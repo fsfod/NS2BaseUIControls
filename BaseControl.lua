@@ -60,6 +60,10 @@ function BaseControl:Initialize(width, height)
   if(width) then
     self:CreateRootFrame(width, height)
   end
+  
+  if(self.OnClick or self.OnEnter) then
+    self:SetupHitRec()
+  end
 end
 
 function BaseControl:Uninitialize()

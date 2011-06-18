@@ -173,7 +173,7 @@ function SliderButton:__init()
 	self:SetupHitRec()
 	
 	local bg = self:CreateRootFrame(30, 30)
-	bg:SetColor(Color(0, 1, 1, 1))
+	bg:SetColor(Color(0.78, 0.3, 0, 1))
 	
 	self.MinValuePos = 0
 	self.MaxValuePos = 500
@@ -182,12 +182,12 @@ function SliderButton:__init()
 end
 
 function SliderButton:OnEnter()
-		self.RootFrame:SetColor(Color(0, 1, 0, 1))
+		self.RootFrame:SetColor(Color(0.9, 0.4, 0, 1))
 	return self
 end
 
 function SliderButton:OnLeave()
-	self.RootFrame:SetColor(Color(0, 1, 1, 1))
+	self.RootFrame:SetColor(Color(0.78, 0.3, 0, 1))
 end
 
 function SliderButton:OnClick(...)

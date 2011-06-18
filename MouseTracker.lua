@@ -163,6 +163,10 @@ function MouseTracker:CheckRemoveFrame(frame)
 	end
 end
 
+function MouseTracker:SettingKeybindHook(callback, selfarg)
+  self.SettingKeybind = {callback, selfarg}
+end
+
 function MouseTracker:SendKeyEvent(handle, _, key, down, a1)
 	PROFILE("MouseTracker:SendKeyEvent")
 
@@ -173,6 +177,24 @@ function MouseTracker:SendKeyEvent(handle, _, key, down, a1)
 	if(key == InputKey.MouseX or key == InputKey.MouseY) then
 	  //self:OnMouseMove()
 	  self.MouseMoved = true
+	else
+	  local block = false
+	  
+	  if(self.SettingKeybind and down) then
+	    self.SettingKeybind[1](self.SettingKeybind[2], key)
+	    self.SettingKeybind = nil
+	    self.EatKeyUp = key
+	    
+	    block = true
+		elseif(self.EatKeyUp == key) then
+		  self.EatKeyUp = nil
+		  block = true
+	  end
+	  
+	  if(block) then
+	    handle:BlockOrignalCall()
+		  handle:SetReturn(true)
+		end
 	end
 
 	if(key == InputKey.MouseButton0 or key == InputKey.MouseButton1 or key == InputKey.MouseButton3) then

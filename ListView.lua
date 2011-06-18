@@ -52,14 +52,15 @@ ListView.DefaultWidth = 300
 ListView.SelectedItemColor = Color(0, 0, 0.3, 1)
 
 
-function ListView:Initialize(width, height, itemCreator)
+function ListView:Initialize(width, height, itemCreator, itemHeight, itemSpacing)
 	
 	height = height or ListView.DefaultHeight
 	width = width or ListView.DefaultWidth
 	
-	self.ItemSpacing = self.ItemSpacing or 1
-	self.ItemHeight = self.ItemHeight or 16	
+	self.ItemSpacing = itemSpacing or self.ItemSpacing or 1
+	self.ItemHeight = itemHeight or self.ItemHeight or 16	
 	self.ItemDistance = self.ItemHeight + self.ItemSpacing
+	self.ScrollBarWidth = 18
 	
 	if(self.ItemsSelectble == nil) then
 	  self.ItemsSelectble = true
@@ -110,9 +111,15 @@ function ListView:Uninitialize()
   BaseControl.Uninitialize(self)
 end
 
+function ListView:SetScrollBarWidth(width)
+  
+  self.ScrollBarWidth = width
+  self.ScrollBar:SetSize(width, self:GetHeight())
+end
+
 function ListView:SetSize(width, height)
   BaseControl.SetSize(self, width, height)
-  self.ScrollBar:SetSize(15, height)
+  self.ScrollBar:SetSize(self.ScrollBarWidth, height)
  
   self.MaxVisibleItems = math.floor(height/(self.ItemDistance))
   
@@ -129,6 +136,18 @@ function ListView:GetItemAtCoords(x, y)
   end
  
   return nil
+end
+
+function ListView:OnItemSelected(index)
+  
+  local DataIndex = self.ViewStart+index-1
+  
+  self.SelectedItem = DataIndex
+
+  self.SelectBG:SetIsVisible(true)
+  self.SelectBG:SetPosition(Vector(0, (index-1)*self.ItemDistance, 0))
+  
+  self:FireEvent(self.ItemSelected, self.ItemDataList[DataIndex], DataIndex)
 end
 
 function ListView:OnClick(button, down, x,y)
@@ -160,23 +179,17 @@ function ListView:OnClick(button, down, x,y)
     local DataIndex = self.ViewStart+index-1
 
     if(self.ItemsSelectble) then
-      self.SelectedItem = DataIndex
-
-      self.SelectBG:SetIsVisible(true)
-      self.SelectBG:SetPosition(Vector(0, (index-1)*ItemDistance, 0))
-      
-      self:FireEvent(self.ItemSelected, self.ItemDataList[DataIndex], DataIndex)
+      self:OnItemSelected(index)
     end
 
     if(item.OnClick) then
-      item:OnClick(button, down, 0, y%ItemDistance)
+      item:OnClick(button, down, x, y%ItemDistance)
       
       self.ClickedItem = item
      return self
     else
       if(self.ItemDblClicked and self.LastClickTime and self.LastClickedIndex == DataIndex and 
         (Client.GetTime()-self.LastClickTime) < MouseTracker.DblClickSpeed) then
-          
 
         self:FireEvent(self.ItemDblClicked, self.ItemDataList[DataIndex], DataIndex)
       end
@@ -211,6 +224,17 @@ end
 
 function ListView:GetSelectedIndex()
   return self.SelectedItem
+end
+
+function ListView:GetSelectedIndexData()
+  
+  local index = self.SelectedItem
+  
+  if(index) then
+    return self.ItemDataList[index]
+  end
+  
+  return nil
 end
 
 function ListView:ListSizeChanged()
