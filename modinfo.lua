@@ -1,11 +1,11 @@
-EngineBuild = 162
+EngineBuild = 178
 ModTableName = "GUIManagerEx"
 MainScript = "GUIManagerEx.lua"
 ValidVM = "client"
 
 ScriptList = {
   "UIHelpers.lua",
-  "CallbackHandler.lua",
+  "MouseStateTracker.lua",
   "GUIManagerEx.lua",
   "ConfigDataBinder.lua",
   "BaseControl.lua",
@@ -17,4 +17,5 @@ ScriptList = {
   "ComboBox.lua",
   "TextBox.lua",
   "CheckBox.lua",
+  "UpDownControl.lua"
 }

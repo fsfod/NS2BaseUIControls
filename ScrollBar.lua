@@ -12,7 +12,7 @@ local BarWidth = 0.7
 function ScrollBar:__init(width, height)
 	BaseControl.Initialize(self)
 
-  width = width or 50
+  width = width or 25
 	height = height or 300
 
   local SideScroll = width > height
@@ -45,14 +45,17 @@ function ScrollBar:__init(width, height)
 end
 
 function ScrollBar:SetMinMax(min, max)
-	
+
 	self.MinValue = min
 	self.MaxValue = max
-	self.Value = min
+	//self.Value = min
 
 	self.Range = max-min
 	
 	self.StepSize = self.StepAmount/self.Range
+	
+	//InteralSetValue will clamp the value for us
+	self:InteralSetValue(self.Value or min, false, true)
 end
 
 function ScrollBar:EnableScrolling()

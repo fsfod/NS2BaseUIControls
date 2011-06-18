@@ -6,10 +6,13 @@ local DimOrange = Color(0.8666/3, 0.3843/3, 0, 1)
 local grey = Color(0.133, 0.149, 0.1529, 1)
 
 
-function CheckBox:__init(label, checked, labelOnLeft)
+function CheckBox:__init(label, checked, labelOnLeft, fontsize)
   label = label or "Some text 1111z"
+  
+  self.FontSize = fontsize or 17
+  
   local labeltxt = GUIManager:CreateTextItem()
-	 labeltxt:SetFontSize(17)
+	 labeltxt:SetFontSize(self.FontSize)
 	 labeltxt:SetText(label)
   
   local width = labeltxt:GetTextWidth(label)
@@ -25,7 +28,7 @@ function CheckBox:__init(label, checked, labelOnLeft)
   
   self:SetColor(0, 0, 0, 0)
   
-  local button = CheckButton(height, height, self.Checked)
+  local button = CheckButton(height, self.Checked)
     self:AddChild(button)
   self.Button = button
 end
@@ -81,12 +84,12 @@ end
 
 class 'CheckButton'(BaseControl)
 
-function CheckButton:Initialize(width, height, checked)
-  BaseControl.Initialize(self, width, height)
+function CheckButton:Initialize(height, checked)
+  BaseControl.Initialize(self, height, height)
   ButtonMixin.__init(self)
 
   local cross = GUIManager:CreateGraphicItem()
-    cross:SetSize(Vector(width, height, 0))
+    cross:SetSize(Vector(height, height, 0))
 	  cross:SetColor(Orange)
 	  cross:SetTexture("ui/checkbox.dds")
 	self.RootFrame:AddChild(cross)
@@ -95,7 +98,7 @@ function CheckButton:Initialize(width, height, checked)
   self:SetCheckedState(checked or false)
   
   local border = GUIManager:CreateGraphicItem()
-    border:SetSize(Vector(width, height, 0))
+    border:SetSize(Vector(height, height, 0))
 	  border:SetColor(grey)
 	  border:SetTexture("ui/checkbox.dds")
 	  border:SetTexturePixelCoordinates(0, 0, 63, 64)
@@ -116,6 +119,8 @@ end
 
 function CheckButton:SetCheckedState(checked)
 	local cross = self.Cross
+  
+  self.Checked = checked
   
   if(checked) then
     cross:SetTexturePixelCoordinates(128, 0, 128+64, 64)

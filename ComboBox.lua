@@ -179,7 +179,22 @@ function DropDownMenu:EntryPicked(data, index)
   self:Close(true)
 end
 
+function DropDownMenu:CheckUnparent()
+  
+  local GUIMgr = GetGUIManager()
+
+  if(self.Owner) then
+    if(GUIMgr:IsMainMenuChild(owner)) then
+      self.Parent:RemoveChild(self)
+    else
+      GUIMgr:CheckRemoveFrame(self)
+    end
+  end
+end
+
 function DropDownMenu:Open(owner, position, list, index)
+
+  self:CheckUnparent()
 
   self.Owner = owner
 
@@ -193,12 +208,18 @@ function DropDownMenu:Open(owner, position, list, index)
   self:SetPosition(position)
   self:SetSize(owner:GetWidth(), height)
 
+  local GUIMgr = GetGUIManager()
+
   if(self.Hidden) then
-    GetGUIManager():AddFrame(self)
-    GetGUIManager():SetFocus(self)
+    GUIMgr:AddFrame(self)
+    GUIMgr:SetFocus(self)
     self:Show()
   else
     GUIManager.UnregisterCallback(self, "MouseMove")
+  end
+
+  if(GUIMgr:IsMainMenuChild(owner)) then
+    GUIMgr:ParentToMainMenu(self)
   end
   
   self:SetDataList(list)
@@ -214,7 +235,6 @@ function DropDownMenu:Close(fromClick)
     return
   end
   
-  GetGUIManager():CheckRemoveFrame(self)
   GUIManager.UnregisterCallback(self, "MouseMove")
   
   self:Hide()
@@ -222,6 +242,8 @@ function DropDownMenu:Close(fromClick)
   if(not fromClick) then
     self.Owner:DropDownClosed()
   end
+  
+  self:CheckUnparent()
   
   self.Owner = nil
 end

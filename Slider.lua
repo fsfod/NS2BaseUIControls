@@ -11,6 +11,15 @@ function Slider:__init(width, height, minValue, maxValue)
   end
 end
 
+function Slider:ShowAmountText()
+  if(not self.AmountText) then
+    self.AmountText = self:CreateFontString(18, "Top", 0, -24)  
+    self.AmountText:SetTextAlignmentX(GUIItem.Align_Center)
+  end
+  
+  self.AmountText:SetIsVisible(true)
+end
+
 function Slider:SetValueFromConfig()
   self:SetValue(self.ConfigBinding:GetValue())
 end
@@ -34,11 +43,23 @@ end
 
 function Slider:InteralSetValue(value, fromSlider, fromInput)
 
+  if(self.ClampFraction) then
+    if(math.floor(value) == self.Value) then
+      return
+    else
+      value = math.floor(value)
+    end
+  end
+
   self.Value = Clamp(value, self.MinValue, self.MaxValue)
-  
+
   if(not fromSlider) then
 		self.Bar:SetValuePosition((self.Value-self.MinValue)/self.Range)
 	end
+	
+  if(self.AmountText) then
+    self.AmountText:SetText((self.ValueConverter or tostring)(self.Value))
+  end
 
   if(not self.NoValueChangedWhileDraging or not fromSlider) then
     if(not fromInput and self.ConfigBinding and fromSlider) then

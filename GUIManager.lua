@@ -1,4 +1,11 @@
 
+if(not GUIManager.ClearFocus) then
+  Event.Hook("Console_clearfocus", function() 
+    Print("Clearing ui focus")
+    GetGUIManager():ClearFocus() 
+  end)
+end
+
 function GUIManager:_SharedCreate(scriptName)
   
 	local creationFunction = _G[scriptName]
@@ -15,15 +22,20 @@ function GUIManager:_SharedCreate(scriptName)
 	 return nil
 	end
 	
-	local newScript = creationFunction()
-	 newScript._scriptName = scriptName
-	 newScript:Initialize()
+  local success, newScript = SafeCall(creationFunction)
+	  
+	if(not success) then
+	  return nil
+	end 
+	
+	newScript._scriptName = scriptName
+	newScript:Initialize()
 
   if(newScript.HitRec or newScript.OnClick or newScript.OnEnter) then
     self:AddFrame(newScript)
   end
   
-  return newScript
+ return newScript
 end
 
 function GUIManager:AddFrame(frame)
@@ -45,19 +57,42 @@ function GUIManager:AddFrame(frame)
 	table.insert(self.TopLevelFrames, frame)
 end
 
+function GUIManager:RemoveFrame(frame, destroyFrame)  
+  assert(frame.Parent == UIParent)
+
+  local removed = self:CheckRemoveFrame(frame)
+
+  if(destroyFrame and frame.Uninitialize) then
+    SafeCall(frame.Uninitialize, frame)
+  end
+
+  if(not removed) then
+    Print("GUIManager:RemoveFrame could not find frame to remove")
+   return
+  end
+
+  return removed
+end
+
 function GUIManager:CheckRemoveFrame(frame)
+  
+  if(self.FocusedFrame == frame) then
+    self.FocusedFrame = nil
+  end
+  
 	if(self.AddedFrames[frame]) then
 		self.AddedFrames[frame] = nil
 		
 		for index, frm in ipairs(self.TopLevelFrames) do
 			if(frame == frm ) then
 				table.remove(self.TopLevelFrames, index)
+			 return true
 			end
 		end
 	end
+	
+	return false
 end
-
-
 
 function GUIManager:ScreenSizeChanged()
 
@@ -66,6 +101,38 @@ function GUIManager:ScreenSizeChanged()
   for i,frame in ipairs(self.TopLevelFrames) do
     frame:OnScreenSizeChanged(width,height)
   end
+end
+
+function GUIManager:SetMainMenu(menuFrame)
+  self.MainMenu = menuFrame
+end
+
+function GUIManager:ParentToMainMenu(frame)
+  assert(not frame.Parent or frame.Parent ~= self.MainMenu)
+  self.MainMenu:AddChild(frame)
+  
+  frame.RootFrame:SetLayer(GUIMainMenu.MenuLayer+1)
+end
+
+function GUIManager:UnparentFromMainMenu(frame)
+  assert(frame.Parent == self.MainMenu)
+  self.MainMenu:RemoveChild(frame)
+  
+  frame.RootFrame:SetLayer(0)
+end
+
+function GUIManager:IsMainMenuChild(frame)
+  local curr = frame
+  
+  while curr do
+    if(curr == self.MainMenu) then
+      return true
+    end
+    
+    curr = curr.Parent
+  end
+  
+  return false
 end
 
 function GUIManager:MouseShown()
@@ -137,32 +204,36 @@ function GUIManager:MouseClick(button, down)
     end
   end
 
-  if(self.ActiveMenu) then
-   return
-  end
-
   local ClickInFrame = false
 
-
-	for i=#FrameList,1,-1 do
-    local frame = FrameList[i]
-    local rec = frame.HitRec
-   
-    if((frame.ChildHasOnClick or frame.OnClick) and not frame.Hidden and MouseX > rec[1] and MouseY > rec[2] and MouseX < rec[3] and MouseY < rec[4]) then
-     //assume that on a valid hit test we always go down to a child or a OnClick function
-     local x,y = MouseX-frame.HitRec[1], MouseY-frame.HitRec[2]
+  if(self.MainMenu and not self.MainMenu.Hidden) then
+    local prevClicked = self.ClickedFrame
+     self:DoFrameOnClick(self.MainMenu, button, MouseX, MouseY) 
     
-      if(not frame.OnClick) then
-        self:CheckChildOnClick(frame, button, x, y)
-      else
-        self:DoFrameOnClick(frame, button, x, y)
-      end
-      
+    if(self.ClickedFrame and self.ClickedFrame ~= prevClicked) then
       ClickInFrame = true
-     break
+    end
+  else
+    for i=#FrameList,1,-1 do
+      local frame = FrameList[i]
+      local rec = frame.HitRec
+      
+      if((frame.ChildHasOnClick or frame.OnClick) and not frame.Hidden and MouseX > rec[1] and MouseY > rec[2] and MouseX < rec[3] and MouseY < rec[4]) then
+       //assume that on a valid hit test we always go down to a child or a OnClick function
+       local x,y = MouseX-frame.HitRec[1], MouseY-frame.HitRec[2]
+      
+        if(not frame.OnClick) then
+          self:CheckChildOnClick(frame, button, x, y)
+        else
+          self:DoFrameOnClick(frame, button, x, y)
+        end
+        
+        ClickInFrame = true
+       break
+      end
     end
   end
-  
+
   local clicked = self.ClickedFrame
   
   if(clicked) then
@@ -191,6 +262,23 @@ function GUIManager:DoFrameOnClick(frame, button, x,y)
 	end
 end
 
+function GUIManager:ClearFocusIfFrame(frame)
+  if(self.FocusedFrame and self.FocusedFrame == frame) then
+    self:ClearFocus()
+  end
+end
+
+function GUIManager:ClearMouseOver()
+  
+  local current = self.CurrentMouseOver
+  
+  if(current and current.OnLeave) then
+	  safecall(current.OnLeave, current)
+	end
+  
+  self.CurrentMouseOver = nil
+end
+  
 function GUIManager:ClearFocus(newFocus)
   
   local focus = self.FocusedFrame
@@ -199,7 +287,7 @@ function GUIManager:ClearFocus(newFocus)
     focus.Focused = false
     
     if(focus.OnFocusLost) then
-      focus:OnFocusLost(newFocus)
+      xpcall2(focus.OnFocusLost, PrintStackTrace, focus, newFocus)
     end
   end
  
@@ -215,10 +303,14 @@ function GUIManager:SetFocus(frame)
   self.FocusedFrame = frame
     
   if(frame.OnFocusGained) then
-    frame:OnFocusGained(old)
+    xpcall2(frame.OnFocusGained, PrintStackTrace, frame, old)
   end
   
    frame.Focused = true
+end
+
+function GUIManager:IsFocusedSet()
+  return self.FocusedFrame ~= nil
 end
 
 function GUIManager:CheckChildOnEnter(frame, x, y)
@@ -252,6 +344,7 @@ function GUIManager:DoFrameOnEnter(frame, x, y)
   
   if(enteredFrame ~= false) then
     self.CurrentMouseOver = enteredFrame or frame
+    self.CurrentMouseOver.Entered = true
   end
 end
 
@@ -277,7 +370,7 @@ function GUIManager:OnMouseMove()
 	    if(Current.OnLeave) then
 	      Current:OnLeave()
 	    end
-	    
+	    Current.Entered = false
 	    self.CurrentMouseOver = nil
 	  end
 	end
@@ -286,20 +379,25 @@ function GUIManager:OnMouseMove()
 	self.Callbacks:Fire("MouseMove", MouseX, MouseY)
 
 	if(not self.CurrentMouseOver and not self.ActiveDrag) then
-	 for i=#self.TopLevelFrames,1,-1 do
-    local frame = self.TopLevelFrames[i]
-    local rec = frame.HitRec
-    
-		  if((frame.OnEnter or frame.ChildHasOnEnter) and not frame.Hidden and x > rec[1] and y > rec[2] and x < rec[3] and y < rec[4]) then
-
-        if(not frame.OnEnter) then
-          self:CheckChildOnEnter(frame, x-frame.HitRec[1], y-frame.HitRec[2])
-        else
-          self:DoFrameOnEnter(frame, x-frame.HitRec[1], y-frame.HitRec[2])
-        end
-       break
-		  end
-	  end
+	  if(self.MainMenu and not self.MainMenu.Hidden) then
+       self:DoFrameOnEnter(self.MainMenu, MouseX, MouseY) 
+    else
+	  
+	    for i=#self.TopLevelFrames,1,-1 do
+       local frame = self.TopLevelFrames[i]
+       local rec = frame.HitRec
+       
+		     if((frame.OnEnter or frame.ChildHasOnEnter) and not frame.Hidden and x > rec[1] and y > rec[2] and x < rec[3] and y < rec[4]) then
+      
+           if(not frame.OnEnter) then
+             self:CheckChildOnEnter(frame, x-frame.HitRec[1], y-frame.HitRec[2])
+           else
+             self:DoFrameOnEnter(frame, x-frame.HitRec[1], y-frame.HitRec[2])
+           end
+          break
+		     end
+	   end
+	 end
 	end
 end
 

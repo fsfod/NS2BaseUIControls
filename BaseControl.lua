@@ -68,6 +68,14 @@ end
 
 function BaseControl:Uninitialize()
 
+  if(self.Focused) then
+    GetGUIManager():ClearFocusIfFrame(self)
+  end
+
+  if(self.Entered) then
+    GetGUIManager():ClearEntered(self)
+  end
+
   if(self.RootFrame) then
     GUI.DestroyItem(self.RootFrame)
     self.RootFrame = nil  
@@ -239,17 +247,6 @@ function BaseControl:SetSize(VecOrX, y, SkipHitRecUpdate)
 	end
 end
 
-function BaseControl:GetWidth()
-  
-  if(self.Size) then
-    return self.Size.x
-  elseif(self.RootFrame) then
-    return self.RootFrame:GetSize().x
-  else
-    return 0
-  end
-end
-
 function BaseControl:GetHeight()
   
   if(self.Size) then
@@ -261,6 +258,10 @@ function BaseControl:GetHeight()
   end
 end
 
+function BaseControl:SetHeight(height)
+  self:SetSize(self:GetWidth(), height)
+end
+
 function BaseControl:GetWidth()
   
   if(self.Size) then
@@ -270,6 +271,10 @@ function BaseControl:GetWidth()
   else
     return 0
   end
+end
+
+function BaseControl:SetWidth(width)
+  self:SetSize(width, self:GetHeight())
 end
 
 function BaseControl:GetTop()
@@ -367,7 +372,13 @@ function BaseControl:AddChild(control)
 end
 
 function BaseControl:RemoveChild(frame)
-  return table.removevalue(self.ChildControls, frame)
+  local found = table.removevalue(self.ChildControls, frame)
+  
+  if(found) then
+    self.RootFrame:RemoveChild(frame.RootFrame)
+  end
+  
+  return found
 end
 
 function BaseControl:SetupHitRec()
@@ -673,8 +684,7 @@ function Draggable:OnDragStop(dontSetPositon)
 	self.IsDragging = false
 	
 	GUIManager.UnregisterCallback(self, "MouseMove")
-	
-		
+
 	if(not dontSetPositon and (self.DragStartPos[1] ~= x or self.DragStartPos[2] ~= y)) then
 	  self:SetPosition(self.DragPos)
 	end
@@ -694,46 +704,6 @@ function Draggable:Mixin(tbl)
   tbl.DragMouseMove = self.DragMouseMove
   tbl.SetRootFrame = self.SetRootFrame
   tbl.OnClick = self.OnClick  
-end
-
-local dummyItem = GUI.CreateItem()
-local mt = debug.getmetatable(dummyItem)
-local env = debug.getfenv(dummyItem)
-local index = mt.__index
-
-
-
-
-function SetPointAndSize(height, width, point, x, y, relativePoint)
-	
-	self:SetSize(Vector(height, width, 0))
-	
-	local point = PointToAnchor[point]
-	self:SetAnchor(point[1], point[2])
-
-
-	if point[1] == GUIItem.Right then
-		
-	end
-	
-	if point[2] == GUIItem.Bottom then
-		
-	end
-
-	self:SetPosition(Vector(x, y, 0))
-end
-
-
-function CreateFrame(frametype)
-	if(FrameMTs[frametype]) then
-		local frame = GUIManager:CreateGraphicItem()
-		
-		getmetatable(frame).__index = ControlMTIndex
-		
-		local frame2 = GUIManager:CreateGraphicItem()
-		
-		return frame
-	end
 end
 
 --local f = CreateFrame("test")

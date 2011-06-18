@@ -1,6 +1,8 @@
 class 'TextBox'(BorderedSquare)
 
-function TextBox:__init(width, height)
+local Space = string.byte(" ", 1)
+
+function TextBox:__init(width, height, fontsize)
   BorderedSquare.__init(self, width, height, 2)
   
   self.CarretPos = 0
@@ -15,12 +17,19 @@ function TextBox:__init(width, height)
    self.RootFrame:AddChild(carret)
   self.Carret = carret
   
-  local text = self:CreateFontString(20)
+  self.FontSize = fontsize or 20
+  
+  local text = self:CreateFontString(self.FontSize)
    text:SetPosition(Vector(5, 2, 0))
    text:SetTextAlignmentX(GUIItem.Align_Min)
    text:SetTextAlignmentY(GUIItem.Align_Center)
    text:SetAnchor(GUIItem.Left, GUIItem.Center)
   self.Text = text
+  
+  local w1 = text:GetTextWidth("oo")
+  local w2 = text:GetTextWidth("o o")
+  
+  self.SpaceSize = w2-w1 
 end
 
 function TextBox:OnClick()
@@ -31,12 +40,18 @@ function TextBox:OnFocusGained()
   self.Carret:SetIsVisible(true)
 end
 
+function TextBox:SetFocus()
+  GetGUIManager():SetFocus(self)
+end
+
 function TextBox:OnFocusLost()
   self.Carret:SetIsVisible(false)
   
   if(self.ConfigBinding) then
     self.ConfigBinding:SetValue(self.Text:GetText())
   end
+  
+  self:FireEvent(self.FocusLost)
 end
 
 function TextBox:SetValueFromConfig()
@@ -45,6 +60,16 @@ end
 
 function TextBox:ConfigValueChanged(text)
   self:SetText(text)
+end
+
+function TextBox:GetText()
+  return self.Text:GetText()
+end
+
+function TextBox:ClearText()
+  self.Text:SetText("")
+  self.CarretPos = 0
+  self:UpdateCarret()
 end
 
 function TextBox:SetText(text)
@@ -68,11 +93,12 @@ end
 
 function TextBox:SendCharacterEvent(character)
   self:InsertChar(character)
+  self:FireEvent(self.TextChanged)
  return true
 end
 
 function TextBox:UpdateCarret()
-    
+  local text = self.Text:GetText()
   local currentText = self.Text:GetWideText()
   local currentTextLength = currentText:length()
   local offset
@@ -81,11 +107,22 @@ function TextBox:UpdateCarret()
      local tempText = currentText:sub(1, self.CarretPos)
      self.Text:SetWideText(tempText)
      
-     offset = self.Text:GetTextWidth(self.Text:GetText())
+     offset = self.Text:GetTextWidth(text)
      
      self.Text:SetWideText(currentText)
   else
-    offset = self.Text:GetTextWidth(self.Text:GetText())
+    
+    offset = self.Text:GetTextWidth(text)
+    
+    if(string.byte(text, #text) == Space) then
+      for i = #text,1,-1 do
+        if(string.byte(text, i) == Space) then
+          offset = offset+self.SpaceSize
+        else
+          break
+        end
+      end
+    end
   end
   
   
@@ -148,10 +185,14 @@ function TextBox:SendKeyEvent(key, down)
         self.CarretPos = self.CarretPos-1
          
         self:UpdateCarret()
+        
+        self:FireEvent(self.TextChanged)
       end
     elseif(key == InputKey.Delete) then
       if CharCount > 0 and self.CarretPos ~= CharCount then
         self:DeleteChar(self.CarretPos+1)
+        
+        self:FireEvent(self.TextChanged)
       end
 		elseif(key == InputKey.Left) then
 			if(self.CarretPos > 0) then
@@ -163,7 +204,7 @@ function TextBox:SendKeyEvent(key, down)
 				self.CarretPos = self.CarretPos+1
 			end
 			self:UpdateCarret()
-    elseif(key == InputKey.Return) then
+    elseif(key == InputKey.Return and not self.IgnoreReturn) then
       if(self.Focused) then
         GUIManager:ClearFocus()
       end

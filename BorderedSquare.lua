@@ -101,6 +101,8 @@ function BasePage:__init(width, height, titleString)
   
   BorderedSquare.__init(self, width, height, 2)
 
+  self.RootFrame:SetColor(PageBgColour)
+
   local title = GUIManager:CreateTextItem()
     title:SetFontSize(20)
     title:SetText(titleString)

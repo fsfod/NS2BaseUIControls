@@ -14,8 +14,9 @@ function GUIManagerEx:OnLoad()
 	self:SetHooks()
 	self:LoadScriptAfter("lua/GUIManager.lua", "GUIManager.lua")
 	
-	
 	self:HookFileLoadFinished("lua/Skulk_Client.lua", "SetSkulkViewTilt")
+	
+	MouseStateTracker:Init()
 end
 
 function GUIManagerEx:SetSkulkViewTilt()
@@ -30,7 +31,8 @@ function GUIManagerEx:SetHooks()
   self:HookClassFunction("GUIManager", "Update")
   
   //self:ReplaceClassFunction("GUIManager", "_SharedCreate")
-  self:HookClassFunction("GUIManager", "DestroyGUIScript", "CheckRemoveFrame", self.CheckRemoveFrame)
+  self:HookClassFunction("GUIManager", "DestroyGUIScript")
+  self:ReplaceClassFunction("GUIManager", "DestroyGUIScriptSingle")
 
   self:HookLibraryFunction(HookType.Post, "Client", "ReloadGraphicsOptions", "CheckGraphicsOptions")
   //self:HookLibraryFunction(HookType.Post, "Client", "SetCursor", function(cursor) Shared.Message(tostring(cursor or "nil")) end)
@@ -44,21 +46,29 @@ function GUIManagerEx:Initialize(self)
 	GUIManager.DblClickSpeed = 0.5
 end
 
+function GUIManagerEx:DestroyGUIScript(self, frame)
+  self:CheckRemoveFrame(frame)
+end
+
+function GUIManagerEx:DestroyGUIScriptSingle(self, scriptName)
+  
+  for index, script in ipairs(self.scriptsSingle) do
+    if script[2] == scriptName then
+      if table.removevalue(self.scriptsSingle, script) then
+        self:CheckRemoveFrame(self, script[1])
+        SafeCall(script[1].Uninitialize, script[1])
+       break
+      end
+    end
+  end
+  
+end
+
 function GUIManagerEx:CheckGraphicsOptions()
   self.CheckSceenResNextFrame = 0
 end
 
-function GUIManagerEx:CheckRemoveFrame(self, frame)
-	if(self.AddedFrames[frame]) then
-		self.AddedFrames[frame] = nil
-		
-		for index, frm in ipairs(self.TopLevelFrames) do
-			if(frame == frm ) then
-				table.remove(self.TopLevelFrames, index)
-			end
-		end
-	end
-end
+local WheelMessages = nil
 
 --self is really GUIManager
 function GUIManagerEx.SendKeyEvent(handle, self, key, down, ...)
@@ -68,10 +78,34 @@ function GUIManagerEx.SendKeyEvent(handle, self, key, down, ...)
     
   end
 
+  if(key == InputKey.MouseZ and GetWheelMessages) then
+		if(WheelMessages == nil) then
+		 WheelMessages = GetWheelMessages() or false
+		 
+		  if(WheelMessages) then
+		    Print("WheelMsgs %i", #WheelMessages)
+		  end
+		end
+		
+		if(WheelMessages) then
+		  local direction = WheelMessages[1]
+		  table.remove(WheelMessages, 1)
+		  
+		  if(direction == 1) then
+		    Print("WheelUp")
+		  elseif(direction == -1) then
+		    Print("WheelDown")
+		  else
+		    Print(tostring(direction or "nil"))
+		  end
+	  end
+  end
+
   local focus = self.FocusedFrame
+  local eventHandled = false
   
   if(focus and focus.SendKeyEvent and focus:SendKeyEvent(key, down, ...)) then
-    return true
+    eventHandled = true
   end
 
   if(key == InputKey.MouseX or key == InputKey.MouseY) then
@@ -79,14 +113,22 @@ function GUIManagerEx.SendKeyEvent(handle, self, key, down, ...)
    return
 	end
 
-	local eventHandled = false
-
 	if(self.EatKeyUp == key) then
 	  self.EatKeyUp = nil
 	 eventHandled = true
 	end
 
-	if(not eventHandled and (key == InputKey.MouseButton0 or key == InputKey.MouseButton1 or key == InputKey.MouseButton3)) then
+  local IsClick = (key == InputKey.MouseButton0 or key == InputKey.MouseButton1 or key == InputKey.MouseButton3)
+  local ProcessClick = true
+
+  //hack to handle when the buy menu is open
+  if(IsClick and (not MainMenuMod or not MainMenuMod:IsMenuOpen())) then
+    local player = Client.GetLocalPlayer()
+    
+    ProcessClick = player and not player.buyMenu
+  end
+
+	if(not eventHandled and IsClick and ProcessClick) then
 		eventHandled = self:MouseClick(key, down)
 	end
 	  
@@ -108,6 +150,8 @@ end
 
 function GUIManagerEx:Update(self, time)
   
+	WheelMessages = nil
+  
   if(GUIManagerEx.CheckSceenResNextFrame) then
     local newValue = GUIManagerEx.CheckSceenResNextFrame+1
     
@@ -121,6 +165,11 @@ function GUIManagerEx:Update(self, time)
     end
   end
   
+  
+  if(self.FocusedFrame and not self.FocusedFrame:IsShown()) then
+    self:ClearFocus()
+  end
+
   local MouseVisible = Client.GetMouseVisible()
   
   if(MouseVisible) then
