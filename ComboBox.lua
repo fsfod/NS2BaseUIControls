@@ -1,22 +1,20 @@
 
-class 'ComboBox'(BaseControl)
+class 'ComboBox'(BorderedSquare)
 
-
-function ComboBox:Initialize(width, height, itemList, labelCreator)
-
-  BaseControl.Initialize(self, width, height)
+function ComboBox:__init(width, height, itemList, labelCreator)
+  BorderedSquare.__init(self, width, height, 2)
   
-  self:SetColor(0.1, 0.1, 0.1, 1)
+   self:SetBackgroundColor(Color(0.1, 0.1, 0.1, 0.85))
   
   local button = ArrowButton(height, height, "Down")
     button:SetPoint("TopRight", 0, 0, "TopRight")
     button.OnClicked = {self.ToggleDropDown, self}
     self:AddChild(button)
   self.Button = button
-    
+
   local itemText = GUIManager:CreateTextItem()
    itemText:SetFontSize(17)
-   itemText:SetPosition(Vector(3, 0, 0))
+   itemText:SetPosition(Vector(4, 3, 0))
     self.RootFrame:AddChild(itemText)
   self.ItemText = itemText
   
@@ -36,6 +34,10 @@ function ComboBox:Initialize(width, height, itemList, labelCreator)
   self:SetSelectedItem(1)
 end
 
+function ComboBox:SetLabel(str, offset, yOffset)
+  BaseControl.SetLabel(self, str, offset, yOffset or 2)
+end
+
 function ComboBox.GetItemLabel(item)
   
   if(type(item) == "string") then
@@ -46,21 +48,6 @@ function ComboBox.GetItemLabel(item)
   
 end
 
-function ComboBox:SetLabel(str)
-  
-  local label = self.Label
-  
-  if(not label) then
-    label = GUIManager:CreateTextItem()
-    label:SetFontSize(17)
-    self.Label = label
-    self.RootFrame:AddChild(label)
-  end
-    
-  label:SetText(str)
-  label:SetPosition(Vector(-(label:GetTextWidth(str)+3), 0, 0))
-end
-
 function ComboBox:DropDownClosed()
   self.DropDownOpen = false
 end
@@ -69,6 +56,63 @@ function ComboBox:OnClick(...)
  return self.ContainerOnClick(self, ...)
 end
 
+function ComboBox:SetValueFromConfig()
+  self:SetSelectedItem(self.ConfigBinding:GetValue())
+end
+
+function ComboBox:ConfigValueChanged(newIndex)
+  self:SetSelectedItem(newIndex)
+
+  self:FireEvent(self.ItemPicked, self.ItemList[newIndex], newIndex)
+end
+
+
+function ComboBox:CheckCreateConfigConverter()
+
+  local binding = self.ConfigBinding
+
+  --add simple sane converter if one is not provided
+  --this just looks through our item list for the value loaded from the config and returns the index
+  if(not binding.ValueConverter) then
+    binding.ValueConverter = function(value, index) 
+      if(index) then
+        return value
+      else
+        return table.find(self.ItemList, value)
+      end
+    end
+  end
+end
+
+function ComboBox:SetConfigBinding(...)
+
+  local binding = ConfigDataBind(...)
+  self.ConfigBinding = binding
+
+  self:CheckCreateConfigConverter()
+  self:SetSelectedItem(binding:GetValue())
+
+  return binding
+end
+
+function ComboBox:SetConfigBindingAndTriggerChange(...)
+
+  local binding = ConfigDataBind(...)
+  self.ConfigBinding = binding
+
+  self:CheckCreateConfigConverter()
+  self:ConfigValueChanged(binding:GetValue())
+
+  return binding
+end
+
+function ComboBox:GetSelectedItem()
+  
+  if(self.SelectedIndex) then
+    return self.ItemList[self.SelectedIndex]
+  end
+  
+end
 
 function ComboBox:SetSelectedItem(index, fromDropDown)
   
@@ -77,15 +121,21 @@ function ComboBox:SetSelectedItem(index, fromDropDown)
   if(fromDropDown) then
     self.DropDownOpen = false
     
+    if(self.ConfigBinding) then
+      self.ConfigBinding:SetValue(self.ItemList[index], index)
+    end
+    
     self:FireEvent(self.ItemPicked, self.ItemList[index], index)
   end
   
-  if(self.ItemList) then
+  if(self.ItemList and self.SelectedIndex) then
     local item = self.ItemList[self.SelectedIndex]
 
     if(item) then
       self.ItemText:SetText(self.GetItemLabel(item))
     end
+  else
+    self.ItemText:SetText("")
   end
 end
 
@@ -104,9 +154,7 @@ function ComboBox:ToggleDropDown(down)
     end
     
     local pos = self:GetScreenPosition()
-      dropdown:Open(self, self.LabelCache, self.SelectedIndex)
-      dropdown:SetPosition(pos.x, pos.y+self:GetHeight()+3)
-      
+      dropdown:Open(self, Vector(pos.x, pos.y+self:GetHeight()+3, 0), self.LabelCache, self.SelectedIndex)      
     
     self.DropDownOpen = true
   else
@@ -131,17 +179,26 @@ function DropDownMenu:EntryPicked(data, index)
   self:Close(true)
 end
 
-function DropDownMenu:Open(owner, list, index)
-  
+function DropDownMenu:Open(owner, position, list, index)
+
   self.Owner = owner
-  self:SetSize(owner:GetWidth(), #list*self.ItemDistance)
-  
+
+  local height = #list*self.ItemDistance
+  local x,y = GUIManager.GetSpaceToScreenEdges(position)
+
+  --make sure our list doesn't run offscreen
+  if(height > y) then
+    height = math.floor(y/self.ItemDistance)*self.ItemDistance
+  end
+  self:SetPosition(position)
+  self:SetSize(owner:GetWidth(), height)
+
   if(self.Hidden) then
-    MouseTracker:AddFrame(self)
-    MouseTracker:SetFocus(self)
+    GetGUIManager():AddFrame(self)
+    GetGUIManager():SetFocus(self)
     self:Show()
   else
-    MouseTracker.UnregisterCallback(self, "MouseMove")
+    GUIManager.UnregisterCallback(self, "MouseMove")
   end
   
   self:SetDataList(list)
@@ -157,8 +214,8 @@ function DropDownMenu:Close(fromClick)
     return
   end
   
-  MouseTracker:CheckRemoveFrame(self)
-  MouseTracker.UnregisterCallback(self, "MouseMove")
+  GetGUIManager():CheckRemoveFrame(self)
+  GUIManager.UnregisterCallback(self, "MouseMove")
   
   self:Hide()
     
@@ -177,7 +234,7 @@ function DropDownMenu:Update()
 end
 
 function DropDownMenu:OnEnter()
-  MouseTracker.RegisterCallback(self, "MouseMove")
+  GUIManager.RegisterCallback(self, "MouseMove")
   
   return self
 end
@@ -194,5 +251,5 @@ function DropDownMenu:MouseMove(x, y)
 end
 
 function DropDownMenu:OnLeave()
-  MouseTracker.UnregisterCallback(self, "MouseMove")
+  GUIManager.UnregisterCallback(self, "MouseMove")
 end

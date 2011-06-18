@@ -14,6 +14,11 @@ function LVTextItem:__init()
 end
 
 function LVTextItem:SetData(msg)
+  if(self.Hidden) then
+    self.Text:SetIsVisible(true)
+    self.Hidden = nil
+  end
+  
   self.Text:SetText(msg)
 end
 
@@ -75,7 +80,7 @@ function ListView:Initialize(width, height, itemCreator, itemHeight, itemSpacing
 	self:SetupHitRec()
 
   local selectBG = GUIManager:CreateGraphicItem()
-    selectBG:SetSize(Vector(width, self.ItemHeight, 0))
+    selectBG:SetIsVisible(false)
     selectBG:SetColor(self.SelectedItemColor)
     bg:AddChild(selectBG)
   self.SelectBG = selectBG
@@ -89,7 +94,7 @@ function ListView:Initialize(width, height, itemCreator, itemHeight, itemSpacing
 	
 	local scrollbar = ScrollBar()
 	 scrollbar:SetPoint("TopRight", 0, 0, "TopRight")
-	 scrollbar.OnValueChanged = {self, self.OnScrollChanged}
+	 scrollbar.ValueChanged = {self.OnScrollChanged, self}
 	 scrollbar:SetStepSize(1)
 	 scrollbar:DisableScrolling()
 	 scrollbar:Hide()
@@ -117,19 +122,47 @@ function ListView:SetScrollBarWidth(width)
   self.ScrollBar:SetSize(width, self:GetHeight())
 end
 
+function ListView:SetMaxVisible(maxVisible)
+
+  local oldVisibleCount = self.MaxVisibleItems
+  self.MaxVisibleItems = maxVisible
+   
+  if(oldVisibleCount) then
+    if(oldVisibleCount < maxVisible and #self.Items < maxVisible) then
+      self:CreateItems(#self.Items+1)
+    elseif(maxVisible < oldVisibleCount) then
+    --just hide our extra items
+      for i=self.MaxVisibleItems+1,oldVisibleCount do
+        self.Items[i]:OnHide()
+        self.Items[i].Hidden = true
+      end
+    end
+  end
+end
+
 function ListView:SetSize(width, height)
   BaseControl.SetSize(self, width, height)
   self.ScrollBar:SetSize(self.ScrollBarWidth, height)
  
-  self.MaxVisibleItems = math.floor(height/(self.ItemDistance))
+  self.SelectBG:SetSize(Vector(width, self.ItemHeight, 0))
+ 
   
+  self:SetMaxVisible(math.floor(height/(self.ItemDistance)))
   self.ItemWidth = width-15
 end
 
 function ListView:GetItemAtCoords(x, y)
- local ItemDistance = self.ItemHeight+self.ItemSpacing
   
- local index = ((y-(y%ItemDistance))/ItemDistance)+1
+  local ScrollBar = self.ScrollBar
+  
+  --check to see if the point is within the scrollbar
+  if(not ScrollBar.Hidden and x > (self:GetWidth()-ScrollBar:GetWidth()) ) then
+    return nil
+  end
+  
+  local ItemDistance = self.ItemHeight+self.ItemSpacing
+  
+  local index = ((y-(y%ItemDistance))/ItemDistance)+1
  
   if(index <= #self.Items and index <= #self.ItemDataList) then
     return index
@@ -189,7 +222,7 @@ function ListView:OnClick(button, down, x,y)
      return self
     else
       if(self.ItemDblClicked and self.LastClickTime and self.LastClickedIndex == DataIndex and 
-        (Client.GetTime()-self.LastClickTime) < MouseTracker.DblClickSpeed) then
+        (Client.GetTime()-self.LastClickTime) < GUIManager.DblClickSpeed) then
 
         self:FireEvent(self.ItemDblClicked, self.ItemDataList[DataIndex], DataIndex)
       end
@@ -354,12 +387,14 @@ function ListView:SetYScroll(y)
 	self.ItemsAnchor:SetPosition(self.AnchorPosition)
 end
 
-function ListView:CreateItems()
+function ListView:CreateItems(startIndex)
   local x = 5
 
   local width = self.ItemWidth
 
-  for i=1,self.MaxVisibleItems do
+  startIndex = startIndex or 1
+
+  for i=startIndex,self.MaxVisibleItems do
     local item = self.CreateItem(self)
      self.ItemsAnchor:AddChild(item:GetRoot())
      item:SetPos(x, (self.ItemHeight+self.ItemSpacing)*(i-1))

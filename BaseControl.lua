@@ -112,20 +112,45 @@ function BaseControl:SetTexture(texture, x1, y1, x2, y2)
   
 end
 
-function BaseControl:CreateFontString(fontSize, anchorPoint, x, y)
+function BaseControl:SetLabel(str, offset, yOffset)
+  
+  local label = self.BC_Label
+  
+  if(not label) then
+    label = GUIManager:CreateTextItem()
+    label:SetFontSize(17)
+    
+    label:SetTextAlignmentX(GUIItem.Align_Min)
+    label:SetTextAlignmentY(GUIItem.Align_Center)
+    label:SetAnchor(GUIItem.Left, GUIItem.Center)
+    
+    self.BC_Label = label
+    self.RootFrame:AddChild(label)
+  end
+    
+  label:SetText(str)
+  label:SetPosition(Vector(-(label:GetTextWidth(str)+(offset or 6)), yOffset or 0, 0))
+end
 
-	local font = GUIManager:CreateTextItem()
-	font:SetFontSize(fontSize)
+function BaseControl:CreateFontString(fontSizeOrTemplate, anchorPoint, x, y)
+  local font
 
-	if(anchorPoint) then
-		local point = PointToAnchor[anchorPoint]
-		font:SetAnchor(point[1], point[2])
+  if(type(fontSizeOrTemplate) == "number") then
+	  font = GUIManager:CreateTextItem()
+	  font:SetFontSize(fontSizeOrTemplate)
+   
+	  if(anchorPoint) then
+	  	local point = PointToAnchor[anchorPoint]
+	  	font:SetAnchor(point[1], point[2])
+	  end
+	else
+	 font = fontSizeOrTemplate:CreateFontString()
+	end
+
+	if(x) then
+	  font:SetPosition(Vector(x, y, 0))
 	end
 	
-	if(x) then
-		font:SetPosition(Vector(x, y, 0))
-	end
-
 	self.RootFrame:AddChild(font)
 	
 	return font
@@ -236,6 +261,41 @@ function BaseControl:GetHeight()
   end
 end
 
+function BaseControl:GetWidth()
+  
+  if(self.Size) then
+    return self.Size.x
+  elseif(self.RootFrame) then
+    return self.RootFrame:GetSize().x
+  else
+    return 0
+  end
+end
+
+function BaseControl:GetTop()
+  assert(self.HitRec)
+
+  return self.HitRec[2]
+end
+
+function BaseControl:GetBottom()
+  assert(self.HitRec and self.Size)
+  
+  return self.HitRec[2]+self.Size.y
+end
+
+function BaseControl:GetLeft()
+  assert(self.HitRec)
+
+  return self.HitRec[1]
+end
+
+function BaseControl:GetRight()
+  assert(self.HitRec and self.Size)
+
+  return self.HitRec[1]+self.Size.x
+end
+
 function BaseControl:GetScreenPosition()
   return self.RootFrame:GetScreenPosition(Client.GetScreenWidth(), Client.GetScreenHeight())
 end
@@ -306,6 +366,10 @@ function BaseControl:AddChild(control)
 	table.insert(self.ChildControls, control)
 end
 
+function BaseControl:RemoveChild(frame)
+  return table.removevalue(self.ChildControls, frame)
+end
+
 function BaseControl:SetupHitRec()
   self.HitRec = {0, 0, 0, 0}
   
@@ -345,6 +409,24 @@ function BaseControl:NotifyChildHasOnClick()
 	end
 end
 
+function BaseControl:SetConfigBinding(...)
+  self.ConfigBinding = ConfigDataBind(...)
+
+  //controls have to implement this
+  self:SetValueFromConfig()
+  
+  return self.ConfigBinding
+end
+
+function BaseControl:SetConfigBindingAndTriggerChange(...)
+  self.ConfigBinding = ConfigDataBind(...)
+
+  //controls have to implement this
+  self:ConfigValueChanged(self.ConfigBinding:GetValue())
+  
+  return self.ConfigBinding
+end
+
 function BaseControl:FireEvent(Action, ...)
   --client code doesn't need bother to check if anything has registered the event
   if(not Action) then
@@ -365,14 +447,16 @@ function BaseControl:FireEvent(Action, ...)
   end
 end
 
-function BaseControl:ContainerOnClick(button, down, x, y)
+function BaseControl:ContainerOnClick(button, down, x, y, controlList)
 	--Make the mouse pos relative  to our Top Left corner
 	
+	controlList = controlList or self.ChildControls
+	
 	--only handle down since the up event is sent to the controle returned from the down event instead of being sent down the control hierarchy
-	if(self.ChildControls and down) then
+	if(controlList and down) then
 
-		for i=#self.ChildControls,1,-1 do
-     local frame = self.ChildControls[i]
+		for i=#controlList,1,-1 do
+     local frame = controlList[i]
 		  
 		  local ClickFunc = frame.OnClick or (frame.ChildHasOnClick and BaseControl.ContainerOnClick)
 		  		
@@ -391,12 +475,14 @@ function BaseControl:ContainerOnClick(button, down, x, y)
 	end
 end
 
-function BaseControl:ContainerOnEnter(x, y)
+function BaseControl:ContainerOnEnter(x, y, controlList)
 	--Make the mouse pos relative  to our Top Left corner
 	
-	if(self.ChildControls) then
-	  for i=#self.ChildControls,1,-1 do
-     local frame = self.ChildControls[i]
+	controlList = controlList or self.ChildControls
+	
+	if(controlList) then
+	  for i=#controlList,1,-1 do
+     local frame = controlList[i]
 		  
 		  local EnterFunc = not frame.Hidden and (frame.OnEnter or (frame.ChildHasOnEnter and frame.ContainerOnEnter))
 		  	
@@ -462,12 +548,18 @@ function BaseControl:Hide()
   self.Hidden = true
   
   if(self.Focused) then
-    MouseTracker:ClearFocus()
+    GetGUIManager():ClearFocus()
   end
   
   if(self.RootFrame) then
    self.RootFrame:SetIsVisible(false)
   end
+end
+
+function BaseControl:IsInParentChain(parent)
+  assert(parent)
+  
+  return self.Parent and (self.Parent == parent or self.Parent:IsInParentChain(parent))
 end
 
 function BaseControl:IsShown()
@@ -540,10 +632,10 @@ function Draggable:OnClick(button, down)
 end
 
 function Draggable:DragStartUp()
-  self.DragStartPos = {MouseTracker.GetMousePostition()}
+  self.DragStartPos = {Client.GetCursorPosScreen()}
 	self.DragStage = 0
 	
-	MouseTracker.RegisterCallback(self, "MouseMove", "DragMouseMove")
+	GUIManager.RegisterCallback(self, "MouseMove", "DragMouseMove")
 end
 
 function Draggable:OnDragStart()
@@ -553,7 +645,7 @@ function Draggable:OnDragStart()
 	local vec = self.RootFrame:GetPosition()
 	self.FrameStartPos = {vec.x, vec.y}
 	
-	MouseTracker:DragStarted(self, self.DragButton)
+	GetGUIManager():DragStarted(self, self.DragButton)
 end
 
 function Draggable:DragMouseMove(x,y)
@@ -569,18 +661,18 @@ function Draggable:DragMouseMove(x,y)
 
 		self.DragRoot:SetPosition(self.DragPos)
 	else
-		MouseTracker.UnregisterCallback(self, "MouseMove")
+		GUIManager.UnregisterCallback(self, "MouseMove")
 	end
 end
 
 function Draggable:OnDragStop(dontSetPositon)
   
-  local x,y = MouseTracker.GetMousePostition()
+  local x,y = Client.GetCursorPosScreen()
   
-  MouseTracker:DragStopped(self)
+  GetGUIManager():DragStopped(self)
 	self.IsDragging = false
 	
-	MouseTracker.UnregisterCallback(self, "MouseMove")
+	GUIManager.UnregisterCallback(self, "MouseMove")
 	
 		
 	if(not dontSetPositon and (self.DragStartPos[1] ~= x or self.DragStartPos[2] ~= y)) then
@@ -698,8 +790,13 @@ function FontTemplate:__init(...)
   end
 end
 
+function FontTemplate:SetAnchor(xAnchor, yAnchor)
+  self.XAnchor = xAnchor
+  self.YAnchor = yAnchor
+end
+
 function FontTemplate:CreateFontString()
-  local result =  GUIManager:CreateTextItem()
+  local result = GUIManager:CreateTextItem()
    self:Apply(result)
   return result
 end
@@ -724,8 +821,14 @@ function FontTemplate:SetColour(redOrColour, g, b, a)
 	end
 end
 
+function FontTemplate:SetCenterAlignAndAnchor()
+  self:SetTextAlignment(GUIItem.Align_Center, GUIItem.Align_Center)
+  self:SetAnchor(GUIItem.Center, GUIItem.Middle)
+end
+
 function FontTemplate:SetTextAlignment(x, y)
-  self.TextAlignment = {x, y}
+  self.TextAlignmentX = x
+  self.TextAlignmentY = y
 end
 
 function FontTemplate:Apply(font)
@@ -741,10 +844,14 @@ function FontTemplate:Apply(font)
 	if(self.Bold) then
 	  font:SetFontIsBold(true)
 	end
+
+	if(self.TextAlignmentX) then
+	  font:SetTextAlignmentX(self.TextAlignmentX)
+    font:SetTextAlignmentY(self.TextAlignmentY)
+	end
 	
-	if(self.TextAlignment) then
-	  font:SetTextAlignmentX(self.TextAlignment[1])
-    font:SetTextAlignmentY(self.TextAlignment[2])
+	if(self.XAnchor) then
+	  font:SetAnchor(self.XAnchor, self.YAnchor)
 	end
 	
 	if(self.Colour) then

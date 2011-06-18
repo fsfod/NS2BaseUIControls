@@ -6,7 +6,7 @@ local DimOrange = Color(0.8666/3, 0.3843/3, 0, 1)
 local grey = Color(0.133, 0.149, 0.1529, 1)
 
 
-function CheckBox:__init(label, checked)
+function CheckBox:__init(label, checked, labelOnLeft)
   label = label or "Some text 1111z"
   local labeltxt = GUIManager:CreateTextItem()
 	 labeltxt:SetFontSize(17)
@@ -14,12 +14,13 @@ function CheckBox:__init(label, checked)
   
   local width = labeltxt:GetTextWidth(label)
   local height = labeltxt:GetTextHeight(label)+4
-  labeltxt:SetPosition(Vector(height+4, 2, 0))
+  self.Label = labeltxt
 
   BaseControl.Initialize(self, width, height)
-  
   self.RootFrame:AddChild(labeltxt)
   
+  self:SetLabelOnLeft(labelOnLeft)
+
   self.Checked = checked or false
   
   self:SetColor(0, 0, 0, 0)
@@ -29,12 +30,43 @@ function CheckBox:__init(label, checked)
   self.Button = button
 end
 
+function CheckBox:SetLabelOnLeft(labelOnLeft)
+   self.LabelOnLeft = labelOnLeft
+   self:UpdateLabelPosition()
+end
+
+function CheckBox:UpdateLabelPosition()
+   
+  local label = self.Label 
+  local height = self:GetHeight()
+  local width = label:GetTextWidth(label:GetText())
+   
+  if(self.LabelOnLeft) then
+    label:SetPosition(Vector(-(width+4), 2, 0))
+  else
+    label:SetPosition(Vector(height+3, 2, 0))
+  end
+end
+
 function CheckBox:OnCheckedToggled()
   self.Checked = not self.Checked
   
-  self:FireEvent(self.CheckChanged, self.Checked)
+  if(self.ConfigBinding) then
+    self.ConfigBinding:SetValue(self.Checked)
+  end
   
+  self:FireEvent(self.CheckChanged, self.Checked)
+
   return self.Checked
+end
+
+function CheckBox:ConfigValueChanged(checked)
+  self:SetChecked(checked)
+  self:FireEvent(self.CheckChanged, self.Checked)
+end
+
+function CheckBox:SetValueFromConfig()
+  self:SetChecked(self.ConfigBinding:GetValue())
 end
 
 function CheckBox:SetChecked(checked)

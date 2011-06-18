@@ -202,10 +202,6 @@ function MouseTracker:SendKeyEvent(handle, _, key, down, a1)
 		  handle:BlockOrignalCall()
 		  handle:SetReturn(true)
 		end
-	else
-		if(key ~= InputKey.MouseX and key ~= InputKey.MouseY) then
-			return false
-		end
 	end
 end
 

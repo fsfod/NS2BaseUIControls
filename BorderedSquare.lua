@@ -92,6 +92,30 @@ function BorderedSquare:SetSize(width, height)
   
   SizeVec.x = 0
   SizeVec.y = width-(LineWidth*2)
-  self.Bottom:SetPositon(SizeVec)
- */
+  self.Bottom:SetPositon(SizeVec)*/
 end
+
+class 'BasePage'(BorderedSquare)
+
+function BasePage:__init(width, height, titleString)
+  
+  BorderedSquare.__init(self, width, height, 2)
+
+  local title = GUIManager:CreateTextItem()
+    title:SetFontSize(20)
+    title:SetText(titleString)
+	  title:SetAnchor(GUIItem.Center, GUIItem.Middle)
+	  title:SetTextAlignmentX(GUIItem.Align_Center)
+	  title:SetTextAlignmentY(GUIItem.Align_Center)
+  self.Title = title
+///title:GetTextWidth(titleString)+40
+
+  local titlebox = BorderedSquare(200, 24, 2)
+    titlebox:SetPoint("Top", 0, 0, "Bottom")
+    titlebox:SetColor(Color(0.1, 0.1, 0.1, 1))
+    titlebox.RootFrame:AddChild(title)
+   self:AddChild(titlebox)
+end
+  
+  
+  

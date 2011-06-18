@@ -9,30 +9,36 @@ local ButtonScrollSpace = 0.5
 local BarWidth = 0.7
 
 
-function ScrollBar:__init()
+function ScrollBar:__init(width, height)
 	BaseControl.Initialize(self)
 
-	local bg = self:CreateRootFrame(50, 600)
+  width = width or 50
+	height = height or 300
+
+  local SideScroll = width > height
+	self.SideScroll = SideScroll
+
+	local bg = self:CreateRootFrame(width, height)
 	bg:SetColor(Color(0.1, 0.1, 0.1, 1))
 	
-	local Up = ArrowButton(40, 40, "Up")
+	local Up = ArrowButton(40, 40, (SideScroll and "Left") or "Up")
 		Up.OnClicked = {self.UpClick, self}
 		self:AddChild(Up)
 	self.Up = Up
 		//:SetPoint("Top", -10, -5)
 
-	local Down = ArrowButton(40, 40, "Down")
+	local Down = ArrowButton(40, 40, (SideScroll and "Right") or "Down")
 		self:AddChild(Down)
 		Down.OnClicked = {self.DownClick, self}
 	self.Down = Down
 		
 	local Bar = SliderButton()
+	  Bar.SideScroll = self.SideScroll
 		self:AddChild(Bar)
 	self.Bar = Bar
 	
-	self.ButtonIncrement = 0.05
+	self:SetSize(width, height)
 	
-	self:SetSize(50, 300)
 	self.StepAmount = 1
 	self:SetMinMax(0, 1)
 	self.StepSize = 0.05
@@ -59,43 +65,49 @@ function ScrollBar:DisableScrolling()
   self.Bar:Hide()
 end
 
-function ScrollBar:OnSliderMoved(newValue)
-	self.Value = self.MinValue+(self.Range*newValue)
-	self:IntenalValueChanged(true)
-end
-
-function ScrollBar:UpClick(down)
-	if(not self.Disabled and down) then
-		self:SetValue(self.Value-(self.Range*self.StepSize))
-	end
-end
-
 function ScrollBar:SetStepSize(amount)
 	self.StepAmount = amount
 	self.StepSize = amount/self.Range
 end
 
-function ScrollBar:DownClick(down)
+function ScrollBar:SetValue(newValue)
+	self:InteralSetValue(newValue, false, true)
+end
+
+function ScrollBar:OnSliderMoved(newValue)
+	self:InteralSetValue(self.MinValue+(self.Range*newValue), true)
+end
+
+function ScrollBar:BarDragStarted()
+  self:FireEvent(self.DragStarted, self)
+end
+
+function ScrollBar:BarDragEnded()
+  self:FireEvent(self.DragEnded, self)
+end
+
+function ScrollBar:UpClick(down)
 	if(not self.Disabled and down) then
-		self:SetValue(self.Value+(self.Range*self.StepSize))
+		self:InteralSetValue(self.Value-(self.Range*self.StepSize))
 	end
 end
 
-function ScrollBar:SetValue(newValue)
-	self.Value = Clamp(newValue, self.MinValue, self.MaxValue)
-	self:IntenalValueChanged()
+function ScrollBar:DownClick(down)
+	if(not self.Disabled and down) then
+		self:InteralSetValue(self.Value+(self.Range*self.StepSize))
+	end
 end
 
-function ScrollBar:IntenalValueChanged(fromSlider)
-	if(not fromSlider) then
+function ScrollBar:InteralSetValue(value, fromSlider, fromInput)
+  self.Value = Clamp(value, self.MinValue, self.MaxValue)
+  
+  if(not fromSlider) then
 		self.Bar:SetValuePosition((self.Value-self.MinValue)/self.Range)
 	end
 
-	local ValueChanged = self.OnValueChanged
-	
-	if(ValueChanged) then
-		ValueChanged[2](ValueChanged[1], self.Value)
-	end
+  if(not fromInput) then
+    self:FireEvent(self.ValueChanged, self.Value, fromSlider)
+  end
 end
 
 function ScrollBar:SetSize(width, height)
@@ -106,24 +118,41 @@ function ScrollBar:SetSize(width, height)
 		height = height.y
 	end
 	
-	local ButtonSize = width*ButtonWidth
+	local SizeSide,LongSide
 
-	self.Up:SetSize(ButtonSize, ButtonSize)
-	self.Up:SetPoint("Top", 0, width*ButtonPadding, "Top")
-
-	self.Down:SetSize(ButtonSize, ButtonSize)
-	self.Down:SetPoint("Bottom", 0, -(width*ButtonPadding), "Bottom")
+	if(not self.SideScroll) then
+	  SizeSide,LongSide = width, height
+	else
+    SizeSide,LongSide = height, width
+	end
 	
-	local TotalButtonPadding = (width*ButtonPadding*2)
+	local ButtonSize = SizeSide*ButtonWidth	
+	local TotalButtonPadding = (SizeSide*ButtonPadding*2)
 	
-	local BarSize = width*BarWidth
+	local BarSize = SizeSide*BarWidth
 	local ScrollStart = ButtonSize+TotalButtonPadding
-  local ScrollEnd = height-ScrollStart
+  local ScrollEnd = LongSide-ScrollStart
+  
   self.ScrollClickRange = {ScrollStart, ScrollEnd, ScrollStart+(BarSize/2), ScrollEnd-(BarSize/2)}
+ 
+	self.Up:SetSize(ButtonSize, ButtonSize)
+	self.Down:SetSize(ButtonSize, ButtonSize)
+	
+	if(not self.SideScroll) then
+	  self.Up:SetPoint("Top", 0, width*ButtonPadding, "Top")
+	  self.Down:SetPoint("Bottom", 0, -(width*ButtonPadding), "Bottom")
+	  
+	  self.Bar:SetPoint("Top", 0, ScrollStart, "Top")
+	else
+	  self.Up:SetPoint("Left", height*ButtonPadding, 0, "Left")
+	  self.Down:SetPoint("Right", -(height*ButtonPadding), 0, "Right")
+
+	  self.Bar:SetPoint("Left", ScrollStart, 0, "Left")
+	end
 
 	self.Bar:SetSize(BarSize, BarSize)
-	self.Bar:SetPoint("Top", 0, ScrollStart, "Top")
-	self.Bar:SetMaxValuePositon(height-((ScrollStart*2)+BarSize))
+		
+	self.Bar:SetMaxValuePositon(LongSide-((ScrollStart*2)+BarSize))
 end
 
 
@@ -143,19 +172,21 @@ function ScrollBar:OnClick(button, down, x,y)
 		
 		  local scrollArea = self.ScrollClickRange
 		  
-		  if(y > scrollArea[1] and y < scrollArea[2]) then		    
+		  local MousePos = (not self.SideScroll and y) or x
+		  		  
+		  if(MousePos > scrollArea[1] and MousePos < scrollArea[2]) then		    
 		    local value
 		    
-		    if(y > scrollArea[4]) then
+		    if(MousePos > scrollArea[4]) then
 		      value = self.MaxValue
-		    elseif(y < scrollArea[3]) then
+		    elseif(MousePos < scrollArea[3]) then
 		      value = self.MinValue
 		    else
-		      local ScrollPercent = (y-scrollArea[3])/(scrollArea[4]-scrollArea[3])
+		      local ScrollPercent = (MousePos-scrollArea[3])/(scrollArea[4]-scrollArea[3])
 
 		      value = self.MinValue+(ScrollPercent*self.Range)
 		    end
-		    self:SetValue(value)
+		    self:InteralSetValue(value)
 		    
 		    return self
 		  end
@@ -204,13 +235,19 @@ function SliderButton:SetMaxValuePositon(max)
 	if(self.CurrentValuePositon ~= 0) then
 		self.CurrentValuePositon = (self.CurrentValuePositon/self.MaxValuePos)*max
 	end
+
 	self.MaxValuePos = max
 
 	self:UpdatePosition()
 end
 
 function SliderButton:UpdatePosition(newPos)
-	self:SetPosition(self.StartPositon[1], self.StartPositon[2]+self.CurrentValuePositon, true)
+  
+  if(not self.SideScroll) then
+	  self:SetPosition(self.StartPositon[1], self.StartPositon[2]+self.CurrentValuePositon, true)
+	else
+	  self:SetPosition(self.StartPositon[1]+self.CurrentValuePositon, self.StartPositon[2], true)
+	end
 end
 
 function SliderButton:SetPosition(x, y, DragSetPosiiton)
@@ -224,10 +261,18 @@ end
 
 function SliderButton:OnDragStart()
 	Draggable.OnDragStart(self)
-	self.DragPos.x = self.Position.x
 	
-	self.MouseMin = self.DragStartPos[2]-self.CurrentValuePositon
+	if(not self.SideScroll) then
+	  self.DragPos.x = self.Position.x
+	  self.MouseMin = self.DragStartPos[2]-self.CurrentValuePositon
+	else
+	  self.DragPos.y = self.Position.y
+	  self.MouseMin = self.DragStartPos[1]-self.CurrentValuePositon
+	end
+
 	self.MouseMax = self.MouseMin+self.MaxValuePos
+	
+	self.Parent:BarDragStarted(self)
 end
 
 function SliderButton:DragMouseMove(x,y)
@@ -237,30 +282,43 @@ function SliderButton:DragMouseMove(x,y)
   end
 	
 	if(self.IsDragging) then
-		local MousePos = y-self.MouseMin
+		local MousePos = ((not self.SideScroll and y) or x)-self.MouseMin
 		local NewPosiiton = Clamp(MousePos, self.MinValuePos, self.MaxValuePos)
 		
 			if(NewPosiiton ~= self.CurrentValuePositon) then
 				self.CurrentValuePositon = Clamp(MousePos, self.MinValuePos, self.MaxValuePos)
-				self.DragPos.y = self.StartPositon[2]+self.CurrentValuePositon
+			
+			  if(not self.SideScroll) then
+				  self.DragPos.y = self.StartPositon[2]+self.CurrentValuePositon
+				else
+				  self.DragPos.x = self.StartPositon[1]+self.CurrentValuePositon
+				end
 			
 				self.DragRoot:SetPosition(self.DragPos)
 				self.Parent:OnSliderMoved(self.CurrentValuePositon/self.MaxValuePos)
 			end
 	else
-		MouseTracker.UnregisterCallback(self, "MouseMove")
+		GUIManager.UnregisterCallback(self, "MouseMove")
 	end
 end
 
 function SliderButton:OnDragStop()
 	Draggable.OnDragStop(self, true)
-
-	self:SetPosition(self.Position.x, self.StartPositon[2]+self.CurrentValuePositon, true)
+  
+  if(not self.SideScroll) then
+	  self:SetPosition(self.Position.x, self.StartPositon[2]+self.CurrentValuePositon, true)
+	else
+	  self:SetPosition(self.StartPositon[1]+self.CurrentValuePositon, self.Position.y,  true)
+	end
+	
+	self.Parent:BarDragEnded()
 end
 
 local ArrowTextures = {
   Up = {0,0, 14, 15},
   Down = {14,0, 29, 15},
+  Left = {29,0, 45,15},
+  Right = {45,0, 29,15},
 }
 
 class 'ArrowButton'(BaseControl)

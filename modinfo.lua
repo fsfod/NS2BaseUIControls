@@ -1,17 +1,20 @@
 EngineBuild = 162
-ModTableName = "MouseTracker"
-MainScript = "MouseTracker.lua"
-ValidVm = "client"
+ModTableName = "GUIManagerEx"
+MainScript = "GUIManagerEx.lua"
+ValidVM = "client"
 
 ScriptList = {
   "UIHelpers.lua",
   "CallbackHandler.lua",
-  "MouseTracker.lua",
+  "GUIManagerEx.lua",
+  "ConfigDataBinder.lua",
   "BaseControl.lua",
+  "ControlStyles.lua",
+  "BorderedSquare.lua",
   "ScrollBar.lua",
+  "Slider.lua",
   "ListView.lua",
   "ComboBox.lua",
-  "BorderedSquare.lua",
   "TextBox.lua",
   "CheckBox.lua",
 }
