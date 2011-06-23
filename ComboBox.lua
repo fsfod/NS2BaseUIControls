@@ -139,27 +139,32 @@ function ComboBox:SetSelectedItem(index, fromDropDown)
   end
 end
 
-local dropdown
+local MenuDropDown, NormalDropDown
 
 function ComboBox:ToggleDropDown(down)
   
   if(not down) then
     return
   end
-  
+
   if(not self.DropDownOpen) then
+    local dropdown
     
-    if(not dropdown) then
-      dropdown = DropDownMenu(self:GetWidth(), self:GetHeight()*7)
+    if(GetGUIManager():IsMainMenuChild(self)) then
+      MenuDropDown = MenuDropDown or DropDownMenu(self:GetWidth(), self:GetHeight()*7)
+      self.DropDown = MenuDropDown
+    else
+      NormalDropDown = NormalDropDown or DropDownMenu(self:GetWidth(), self:GetHeight()*7)
+      self.DropDown = NormalDropDown
     end
-    
+      
     local pos = self:GetScreenPosition()
-      dropdown:Open(self, Vector(pos.x, pos.y+self:GetHeight()+3, 0), self.LabelCache, self.SelectedIndex)      
+    
+    self.DropDown:Open(self, Vector(pos.x, pos.y+self:GetHeight()+3, 0), self.LabelCache, self.SelectedIndex)      
     
     self.DropDownOpen = true
   else
-    dropdown:Close()
-    
+    self.DropDown:Close()   
     self.DropDownOpen = false
   end
   
@@ -197,6 +202,7 @@ function DropDownMenu:Open(owner, position, list, index)
   self:CheckUnparent()
 
   self.Owner = owner
+  self.ViewStart = 1
 
   local height = #list*self.ItemDistance
   local x,y = GUIManager.GetSpaceToScreenEdges(position)
@@ -221,6 +227,8 @@ function DropDownMenu:Open(owner, position, list, index)
   if(GUIMgr:IsMainMenuChild(owner)) then
     GUIMgr:ParentToMainMenu(self)
   end
+  
+  self:Show()
   
   self:SetDataList(list)
 end

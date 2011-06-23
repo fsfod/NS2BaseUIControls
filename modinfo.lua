@@ -2,6 +2,7 @@ EngineBuild = 178
 ModTableName = "GUIManagerEx"
 MainScript = "GUIManagerEx.lua"
 ValidVM = "client"
+MountSource = true
 
 ScriptList = {
   "UIHelpers.lua",

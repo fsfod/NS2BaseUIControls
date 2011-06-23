@@ -75,17 +75,17 @@ function BaseControl:Uninitialize()
   if(self.Entered) then
     GetGUIManager():ClearEntered(self)
   end
-
-  if(self.RootFrame) then
-    GUI.DestroyItem(self.RootFrame)
-    self.RootFrame = nil  
-  end
   
   if(self.ChildControls) then
     for _,frame in ipairs(self.ChildControls) do
       frame:Uninitialize()
     end 
     self.ChildControls = nil
+  end
+  
+	if(self.RootFrame) then
+    GUI.DestroyItem(self.RootFrame)
+    self.RootFrame = nil  
   end
 end
 
@@ -449,7 +449,7 @@ function BaseControl:FireEvent(Action, ...)
   else
     if(type(Action) == "string") then
   	  if(not _G[Action]) then
-  	    Print("BaseControl:FireEvent Could not find global function named ".. Action)
+  	    RawPrint("BaseControl:FireEvent Could not find global function named ".. Action)
   	   return
   	  end
   	  Action = _G[Action]

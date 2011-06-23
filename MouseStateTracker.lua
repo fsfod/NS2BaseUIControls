@@ -12,6 +12,12 @@ if(not MouseStateTracker) then
     StateStack = {},
     OwnerToState = {},
     StackTop = 0,
+    DeathPersist = {
+      chat = true,
+    },
+    RoundPersist = {
+      chat = true,
+    },
 
     MouseFunctions = {
       ["SetMouseVisible"] = SetMouseVisible,
@@ -21,7 +27,7 @@ if(not MouseStateTracker) then
     },
   }
   
-  Event.Hook("Console_resetmouse", function()MouseStateTracker:ClearState() end)
+  Event.Hook("Console_resetmouse", function()MouseStateTracker:ClearStack() end)
   
 else
   HotReload = true
@@ -32,16 +38,33 @@ else
   SetCursor = MouseStateTracker.MouseFunctions.SetCursor
 end
 
+MouseStateTracker.Debug = false
+
 ClassHooker:Mixin("MouseStateTracker")
 
 
 function MouseStateTracker:Init()
-  self:DisableMouseFunctions()
-  self:SetHooks()
+  self:SetHooks(true)
   self:SetMainMenuState()
+  
+  //Event.Hook("UpdateClient", function()
+  //  MouseStateTracker:Update()
+  //end)
 end
 
-function MouseStateTracker:SetHooks() 
+function MouseStateTracker:Update()
+  //self:ApplyStack()
+end
+
+
+
+function MouseStateTracker:PrintDebug(...)
+  if(self.Debug) then
+    RawPrint(...)
+  end
+end
+
+function MouseStateTracker:SetHooks(startup) 
   self:ReplaceClassFunction("Alien", "_UpdateMenuMouseState", "UpdateBuyMenuState")
 
   self:PostHookClassFunction("Commander", "UpdateCursor")  
@@ -50,23 +73,49 @@ function MouseStateTracker:SetHooks()
   self:HookClassFunction("Armory", "OnUse", "ArmoryBuy_Hook")
   self:HookFunction("ArmoryUI_Close", function() self:PopState("buymenu") end)
   
+  self:PostHookClassFunction("Marine", "CloseMenu", function()
+    self:TryPopState("buymenu")
+  end)
+  
+  //self:HookLibraryFunction(HookType.Post, "Client", "SetPitch", function() 
+  //  self:PrintDebug("Client.SetPitch")
+ // end)
+
+  //self:HookLibraryFunction(HookType.Post, "Client", "SetYaw", function()
+ //   self:PrintDebug("Client.SetYaw")
+ // end)
+  
+  
   PlayerEvents:HookIsCommander(self, "CommaderStateChanged")
+  PlayerEvents:HookPlayerDied(self, "PlayerDied")
+  PlayerEvents:HookTeamChanged(self, "TeamChanged")
+  
+  if(startup or self.MouseFunctionHooks) then
+    self:DisableMouseFunctions() 
+  end
 end
 
+function MouseStateTracker:TeamChanged(old, new)
+  self:ClearAllExcept(self.RoundPersist)
+end
+
+function MouseStateTracker:PlayerDied()
+  self:ClearAllExcept(self.DeathPersist)
+end
 
 function MouseStateTracker:ArmoryBuy_Hook(objSelf, player, elapsedTime, useAttachPoint)
-  if(objSelf ~= Client.GetLocalPlayer()) then
+  if(player ~= Client.GetLocalPlayer()) then
     return
   end
   
-  if (objSelf:GetIsBuilt() and objSelf:GetIsActive() and not self.OwnerToState["buymenu"]) then
+  if(player.showingBuyMenu and not self.OwnerToState["buymenu"]) then
   	self:PushState("buymenu", true, false, false)
   end
 end
 
 function MouseStateTracker:CommaderStateChanged(isCommander)
   if(not isCommander) then
-    self:PopState("commander")
+    self:TryPopState("commander")
   else
   end
 end
@@ -133,7 +182,8 @@ function MouseStateTracker:GetStateIndex(ownerName)
 end
 
 function MouseStateTracker:SetMainMenuState()
-
+  self:PrintDebug("SetMainMenuState")
+  
   self.MainMenuActive = true
 
   SetMouseVisible(true)
@@ -151,18 +201,21 @@ function MouseStateTracker:ClearAllExcept(keepList)
   
   local LookUpTable = {}
   
-  for name,_ in pairs(keepList) do
-    if(self.OwnerToState[name]) then
-      LookUpTable[name] = self:GetStateIndex(name)
+  for i,state in pairs(self.StateStack) do
+    local name = state.Owner
+    
+    if(keepList[name]) then
+      LookUpTable[name] = i
+    else
+      --nil out this refrance since were not keeping this state entry
+      self.OwnerToState[name] = nil
     end
   end
 
   self.StateStack = {}
 
   for name,state in pairs(self.OwnerToState) do
-    if(not LookUpTable[name]) then
-      self.OwnerToState[name] = nil
-    else
+    if(LookUpTable[name]) then
       table.insert(self.StateStack, state)
     end
   end
@@ -191,7 +244,7 @@ end
 
 function MouseStateTracker:PushState(ownerName, mouseVisble, mouseCaptured, mouseClipped, cursorIcon)
   assert(ownerName)
-  Print("PushMouseState "..ownerName)
+  self:PrintDebug("PushMouseState "..(ownerName or "nil"))
   
   local exists = self.OwnerToState[ownerName]
 
@@ -234,12 +287,12 @@ end
 
 function MouseStateTracker:PopState(ownerName)
   
-  Print("PopMouseState "..ownerName)
+  self:PrintDebug("PopMouseState "..ownerName)
   
   local index = self:GetStateIndex(ownerName)
   
   if(not index) then
-    Print("there is no MouseState named "..ownerName.." in the stack")
+    RawPrint("there is no MouseState named "..ownerName.." in the stack")
    return
   end
   
@@ -253,6 +306,8 @@ function MouseStateTracker:PopState(ownerName)
 end
 
 function MouseStateTracker:ApplyStack()
+  
+  self:PrintDebug("ApplyStack %i", #self.StateStack)
   
   if(self.MainMenuActive) then
     return

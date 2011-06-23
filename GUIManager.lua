@@ -1,7 +1,7 @@
 
 if(not GUIManager.ClearFocus) then
   Event.Hook("Console_clearfocus", function() 
-    Print("Clearing ui focus")
+    RawPrint("Clearing ui focus")
     GetGUIManager():ClearFocus() 
   end)
 end
@@ -67,7 +67,7 @@ function GUIManager:RemoveFrame(frame, destroyFrame)
   end
 
   if(not removed) then
-    Print("GUIManager:RemoveFrame could not find frame to remove")
+    RawPrint("GUIManager:RemoveFrame could not find frame to remove")
    return
   end
 
@@ -80,8 +80,11 @@ function GUIManager:CheckRemoveFrame(frame)
     self.FocusedFrame = nil
   end
   
-	if(self.AddedFrames[frame]) then
-		self.AddedFrames[frame] = nil
+  if(self.CurrentMouseOver == frame) then
+    self:ClearMouseOver()
+  end
+
+	if(frame.RootFrame or frame.HitRec) then
 		
 		for index, frm in ipairs(self.TopLevelFrames) do
 			if(frame == frm ) then
@@ -273,12 +276,14 @@ function GUIManager:ClearMouseOver()
   local current = self.CurrentMouseOver
   
   if(current and current.OnLeave) then
-	  safecall(current.OnLeave, current)
+	  SafeCall(current.OnLeave, current)
 	end
+  
+  current.Entered = false
   
   self.CurrentMouseOver = nil
 end
-  
+
 function GUIManager:ClearFocus(newFocus)
   
   local focus = self.FocusedFrame
@@ -314,6 +319,11 @@ function GUIManager:IsFocusedSet()
 end
 
 function GUIManager:CheckChildOnEnter(frame, x, y)
+  
+  if(not frame.ChildControls) then
+    RawPrint("CheckChildOnEnter Warning found frame with nil ChildControls")
+   return false
+  end
             
   for i=#frame.ChildControls,1,-1 do
    local childFrame = frame.ChildControls[i]
@@ -367,11 +377,7 @@ function GUIManager:OnMouseMove()
 	  local bottom = position.y+(hitRec[4]-hitRec[2])
 
 	  if(not Current:IsShown() or x < position.x or y < position.y or x > right or y > bottom) then
-	    if(Current.OnLeave) then
-	      Current:OnLeave()
-	    end
-	    Current.Entered = false
-	    self.CurrentMouseOver = nil
+	    self:ClearMouseOver()
 	  end
 	end
 
@@ -396,7 +402,7 @@ function GUIManager:OnMouseMove()
            end
           break
 		     end
-	   end
+	    end
 	 end
 	end
 end

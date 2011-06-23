@@ -83,7 +83,7 @@ function GUIManagerEx.SendKeyEvent(handle, self, key, down, ...)
 		 WheelMessages = GetWheelMessages() or false
 		 
 		  if(WheelMessages) then
-		    Print("WheelMsgs %i", #WheelMessages)
+		    RawPrint("WheelMsgs %i", #WheelMessages)
 		  end
 		end
 		
@@ -92,11 +92,11 @@ function GUIManagerEx.SendKeyEvent(handle, self, key, down, ...)
 		  table.remove(WheelMessages, 1)
 		  
 		  if(direction == 1) then
-		    Print("WheelUp")
+		    RawPrint("WheelUp")
 		  elseif(direction == -1) then
-		    Print("WheelDown")
+		    RawPrint("WheelDown")
 		  else
-		    Print(tostring(direction or "nil"))
+		    RawPrint(direction or "nil")
 		  end
 	  end
   end
@@ -125,7 +125,7 @@ function GUIManagerEx.SendKeyEvent(handle, self, key, down, ...)
   if(IsClick and (not MainMenuMod or not MainMenuMod:IsMenuOpen())) then
     local player = Client.GetLocalPlayer()
     
-    ProcessClick = player and not player.buyMenu
+    ProcessClick = not player or not (player.buyMenu or player.showingBuyMenu)
   end
 
 	if(not eventHandled and IsClick and ProcessClick) then

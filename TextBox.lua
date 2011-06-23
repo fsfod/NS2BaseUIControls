@@ -206,7 +206,7 @@ function TextBox:SendKeyEvent(key, down)
 			self:UpdateCarret()
     elseif(key == InputKey.Return and not self.IgnoreReturn) then
       if(self.Focused) then
-        GUIManager:ClearFocus()
+        GetGUIManager():ClearFocus()
       end
     elseif key == InputKey.Escape then
       if(self.Focused) then

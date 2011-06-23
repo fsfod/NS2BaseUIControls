@@ -104,9 +104,8 @@ function ListView:Initialize(width, height, itemCreator, itemHeight, itemSpacing
   self.ScrollHiddenUntilNeeded = true
 
   self.Items = {}
-	assert(self.SetSize ~= BaseControl.SetSize)
+  
 	self:SetSize(width, height)
-
 
 	self:CreateItems()
 	self.AnchorPosition = Vector(0,0,0)
@@ -125,13 +124,15 @@ end
 function ListView:ClampViewStart()
   
   if(not self.ItemDataList or #self.ItemDataList == 0) then
-    self.ViewStart = 0
+    self.ViewStart = 1
    return
   end
   
 	local extra = #self.ItemDataList-self.MaxVisibleItems
 	
-	if(self.ViewStart > extra+1) then
+	if(extra < 0) then
+	  self.ViewStart = 1
+  elseif(self.ViewStart > extra+1) then
 	  self.ViewStart = extra+1
 	  self.ScrollBar:SetValue(self.ViewStart)
 	end
@@ -164,7 +165,7 @@ function ListView:UpdateScrollbarRange()
   end
 end
  
-function ListView:SetMaxVisible(maxVisible)
+function ListView:OnMaxVisibleChanged(maxVisible)
 
   local doAutoScroll = self.AutoScroll and self:IsAtAutoScrollPos()
   
@@ -183,6 +184,8 @@ function ListView:SetMaxVisible(maxVisible)
     end
     
     self:UpdateScrollbarRange()
+	else
+    self:CreateItems()
   end
   
   if(doAutoScroll) then
@@ -194,7 +197,20 @@ function ListView:SetMaxVisible(maxVisible)
 end
  
 function ListView:GetHeightForLineCount(count)
-  return self.ItemDistance*count
+  return (self.ItemDistance*count)+1 
+end
+
+function ListView:SetItemHeight(height, adjustFrameHeight)
+  self.ItemHeight = height
+	self.ItemDistance = height + self.ItemSpacing
+	
+	self:ResetPositions()
+	
+	if(adjustFrameHeight) then
+	  self:SetSize(self:GetWidth(), self:GetHeightForLineCount(self.MaxVisibleItems))
+	else
+	  self:OnMaxVisibleChanged(math.floor(self:GetHeight()/self.ItemDistance))
+	end
 end
 
 function ListView:SetSize(width, height)
@@ -203,9 +219,11 @@ function ListView:SetSize(width, height)
  
   self.SelectBG:SetSize(Vector(width, self.ItemHeight, 0))
   
-  self:SetMaxVisible(math.floor(height/(self.ItemDistance)))
   self.ItemWidth = width-15
+  self:OnMaxVisibleChanged(math.floor(height/self.ItemDistance))
 end
+
+ListView.SetSize2 = ListView.SetSize
 
 assert(ListView.SetSize ~= BaseControl.SetSize)
 
@@ -513,8 +531,8 @@ end
 function ListView:ResetPositions()
 	local x = 0
 
-	for i=1,self.MaxVisibleItems do
-    self.Items[i]:SetPosition(x, (self.ItemHeight+self.ItemSpacing)*i)
+	for i=1,#self.Items do
+    self.Items[i]:SetPosition(x, self.ItemDistance*(i-1))
   end
 end
 
