@@ -13,6 +13,7 @@ UIParent = {
 	GetXAnchor = function() return GUIItem.Left end,
 	GetYAnchor = function() return GUIItem.Top end,
 	IsShown = function() return true end,
+	ChildFlags = 255,
 }
 
 function CheckUpdateScreenRes()

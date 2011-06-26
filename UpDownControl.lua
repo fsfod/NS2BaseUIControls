@@ -5,24 +5,27 @@ UpDownControl.ButtonWidth = 18
 function UpDownControl:__init(width, height, min, max)
   BaseControl.Initialize(self, width, height)
   
-  local numberBox = TextBox(width-(UpDownControl.ButtonWidth*2) , 20)
-    numberBox:SetPoint("Center", 0, 0, "Center")
+  local numberBox = TextBox(width-((UpDownControl.ButtonWidth*2)+2) , 20)
+    numberBox:SetPoint("Center", -1, 0, "Center")
     numberBox.FocusLost = {self.CheckTextBoxValue, self}
   self.NumberBox = numberBox
   self:AddChild(numberBox)
     
   self.MinValue = min or 0
   self.MaxValue = max or 1
+  self.StepSize = 1
   self.Value = self.Min
   
-  local down = ArrowButton(UpDownControl.ButtonWidth, 20, "Left")
-    down:SetPoint("Left", 0, 0, "Left")
+  self:UpdateTextBox()
+  
+  local down = ArrowButton(UpDownControl.ButtonWidth, height+1, "Left")
+    down:SetPoint("Left", 0, 1, "Left")
     down.OnClicked = {self.DownClick, self}
   self:AddChild(down)
   self.Down = down
   
-  local up = ArrowButton(UpDownControl.ButtonWidth, 20, "Right")
-    up:SetPoint("Right", 0, 0, "Right")
+  local up = ArrowButton(UpDownControl.ButtonWidth, height+1, "Right")
+    up:SetPoint("Right", 0, 1, "Right")
     up.OnClicked = {self.UpClick, self}
   self:AddChild(up)
   self.Up = up
@@ -30,32 +33,48 @@ end
 
 function UpDownControl:DownClick(isDown)
   if(isDown) then
-    self:SetValue(self.Value-1, true)
+    self:SetValue(self.Value-self.StepSize, true)
   end
 end
 
 function UpDownControl:UpClick(isDown)
   if(isDown) then
-    self:SetValue(self.Value+1, true)
+    self:SetValue(self.Value+self.StepSize, true)
   end
 end
 
 function UpDownControl:CheckTextBoxValue()
   local sucess, result = pcall(tonumber, self.NumberBox:GetText())
   
-  if(not sucess) then
-    self.NumberBox:SetText(tostring(self.Value))
+  if(not sucess or not result) then
+    self.NumberBox:SetText(tostring(self.Value or self.MinValue))
    return false
   end
   
   self:SetValue(result, true)
 end
 
+function UpDownControl:UpdateTextBox()
+  self.NumberBox:SetText(tostring(self.Value or 0))
+end
+
+function UpDownControl:OnMouseWheel(direction)
+  
+  if(direction > 0) then
+    direction = 1
+  else
+    direction = -1
+  end
+
+	self:SetValue(self.Value+(self.StepSize*direction), true)
+end
+
 function UpDownControl:SetValue(value, fromInput)
  
   if(self.ClampFraction) then
     if(math.floor(value) == self.Value) then
-      return
+      self:UpdateTextBox()
+     return
     else
       value = math.floor(value)
     end
@@ -63,7 +82,7 @@ function UpDownControl:SetValue(value, fromInput)
 
   self.Value = Clamp(value, self.MinValue, self.MaxValue)
 
-  self.NumberBox:SetText(tostring(self.Value))
+  self:UpdateTextBox()
   
   if(fromInput) then
     self:FireEvent(self.ValueChanged, self.Value)

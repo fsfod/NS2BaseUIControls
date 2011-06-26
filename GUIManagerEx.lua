@@ -87,16 +87,23 @@ function GUIManagerEx.SendKeyEvent(handle, self, key, down, ...)
 		  end
 		end
 		
-		if(WheelMessages) then
+		if(WheelMessages and #WheelMessages ~= 0) then
 		  local direction = WheelMessages[1]
 		  table.remove(WheelMessages, 1)
 		  
+		  
+		  self.WheelDirection = direction
+		  
+		  local x,y = Client.GetCursorPosScreen()
+		  self:TraverseFrames(self:GetFrameList(), x, y, 4, self.DoFrameOnMouseWheel)
+		  
+		  
 		  if(direction == 1) then
-		    RawPrint("WheelUp")
+		    //RawPrint("WheelUp")
 		  elseif(direction == -1) then
-		    RawPrint("WheelDown")
+		    //RawPrint("WheelDown")
 		  else
-		    RawPrint(direction or "nil")
+		   // RawPrint(direction or "nil")
 		  end
 	  end
   end

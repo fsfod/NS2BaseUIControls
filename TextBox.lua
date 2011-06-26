@@ -2,7 +2,7 @@ class 'TextBox'(BorderedSquare)
 
 local Space = string.byte(" ", 1)
 
-function TextBox:__init(width, height, fontsize)
+function TextBox:__init(width, height, fontsize, fontname)
   BorderedSquare.__init(self, width, height, 2)
   
   self.CarretPos = 0
@@ -20,10 +20,15 @@ function TextBox:__init(width, height, fontsize)
   self.FontSize = fontsize or 20
   
   local text = self:CreateFontString(self.FontSize)
-   text:SetPosition(Vector(5, 2, 0))
+   text:SetPosition(Vector(5, 1, 0))
    text:SetTextAlignmentX(GUIItem.Align_Min)
    text:SetTextAlignmentY(GUIItem.Align_Center)
    text:SetAnchor(GUIItem.Left, GUIItem.Center)
+   
+   if(fontname) then
+    text:SetFontName(fontname)
+   end
+   
   self.Text = text
   
   local w1 = text:GetTextWidth("oo")
@@ -33,7 +38,17 @@ function TextBox:__init(width, height, fontsize)
 end
 
 function TextBox:OnClick()
-  return self
+end
+
+function TextBox:SetFont(fontname)
+  self.Text:SetFontName(fontname)
+  
+  local w1 = self.Text:GetTextWidth("oo")
+  local w2 = self.Text:GetTextWidth("o o")
+  
+  self.SpaceSize = w2-w1 
+  
+  self:UpdateCarret()
 end
 
 function TextBox:OnFocusGained()

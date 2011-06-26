@@ -12,6 +12,8 @@ local BarWidth = 0.7
 function ScrollBar:__init(width, height)
 	BaseControl.Initialize(self)
 
+  self.TraverseChildFirst = true
+
   width = width or 25
 	height = height or 300
 
@@ -89,6 +91,18 @@ function ScrollBar:BarDragEnded()
   self:FireEvent(self.DragEnded, self)
 end
 
+function ScrollBar:OnMouseWheel(direction)
+  if(not self.SideScroll) then
+    direction = -direction
+  end
+  
+  local amount = (self.Range*self.StepSize)*direction
+    
+  if(not self.Disabled) then
+		self:InteralSetValue(self.Value+amount)
+	end
+end
+
 function ScrollBar:UpClick(down)
 	if(not self.Disabled and down) then
 		self:InteralSetValue(self.Value-(self.Range*self.StepSize))
@@ -162,52 +176,38 @@ end
 function ScrollBar:OnClick(button, down, x,y)
 		
 	if(down) then
-		local frame = self:ContainerOnClick(button, down, x,y)
-	
-	  --one of our buttons or slider was clicked
-		if(frame) then
-			return frame
-		else
-
-		  if(self.Disabled) then
-	      return
+	  if(self.Disabled) then
+	    return
+	  end
+	  
+	  local scrollArea = self.ScrollClickRange
+	  
+	  local MousePos = (not self.SideScroll and y) or x
+	  		  
+	  if(MousePos > scrollArea[1] and MousePos < scrollArea[2]) then		    
+	    local value
+	    
+	    if(MousePos > scrollArea[4]) then
+	      value = self.MaxValue
+	    elseif(MousePos < scrollArea[3]) then
+	      value = self.MinValue
+	    else
+	      local ScrollPercent = (MousePos-scrollArea[3])/(scrollArea[4]-scrollArea[3])
+    
+	      value = self.MinValue+(ScrollPercent*self.Range)
 	    end
-		
-		  local scrollArea = self.ScrollClickRange
-		  
-		  local MousePos = (not self.SideScroll and y) or x
-		  		  
-		  if(MousePos > scrollArea[1] and MousePos < scrollArea[2]) then		    
-		    local value
-		    
-		    if(MousePos > scrollArea[4]) then
-		      value = self.MaxValue
-		    elseif(MousePos < scrollArea[3]) then
-		      value = self.MinValue
-		    else
-		      local ScrollPercent = (MousePos-scrollArea[3])/(scrollArea[4]-scrollArea[3])
-
-		      value = self.MinValue+(ScrollPercent*self.Range)
-		    end
-		    self:InteralSetValue(value)
-		    
-		    return self
-		  end
-		end
+	    self:InteralSetValue(value)
+	  end
 	end
-		//Draggable.OnClick(self, button, down, x, y)
-
-		//return self
 end
 
 class 'SliderButton'(Draggable)
 
 function SliderButton:__init()
 	Draggable.__init(self)
-	self:SetupHitRec()
+	BaseControl.Initialize(self, 30, 30)
 	
-	local bg = self:CreateRootFrame(30, 30)
-	bg:SetColor(Color(0.78, 0.3, 0, 1))
+	self:SetColor(Color(0.78, 0.3, 0, 1))
 	
 	self.MinValuePos = 0
 	self.MaxValuePos = 500
@@ -216,8 +216,7 @@ function SliderButton:__init()
 end
 
 function SliderButton:OnEnter()
-		self.RootFrame:SetColor(Color(0.9, 0.4, 0, 1))
-	return self
+  self.RootFrame:SetColor(Color(0.9, 0.4, 0, 1))
 end
 
 function SliderButton:OnLeave()
@@ -225,7 +224,7 @@ function SliderButton:OnLeave()
 end
 
 function SliderButton:OnClick(...)
-	return Draggable.OnClick(self, ...)
+	Draggable.OnClick(self, ...)
 end
 
 function SliderButton:SetValuePosition(percent)
@@ -358,9 +357,8 @@ function ArrowButton:SetSize(width, height)
 end
 
 function ArrowButton:OnEnter()
-		self.MouseOver = true
-		self.RootFrame:SetColor(MouseOverColor)
-  return self
+  self.MouseOver = true
+  self.RootFrame:SetColor(MouseOverColor)
 end
 
 function ArrowButton:OnLeave()
@@ -395,6 +393,4 @@ function ArrowButton:OnClick(button, down)
 			end 
 		end
 	end
-	
-	return self
 end

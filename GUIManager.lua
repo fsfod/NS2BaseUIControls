@@ -1,4 +1,20 @@
 
+/*
+  A frame that gets sent an button down OnClick event will always get sent the up event even if the mouse moved off the frame before releasing the button
+  
+  While a drag is active(a frame notifies of this with DragStarted) no OnEnter events are triggered
+  
+  We traverse frame lists backwards in case there are overlaping frames 
+  
+  A frame is required to have there HitRec in the same positon as the value returned by there GetScreenPosition function almost all frames will be using
+  the default BaseControl:GetScreenPosition function but frames can override it
+*/
+
+local band = bit.band
+local bor = bit.bor
+local lshift = bit.lshift
+local rshift = bit.rshift
+
 if(not GUIManager.ClearFocus) then
   Event.Hook("Console_clearfocus", function() 
     RawPrint("Clearing ui focus")
@@ -144,13 +160,7 @@ end
 
 function GUIManager:MouseHidden()
 
-  if(self.CurrentMouseOver) then
-    if(self.CurrentMouseOver.OnLeave) then
-	    self.CurrentMouseOver:OnLeave()
-	  end
-    self.CurrentMouseOver = nil
-  end
-  
+  self:ClearMouseOver()
 
 	if(self.ClickedFrame) then
 		self.ClickedFrame:OnClick(self.ClickedButton, false)
@@ -160,20 +170,26 @@ function GUIManager:MouseHidden()
 	self:ClearFocus()
 end
 
-function GUIManager:CheckChildOnClick(frame, button, x, y)
-   
-  for i=#frame.ChildControls,1,-1 do
-    local childFrame = frame.ChildControls[i]
-    local rec = childFrame.HitRec
+
+function GUIManager:DoClick(frame, x, y)
+  local result
+
+  if(frame.TraverseChildFirst and frame.ChildControls) then
+    result = self:TraverseFrames(frame.ChildControls, x, y, 1, self.DoClick)    
+  end
+
+  if(not result) then
+    result = frame:OnClick(self.ClickedButton, true, x, y)
     
-    if((childFrame.ChildHasOnClick or childFrame.OnClick) and not childFrame.Hidden and x > rec[1] and y > rec[2] and x < rec[3] and y < rec[4]) then
-      if(not childFrame.OnClick) then
-        self:CheckChildOnClick(childFrame, button, x-rec[1], y-rec[2])
-      else
-        self:DoFrameOnClick(childFrame, button, x-rec[1], y-rec[2])
-      end
+    --if the frames OnClick function didn't return anything we treat that as they accepted the click
+    if(result == nil or result == true) then
+      self.ClickedFrame = frame
+      
+      result = true
     end
   end
+
+  return result
 end
 
 function GUIManager:MouseClick(button, down)
@@ -208,33 +224,14 @@ function GUIManager:MouseClick(button, down)
   end
 
   local ClickInFrame = false
+  local prevClicked = self.ClickedFrame
 
-  if(self.MainMenu and not self.MainMenu.Hidden) then
-    local prevClicked = self.ClickedFrame
-     self:DoFrameOnClick(self.MainMenu, button, MouseX, MouseY) 
-    
-    if(self.ClickedFrame and self.ClickedFrame ~= prevClicked) then
-      ClickInFrame = true
-    end
-  else
-    for i=#FrameList,1,-1 do
-      local frame = FrameList[i]
-      local rec = frame.HitRec
-      
-      if((frame.ChildHasOnClick or frame.OnClick) and not frame.Hidden and MouseX > rec[1] and MouseY > rec[2] and MouseX < rec[3] and MouseY < rec[4]) then
-       //assume that on a valid hit test we always go down to a child or a OnClick function
-       local x,y = MouseX-frame.HitRec[1], MouseY-frame.HitRec[2]
-      
-        if(not frame.OnClick) then
-          self:CheckChildOnClick(frame, button, x, y)
-        else
-          self:DoFrameOnClick(frame, button, x, y)
-        end
-        
-        ClickInFrame = true
-       break
-      end
-    end
+  self:TraverseFrames(self:GetFrameList(), MouseX, MouseY, 1, self.DoClick)
+  
+  //self:DoFrameOnClick(self.MainMenu, button, MouseX, MouseY) 
+  
+  if(self.ClickedFrame and self.ClickedFrame ~= prevClicked) then
+    ClickInFrame = true
   end
 
   local clicked = self.ClickedFrame
@@ -254,17 +251,6 @@ function GUIManager:MouseClick(button, down)
   return ClickInFrame
 end
 
-function GUIManager:DoFrameOnClick(frame, button, x,y)
-	--the frame might have a ChildControls table but we assume it will do its own hit testing because it has a OnClick function
-  local clickedFrame = frame:OnClick(button, true, x,y)
-	
-	if(clickedFrame and type(clickedFrame) ~= "boolean") then
-	  self.ClickedFrame = clickedFrame
-	else
-	  self.ClickedFrame = frame
-	end
-end
-
 function GUIManager:ClearFocusIfFrame(frame)
   if(self.FocusedFrame and self.FocusedFrame == frame) then
     self:ClearFocus()
@@ -272,15 +258,17 @@ function GUIManager:ClearFocusIfFrame(frame)
 end
 
 function GUIManager:ClearMouseOver()
-  
+
   local current = self.CurrentMouseOver
-  
-  if(current and current.OnLeave) then
-	  SafeCall(current.OnLeave, current)
+
+  if(current) then
+    if(current.OnLeave) then
+	    SafeCall(current.OnLeave, current)
+	  end
+	  
+	  current.Entered = false
 	end
-  
-  current.Entered = false
-  
+
   self.CurrentMouseOver = nil
 end
 
@@ -318,44 +306,124 @@ function GUIManager:IsFocusedSet()
   return self.FocusedFrame ~= nil
 end
 
-function GUIManager:CheckChildOnEnter(frame, x, y)
+local Features = {
+  OnClick = 1,
+  OnEnter = 2,
+  OnMouseWheel = 4,
+}
+
+local ChildHas = {}
+
+for name, value in pairs(Features) do
+  ChildHas["ChildHas"..name] = lshift(value, 16)
+end
+
+function GUIManager:TraverseFrames(frameList, x, y, filter, callback)
+  assert(frameList)
   
-  if(not frame.ChildControls) then
-    RawPrint("CheckChildOnEnter Warning found frame with nil ChildControls")
-   return false
-  end
-            
-  for i=#frame.ChildControls,1,-1 do
-   local childFrame = frame.ChildControls[i]
-   
-    local rec = childFrame.HitRec
+  for i=#frameList,1,-1 do
+   local childFrame = frameList[i]
+   local rec = childFrame.HitRec
     
-    if((childFrame.ChildHasOnEnter or childFrame.OnEnter) and not childFrame.Hidden and x > rec[1] and y > rec[2] and x < rec[3] and y < rec[4]) then
-      if(not childFrame.OnEnter) then
-        self:CheckChildOnEnter(childFrame, x-rec[1], y-rec[2])
-      else
-        self:DoFrameOnEnter(childFrame, x-rec[1], y-rec[2])
+    if(not childFrame.Hidden and rec) then
+      local childFlags = band(filter, childFrame.ChildFlags)
+      local controlFlags = band(filter, childFrame.Flags)
+      
+      
+      if((childFlags ~= 0 or controlFlags ~= 0) and x > rec[1] and y > rec[2] and x < rec[3] and y < rec[4]) then
+        local result
+
+        --the control has provided it own Traverse function so try that first before we check the controls flags
+        if(childFrame.TraverseGetFrame) then
+          local x1, x2
+
+          result, x1, x2 = childFrame:TraverseGetFrame(x-rec[1], y-rec[2], filter)
+
+          if(result) then
+            if(band(filter, result.Flags) ~= 0) then
+              result = callback(self, result, x1, x2)
+            else
+              assert(result.ChildControls, "TraverseGetFrame returned us a control with no valid filter flags set and it has no ChildControls")
+              result = self:TraverseFrames(result.ChildControls, x1, x2, filter, callback)
+            end
+          end
+        end
+        
+        if(not result and childFrame.TraverseChildFirst and childFrame.ChildControls) then
+          result = self:TraverseFrames(childFrame.ChildControls, x, y, filter, callback)
+        end
+        
+        if(controlFlags ~= 0 and not result) then
+          result = callback(self, childFrame, x-rec[1], y-rec[2])
+        end
+        
+        --if the callback returned false or the control didn't have the flags, we go on to try the child controls if any of them have the flags
+        if(childFlags ~= 0 and not result and not childFrame.TraverseChildFirst) then
+          result = self:TraverseFrames(childFrame.ChildControls, x-rec[1], y-rec[2], filter, callback)
+        end
+        
+        --the callback returned true in this function or in one of our recursive calls so exit now
+        if(result) then
+          return true
+        end
       end
     end
   end
+  
+  return false
 end
 
 function GUIManager:IsMouseStillInFrame(frame)
   return frame == self.CurrentMouseOver
 end
 
-function GUIManager:DoFrameOnEnter(frame, x, y)
+
+function GUIManager:DoFrameOnMouseWheel(frame, x, y)
+  --try all the child controls first if the frame has requested it
+  if(frame.TraverseChildFirst and frame.ChildControls) then
+    result = self:TraverseFrames(frame.ChildControls, x, y, 4, self.DoFrameOnMouseWheel)
+  end
+
+  if(not result and self.WheelDirection) then
+    result = frame:OnMouseWheel(self.WheelDirection, x, y)
   
+
+    if(result == nil or result == true) then
+      self.WheelDirection = nil
+    
+      return true
+    end
+  end
+
+  return false
+end
+
+function GUIManager:DoFrameOnEnter(frame, x, y)
+
   if(self.CurrentMouseOver) then
     error("GUIManager:DoFrameOnEnter found CurrentMouseOver still set")
   end
-  
-  local enteredFrame = frame:OnEnter(x, y)
-  
-  if(enteredFrame ~= false) then
-    self.CurrentMouseOver = enteredFrame or frame
-    self.CurrentMouseOver.Entered = true
+
+  local result, doChildList
+
+  --try all the child controls first if the frame has requested it
+  if(frame.TraverseChildFirst and frame.ChildControls) then
+    result = self:TraverseFrames(frame.ChildControls, x, y, 2, self.DoFrameOnEnter)
   end
+
+  if(not result) then
+      result = frame:OnEnter(x, y)
+  
+  --if the frames OnEnter function didn't return anything we treat that as they accepted the Enter event
+    if(result == nil or result == true) then
+      self.CurrentMouseOver = frame
+      frame.Entered = true
+    
+      return true
+    end
+  end
+
+  return result
 end
 
 function GUIManager:OnMouseMove()
@@ -363,13 +431,11 @@ function GUIManager:OnMouseMove()
 
   local x,y = Client.GetCursorPosScreen()
 	
-	  local MouseX, MouseY = Client.GetCursorPosScreen()
-	
 	if(self.CurrentMouseOver and not self.ActiveDrag) then
 	  local Current = self.CurrentMouseOver
 	  
-	  --a frame is required to have there HitRec in the same positon as the topleft corner of there RootFrame
-	  local position = Current.RootFrame:GetScreenPosition(Client.GetScreenWidth(), Client.GetScreenHeight())
+	  --a frame is required to have there HitRec in the same positon as the value returned by there GetScreenPosition function
+	  local position = Current:GetScreenPosition()
 	  local hitRec = Current.HitRec
 
     --use the hit rectangle to get the size of the frame
@@ -382,29 +448,19 @@ function GUIManager:OnMouseMove()
 	end
 
   --fire mouse move after we've done OnLeave but before OnEnter so OnEnter/OnLeave frame code is more sane 
-	self.Callbacks:Fire("MouseMove", MouseX, MouseY)
+	self.Callbacks:Fire("MouseMove", x, y)
 
 	if(not self.CurrentMouseOver and not self.ActiveDrag) then
-	  if(self.MainMenu and not self.MainMenu.Hidden) then
-       self:DoFrameOnEnter(self.MainMenu, MouseX, MouseY) 
-    else
-	  
-	    for i=#self.TopLevelFrames,1,-1 do
-       local frame = self.TopLevelFrames[i]
-       local rec = frame.HitRec
-       
-		     if((frame.OnEnter or frame.ChildHasOnEnter) and not frame.Hidden and x > rec[1] and y > rec[2] and x < rec[3] and y < rec[4]) then
-      
-           if(not frame.OnEnter) then
-             self:CheckChildOnEnter(frame, x-frame.HitRec[1], y-frame.HitRec[2])
-           else
-             self:DoFrameOnEnter(frame, x-frame.HitRec[1], y-frame.HitRec[2])
-           end
-          break
-		     end
-	    end
-	 end
+	  self:TraverseFrames(self:GetFrameList(), x, y, 2, self.DoFrameOnEnter)
 	end
+end
+
+function GUIManager:GetFrameList() 
+  if(self.MainMenu and not self.MainMenu.Hidden) then
+    return self.MainMenu:GetFrameList()
+  else
+    return self.TopLevelFrames
+  end
 end
 
 function GUIManager:DragStarted(frame, button)

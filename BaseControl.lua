@@ -48,6 +48,13 @@ function classL(className, base)
 	_G[className] = t
 end
 
+local bor = bit.bor
+local band = bit.band
+
+local OnClickFlag = 1
+local OnEnterFlag = 2
+local OnMouseWheelFlag = 4
+
 class'BaseControl' 
 
 function BaseControl:__init(width, height, ...)
@@ -57,11 +64,29 @@ function BaseControl:__init(width, height, ...)
 end
 
 function BaseControl:Initialize(width, height)
+  
+  local flags = 0
+  
   if(width) then
     self:CreateRootFrame(width, height)
   end
+
+  if(self.OnClick) then
+    flags = OnClickFlag
+  end
   
-  if(self.OnClick or self.OnEnter) then
+  if(self.OnEnter) then
+    flags = bor(flags, OnEnterFlag)
+  end
+  
+  if(self.OnMouseWheel) then
+    flags = bor(flags,OnMouseWheelFlag)
+  end 
+  
+  self.Flags = flags
+  self.ChildFlags = 0
+  
+  if(flags ~= 0) then
     self:SetupHitRec()
   end
 end
@@ -73,7 +98,7 @@ function BaseControl:Uninitialize()
   end
 
   if(self.Entered) then
-    GetGUIManager():ClearEntered(self)
+    GetGUIManager():ClearMouseOver()
   end
   
   if(self.ChildControls) then
@@ -359,16 +384,31 @@ function BaseControl:AddChild(control)
   if(control.HitRec) then
     control:UpdateHitRec()
   end
-
-  if(control.OnClick and not self.ChildHasOnClick and not self.OnClick) then
-    self:NotifyChildHasOnClick()
+  
+  if(control.Flags ~= 0) then
+    local flags = control.Flags
+    
+    if(flags ~= band(flags, self.ChildFlags)) then
+      self:NotifyChildFlags(flags)
+    end
   end
-
-	if((control.OnEnter or control.ChildHasOnEnter) and not self.OnEnter) then
-		self:NotifyChildHasOnEnter()
-	end
 	
 	table.insert(self.ChildControls, control)
+end
+
+function BaseControl:NotifyChildFlags(flags)
+  flags = bor(self.ChildFlags, flags)
+  self.ChildFlags = flags 
+
+  local parent = self.Parent
+
+  if(not self.HitRec) then
+    self:SetupHitRec()
+  end
+
+  if(parent and band(parent.ChildFlags, flags) ~= flags) then
+  	parent:NotifyChildFlags(flags)
+  end
 end
 
 function BaseControl:RemoveChild(frame)
@@ -387,37 +427,6 @@ function BaseControl:SetupHitRec()
   if(self.Parent) then
     self:UpdateHitRec()
   end
-end
-
-function BaseControl:NotifyChildHasOnEnter()
-	if(not self.OnEnter) then
-		self.ChildHasOnEnter = true
-		
-		if(not self.HitRec) then
-	    self:SetupHitRec()
-	  end
-		
-		local parent = self.Parent
-		if(parent and not parent.OnEnter and parent.ChildHasOnEnter) then
-			parent:NotifyChildHasOnEnter()
-		end
-	end
-end
-
-
-function BaseControl:NotifyChildHasOnClick()
-	self.ChildHasOnClick = true
-	
-	self.OnClick = self.OnClick or self.ContainerOnClick
-	
-	if(not self.HitRec) then
-	  self:SetupHitRec()
-	end
-	
-	local parent = self.Parent
-	if(parent and not parent.ChildHasOnClick) then
-		parent:NotifyChildHasOnClick()
-	end
 end
 
 function BaseControl:SetConfigBinding(...)
@@ -456,60 +465,6 @@ function BaseControl:FireEvent(Action, ...)
   	end
     return Action(...)
   end
-end
-
-function BaseControl:ContainerOnClick(button, down, x, y, controlList)
-	--Make the mouse pos relative  to our Top Left corner
-	
-	controlList = controlList or self.ChildControls
-	
-	--only handle down since the up event is sent to the controle returned from the down event instead of being sent down the control hierarchy
-	if(controlList and down) then
-
-		for i=#controlList,1,-1 do
-     local frame = controlList[i]
-		  
-		  local ClickFunc = frame.OnClick or (frame.ChildHasOnClick and BaseControl.ContainerOnClick)
-		  		
-			if(ClickFunc and not frame.Hidden) then
-				local rec = frame.HitRec
-
-				if(x > rec[1] and y > rec[2] and x < rec[3] and y < rec[4]) then
-					local clickedFrame = ClickFunc(frame, button, down, x-rec[1],y-rec[2])
-					
-					if(clickedFrame) then
-						return clickedFrame
-					end
-				end
-			end
-		end
-	end
-end
-
-function BaseControl:ContainerOnEnter(x, y, controlList)
-	--Make the mouse pos relative  to our Top Left corner
-	
-	controlList = controlList or self.ChildControls
-	
-	if(controlList) then
-	  for i=#controlList,1,-1 do
-     local frame = controlList[i]
-		  
-		  local EnterFunc = not frame.Hidden and (frame.OnEnter or (frame.ChildHasOnEnter and frame.ContainerOnEnter))
-		  	
-			if(EnterFunc) then
-				local rec = frame.HitRec
-
-				if(x > rec[1] and y > rec[2] and x < rec[3] and y < rec[4]) then
-					local enteredFrame = EnterFunc(frame, x-rec[1],y-rec[2])
-					
-					if(enteredFrame ~= nil) then
-						return enteredFrame
-					end
-				end
-			end
-		end
-	end
 end
 
 --the control needs to set its size if it want to pass a reltivePoint
@@ -606,11 +561,11 @@ function Draggable:__init(width, height)
 	self.DragButton = InputKey.MouseButton0
 
 	self.DragPos = Vector(0,0,0)
-	
-	self:SetupHitRec()
 
 	if(height and width) then
 		self:CreateRootFrame(width, height)
+		
+		self:SetupHitRec()
 	end
 end
 
@@ -627,7 +582,7 @@ function Draggable:OnClick(button, down)
 			  --this shouldn't happen normaly but if someone mouse button is dieing
 			  if(self.IsDragging) then
 			    self:OnDragStop(true)
-				 return self
+				 return true
 			  end
 
 			  self:DragStartUp()
@@ -638,8 +593,11 @@ function Draggable:OnClick(button, down)
 			end
 			self.DragStage = -1
 		end
+		
+		return true
 	end
-	return self
+	
+	return false
 end
 
 function Draggable:DragStartUp()
@@ -740,7 +698,6 @@ function ButtonMixin:OnClick(button, down)
       if(self.ClickAction) then
 		    self:FireEvent(self.ClickAction)
 		  end
-		 return self
 		else
 		  if(self.Clicked) then
         self:Clicked(false)

@@ -58,7 +58,9 @@ function Slider:InteralSetValue(value, fromSlider, fromInput)
 	end
 	
   if(self.AmountText) then
-    self.AmountText:SetText((self.ValueConverter or tostring)(self.Value))
+    local text = (self.ValueConverter and self.ValueConverter(self.Value)) or string.format("%.2f", self.Value)
+    
+    self.AmountText:SetText(text)
   end
 
   if(not self.NoValueChangedWhileDraging or not fromSlider) then

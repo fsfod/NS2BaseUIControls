@@ -16,7 +16,9 @@ function BorderedSquare:__init(width, height, lineWidth, skipSetSize)
 	height = height or DefaultSize
 	width = width or DefaultSize
 	
-  local bg = self:CreateRootFrame(width, height)
+	BaseControl.Initialize(self, width, height)
+	
+  local bg = self.RootFrame
 	  bg:SetColor(BackgroundColor)
   
   local top = GUIManager:CreateGraphicItem()

@@ -2,13 +2,19 @@ class'LVTextItem'
 
 local white = Color(1, 1, 1, 1)
 local black = Color(0, 0, 0, 1)
+LVTextItem.TextOffset = Vector(4,0,0)
+LVTextItem.FontSize = 17
 
-function LVTextItem:__init()
-
+function LVTextItem:__init(owner, fontsize)
+  
+  if(fontsize) then
+    self.FontSize = fontsize
+  end
+  
   local font = GUIManager:CreateTextItem()
-	 font:SetFontSize(17)
+	 font:SetFontSize(self.FontSize)
 	 font:SetColor(white)
-	 font:SetPosition(Vector(4,0,0))
+	 font:SetPosition(self.TextOffset)
 	self.Text = font
 	
 	self.PositionVector = Vector(0,0,0)
@@ -36,10 +42,9 @@ end
 
 function LVTextItem:SetPosition(x, y)
   local vec = self.PositionVector
-  
-  vec.x = x
-  vec.y = y
-  
+  vec.x = x+self.TextOffset.x
+  vec.y = y+self.TextOffset.y
+ 
   self.Text:SetPosition(vec)
 end
 
@@ -68,17 +73,16 @@ function ListView:Initialize(width, height, itemCreator, itemHeight, itemSpacing
 	self.ItemDistance = self.ItemHeight + self.ItemSpacing
 	self.ScrollBarWidth = 20
 	
+	self.TraverseChildFirst = true
+	
 	if(self.ItemsSelectble == nil) then
 	  self.ItemsSelectble = true
 	end
+	
+	BaseControl.Initialize(self, width, height)
 
-	self.CurrentItemIndex = 1
-	
-	local bg = GUIManager:CreateGraphicItem()
-	  bg:SetColor(Color(0.5,0.5,0.5,0.5))
-	
-	self:SetRootFrame(bg)
-	self:SetupHitRec()
+	local bg = self.RootFrame
+	  self:SetColor(Color(0.5,0.5,0.5,0.5))
 
   local selectBG = GUIManager:CreateGraphicItem()
     selectBG:SetIsVisible(false)
@@ -123,9 +127,11 @@ end
 
 function ListView:ClampViewStart()
   
-  if(not self.ItemDataList or #self.ItemDataList == 0) then
+  local oldValue = self.ViewStart 
+  
+  if(not self.ItemDataList or #self.ItemDataList == 0 or self.ViewStart <= 0) then
     self.ViewStart = 1
-   return
+   return oldValue ~= self.ViewStart
   end
   
 	local extra = #self.ItemDataList-self.MaxVisibleItems
@@ -136,6 +142,8 @@ function ListView:ClampViewStart()
 	  self.ViewStart = extra+1
 	  self.ScrollBar:SetValue(self.ViewStart)
 	end
+	
+	return oldValue ~= self.ViewStart
 end
  
 function ListView:UpdateScrollbarRange()
@@ -239,8 +247,8 @@ function ListView:GetItemAtCoords(x, y)
   local ItemDistance = self.ItemHeight+self.ItemSpacing
   
   local index = ((y-(y%ItemDistance))/ItemDistance)+1
- 
-  if(index <= #self.Items and index <= #self.ItemDataList) then
+
+  if(index <= #self.Items and index <= #self.ItemDataList and index <= self.MaxVisibleItems) then
     return index
   end
  
@@ -259,36 +267,40 @@ function ListView:OnItemSelected(index)
   self:FireEvent(self.ItemSelected, self.ItemDataList[DataIndex], DataIndex)
 end
 
-function ListView:OnEnter(x,y)
+function ListView:TraverseGetFrame(x, y, filter)
+  local index = self:GetItemAtCoords(x,y)
 
-  local ret = self:ContainerOnEnter(x,y)
-  
-  --the scrollbar was entered
-  if(ret) then
-    return ret
+  if(index) then
+    local item = self.Items[index]
+    local hitrec = item.HitRec
+
+    if(not item.Hidden and hitrec and (bit.band(item.ChildFlags or 0, filter) ~= 0 or bit.band(item.Flags or 0, filter) ~= 0)) then
+      return item, x-hitrec[1],y-hitrec[2]
+    end
   end
+ 
+  return nil
+end
+/*
+function ListView:OnEnter(x,y)
 
   local index = self:GetItemAtCoords(x,y)
 
   if(index) then
     local item = self.Items[index]
 
-    if(not item.Hidden and (item.OnEnter or item.ChildHasOnEnter)) then
+    if(not item.Hidden and (item.OnEnter or item.ChildControls)) then
       local hitrec = item.HitRec
-      
-      local enterFunc = item.OnEnter or BaseControl.ContainerOnEnter
-      
-      ret = enterFunc(item, x-hitrec[1],y-hitrec[2])
-      
-      if(ret) then
-        self.EnteredEntry = item
-      end
 
-     return ret
+      --let the GUIManager handle this
+      return item, x-hitrec[1],y-hitrec[2]
     end
   end
-  
-  return false
+end
+*/
+
+function ListView:OnMouseWheel(direction)
+  self:SetListToIndex(self.ViewStart+(-direction))
 end
 
 function ListView:OnClick(button, down, x,y)
@@ -302,17 +314,7 @@ function ListView:OnClick(button, down, x,y)
 	  return
   end
   
-  local frame = self:ContainerOnClick(button, down, x,y)
-	
-	--the scroll bar was clicked
-  if(frame) then
-		return frame
-	end
-  
 ----start of item hit dection and selection code-------
-  
-  local ItemDistance = self.ItemHeight+self.ItemSpacing
-  
   local index = self:GetItemAtCoords(x,y)
   
   if(index) then
@@ -323,12 +325,7 @@ function ListView:OnClick(button, down, x,y)
       self:OnItemSelected(index)
     end
 
-    if(item.OnClick) then
-      item:OnClick(button, down, x, y%ItemDistance)
-      
-      self.ClickedItem = item
-     return self
-    else
+    if(not item.OnClick) then
       if(self.ItemDblClicked and self.LastClickTime and self.LastClickedIndex == DataIndex and 
         (Client.GetTime()-self.LastClickTime) < GUIManager.DblClickSpeed) then
 
@@ -338,7 +335,12 @@ function ListView:OnClick(button, down, x,y)
       self.LastClickedIndex = DataIndex
       self.LastClickTime = Client.GetTime()
     end
+    
+   // return item.isa and item:isa("BaseControl") and item)
+   return true
   end
+  
+  return false
 end
 
 function ListView:ResetSelection()
@@ -483,19 +485,12 @@ function ListView:JumpToListEnd(forceRefresh)
 end
 
 function ListView:SetListToIndex(index, fromScrollBar)
-	
-	local maxindex = 1+#self.ItemDataList-self.MaxVisibleItems
 
-  if(maxindex <= 0) then
-    index = 1
-	elseif(index > maxindex) then
-		index = maxindex
-	end
-	
 	self.ViewStart = index
-	
+	self:ClampViewStart()
+
 	if(not fromScrollBar) then
-    self.ScrollBar:SetValue(index)
+    self.ScrollBar:SetValue(self.ViewStart)
   end
  
 	self:RefreshItems()
@@ -568,9 +563,8 @@ function BaseButton:SetSize(width, height)
 end
 
 function BaseButton:OnEnter()
-		self.MouseOver = true
-		self.Overlay:SetColor(MouseOverColor)
-  return self
+  self.MouseOver = true
+  self.Overlay:SetColor(MouseOverColor)
 end
 
 function BaseButton:OnLeave()
@@ -603,12 +597,7 @@ function BaseButton:OnClick(button, down)
 			end 
 		end
 	end
-	
-	return self
 end
-
-
-
 
 
 

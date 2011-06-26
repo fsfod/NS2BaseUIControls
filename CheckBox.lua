@@ -114,7 +114,6 @@ end
 
 function CheckButton:OnEnter()
   self.Border:SetColor(DimOrange)
- return self
 end
 
 function CheckButton:SetCheckedState(checked)

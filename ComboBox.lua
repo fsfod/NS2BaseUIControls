@@ -52,10 +52,6 @@ function ComboBox:DropDownClosed()
   self.DropDownOpen = false
 end
 
-function ComboBox:OnClick(...)
- return self.ContainerOnClick(self, ...)
-end
-
 function ComboBox:SetValueFromConfig()
   self:SetSelectedItem(self.ConfigBinding:GetValue())
 end
@@ -154,7 +150,11 @@ function ComboBox:ToggleDropDown(down)
       MenuDropDown = MenuDropDown or DropDownMenu(self:GetWidth(), self:GetHeight()*7)
       self.DropDown = MenuDropDown
     else
-      NormalDropDown = NormalDropDown or DropDownMenu(self:GetWidth(), self:GetHeight()*7)
+      if(not NormalDropDown) then
+        NormalDropDown = DropDownMenu(self:GetWidth(), self:GetHeight()*7)
+        NormalDropDown.RootFrame:SetLayer(1)
+      end
+
       self.DropDown = NormalDropDown
     end
       
@@ -265,8 +265,6 @@ end
 
 function DropDownMenu:OnEnter()
   GUIManager.RegisterCallback(self, "MouseMove")
-  
-  return self
 end
 
 function DropDownMenu:MouseMove(x, y)
