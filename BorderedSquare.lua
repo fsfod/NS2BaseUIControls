@@ -103,7 +103,7 @@ function BasePage:__init(width, height, titleString)
   
   BorderedSquare.__init(self, width, height, 2)
 
-  self.RootFrame:SetColor(PageBgColour)
+  self:SetColor(PageBgColour)
 
   local title = GUIManager:CreateTextItem()
     title:SetFontSize(20)
@@ -117,7 +117,7 @@ function BasePage:__init(width, height, titleString)
   local titlebox = BorderedSquare(200, 24, 2)
     titlebox:SetPoint("Top", 0, 0, "Bottom")
     titlebox:SetColor(Color(0.1, 0.1, 0.1, 1))
-    titlebox.RootFrame:AddChild(title)
+    titlebox:AddGUIItemChild(title)
    self:AddChild(titlebox)
 end
   

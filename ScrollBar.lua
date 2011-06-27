@@ -216,11 +216,11 @@ function SliderButton:__init()
 end
 
 function SliderButton:OnEnter()
-  self.RootFrame:SetColor(Color(0.9, 0.4, 0, 1))
+  self:SetColor(Color(0.9, 0.4, 0, 1))
 end
 
 function SliderButton:OnLeave()
-	self.RootFrame:SetColor(Color(0.78, 0.3, 0, 1))
+	self:SetColor(Color(0.78, 0.3, 0, 1))
 end
 
 function SliderButton:OnClick(...)
@@ -336,14 +336,14 @@ function ArrowButton:__init(width, height, mode)
 	//self.RootFrame:SetBlendTechnique(GUIItem.Add)
 	self:SetupHitRec()
 
-  self.RootFrame:SetColor(NormalColor)
+  self:SetColor(NormalColor)
 
   local arrow = GUIManager:CreateGraphicItem()
 	  arrow:SetColor(Color(1,1,1, 1))
 	  arrow:SetBlendTechnique(GUIItem.Add)
 	  arrow:SetTexture("ui/arrows.dds")
 	  arrow:SetTexturePixelCoordinates(unpack(ArrowTextures[mode]))
-	self.RootFrame:AddChild(arrow)
+	self:AddGUIItemChild(arrow)
 	self.Overlay = arrow
 
 	self:SetSize(Vector(width, height, 0))
@@ -358,12 +358,12 @@ end
 
 function ArrowButton:OnEnter()
   self.MouseOver = true
-  self.RootFrame:SetColor(MouseOverColor)
+  self:SetColor(MouseOverColor)
 end
 
 function ArrowButton:OnLeave()
   self.MouseOver = false
-  self.RootFrame:SetColor(NormalColor)
+  self:SetColor(NormalColor)
 end
 
 function ArrowButton:OnClick(button, down)
@@ -383,9 +383,9 @@ function ArrowButton:OnClick(button, down)
 			self.Overlay:SetColor(Color(1, 1, 1, 1))
 
 			if(self.MouseOver) then
-			  self.RootFrame:SetColor(MouseOverColor)
+			  self:SetColor(MouseOverColor)
 			else
-			  self.RootFrame:SetColor(NormalColor)
+			  self:SetColor(NormalColor)
 			end
 			
 			if(self.OnClicked) then

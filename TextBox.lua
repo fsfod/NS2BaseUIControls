@@ -14,7 +14,7 @@ function TextBox:__init(width, height, fontsize, fontname)
    carret:SetSize(Vector(1, height-4, 0))
    carret:SetPosition(Vector(5, 2, 0))
    carret:SetColor(Color(1,0,0, 1))
-   self.RootFrame:AddChild(carret)
+   self:AddGUIItemChild(carret)
   self.Carret = carret
   
   self.FontSize = fontsize or 20

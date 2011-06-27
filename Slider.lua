@@ -4,7 +4,7 @@ class 'Slider'(ScrollBar)
 function Slider:__init(width, height, minValue, maxValue)
 	ScrollBar.__init(self, width, height)
   
-  self.RootFrame:SetColor(Color(0.15, 0.15, 0.15, 1))
+  self:SetColor(Color(0.15, 0.15, 0.15, 1))
 
   if(minValue) then
     self:SetMinMax(minValue, maxValue)

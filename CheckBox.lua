@@ -20,7 +20,7 @@ function CheckBox:__init(label, checked, labelOnLeft, fontsize)
   self.Label = labeltxt
 
   BaseControl.Initialize(self, width, height)
-  self.RootFrame:AddChild(labeltxt)
+  self:AddGUIItemChild(labeltxt)
   
   self:SetLabelOnLeft(labelOnLeft)
 
@@ -92,7 +92,7 @@ function CheckButton:Initialize(height, checked)
     cross:SetSize(Vector(height, height, 0))
 	  cross:SetColor(Orange)
 	  cross:SetTexture("ui/checkbox.dds")
-	self.RootFrame:AddChild(cross)
+	self:AddGUIItemChild(cross)
   self.Cross = cross
   
   self:SetCheckedState(checked or false)
@@ -103,7 +103,7 @@ function CheckButton:Initialize(height, checked)
 	  border:SetTexture("ui/checkbox.dds")
 	  border:SetTexturePixelCoordinates(0, 0, 63, 64)
 	self.Border = border
-	self.RootFrame:AddChild(border)
+	self:AddGUIItemChild(border)
   
   self:SetColor(Color(0, 0, 0, 0))
 end

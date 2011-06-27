@@ -325,13 +325,9 @@ function GUIManager:TraverseFrames(frameList, x, y, filter, callback)
    local childFrame = frameList[i]
    local rec = childFrame.HitRec
     
-    if(not childFrame.Hidden and rec) then
-      local childFlags = band(filter, childFrame.ChildFlags)
-      local controlFlags = band(filter, childFrame.Flags)
-      
-      
-      if((childFlags ~= 0 or controlFlags ~= 0) and x > rec[1] and y > rec[2] and x < rec[3] and y < rec[4]) then
+    if(not childFrame.Hidden and rec and x > rec[1] and y > rec[2] and x < rec[3] and y < rec[4]) then 
         local result
+        local childFlags = band(filter, childFrame.ChildFlags)
 
         --the control has provided it own Traverse function so try that first before we check the controls flags
         if(childFrame.TraverseGetFrame) then
@@ -349,11 +345,12 @@ function GUIManager:TraverseFrames(frameList, x, y, filter, callback)
           end
         end
         
-        if(not result and childFrame.TraverseChildFirst and childFrame.ChildControls) then
-          result = self:TraverseFrames(childFrame.ChildControls, x, y, filter, callback)
+        if(not result and childFlags ~= 0 and childFrame.TraverseChildFirst and childFrame.ChildControls) then
+          result = self:TraverseFrames(childFrame.ChildControls, x-rec[1], y-rec[2], filter, callback)
         end
         
-        if(controlFlags ~= 0 and not result) then
+        --Call the callback if this control has any of the same flags as the filter
+        if(band(filter, childFrame.Flags) ~= 0 and not result) then
           result = callback(self, childFrame, x-rec[1], y-rec[2])
         end
         
@@ -366,7 +363,6 @@ function GUIManager:TraverseFrames(frameList, x, y, filter, callback)
         if(result) then
           return true
         end
-      end
     end
   end
   
@@ -404,26 +400,17 @@ function GUIManager:DoFrameOnEnter(frame, x, y)
     error("GUIManager:DoFrameOnEnter found CurrentMouseOver still set")
   end
 
-  local result, doChildList
-
-  --try all the child controls first if the frame has requested it
-  if(frame.TraverseChildFirst and frame.ChildControls) then
-    result = self:TraverseFrames(frame.ChildControls, x, y, 2, self.DoFrameOnEnter)
-  end
-
-  if(not result) then
-      result = frame:OnEnter(x, y)
+  local result = frame:OnEnter(x, y)
   
   --if the frames OnEnter function didn't return anything we treat that as they accepted the Enter event
-    if(result == nil or result == true) then
-      self.CurrentMouseOver = frame
-      frame.Entered = true
+  if(result == nil or result == true) then
+    self.CurrentMouseOver = frame
+    frame.Entered = true
     
-      return true
-    end
+    return true
   end
 
-  return result
+  return false
 end
 
 function GUIManager:OnMouseMove()

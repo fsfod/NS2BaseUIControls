@@ -10,6 +10,8 @@ ScriptList = {
   "GUIManagerEx.lua",
   "ConfigDataBinder.lua",
   "BaseControl.lua",
+  "ScaleMixin.lua",
+  "DraggableMixIn.lua",
   "ControlStyles.lua",
   "BorderedSquare.lua",
   "ScrollBar.lua",

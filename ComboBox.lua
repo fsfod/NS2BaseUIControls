@@ -15,7 +15,7 @@ function ComboBox:__init(width, height, itemList, labelCreator)
   local itemText = GUIManager:CreateTextItem()
    itemText:SetFontSize(17)
    itemText:SetPosition(Vector(4, 3, 0))
-    self.RootFrame:AddChild(itemText)
+    self:AddGUIItemChild(itemText)
   self.ItemText = itemText
   
   self.DropDownOpen = false

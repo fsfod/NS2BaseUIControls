@@ -158,7 +158,7 @@ function BaseControl:SetLabel(str, offset, yOffset)
     label:SetAnchor(GUIItem.Left, GUIItem.Center)
     
     self.BC_Label = label
-    self.RootFrame:AddChild(label)
+    self:AddGUIItemChild(label)
   end
     
   label:SetText(str)
@@ -184,9 +184,13 @@ function BaseControl:CreateFontString(fontSizeOrTemplate, anchorPoint, x, y)
 	  font:SetPosition(Vector(x, y, 0))
 	end
 	
-	self.RootFrame:AddChild(font)
+	self:AddGUIItemChild(font)
 	
 	return font
+end
+
+function BaseControl:SetLayer(layer)
+  self.RootFrame:SetLayer(layer)
 end
 
 function BaseControl:SetColor(redOrColour, g, b, a)
@@ -368,13 +372,17 @@ function BaseControl:UpdateHitRec(rec)
 	 rec[4] = y+self.Size.y
 end
 
+function BaseControl:AddGUIItemChild(frame)
+  self.RootFrame:AddChild(frame)
+end
+
 function BaseControl:AddChild(control)
 
 	if(not self.ChildControls) then
 		self.ChildControls = {}
 	end
 	
-	self.RootFrame:AddChild(control.RootFrame)
+	self:AddGUIItemChild(control.RootFrame)
 	control.Parent = self
 	
 	if(control.OnParentSet) then
@@ -385,12 +393,10 @@ function BaseControl:AddChild(control)
     control:UpdateHitRec()
   end
   
-  if(control.Flags ~= 0) then
-    local flags = control.Flags
-    
-    if(flags ~= band(flags, self.ChildFlags)) then
-      self:NotifyChildFlags(flags)
-    end
+  local flags = bor(control.Flags, control.ChildFlags)
+  
+  if(flags ~= 0 and flags ~= band(flags, self.ChildFlags)) then
+    self:NotifyChildFlags(flags)
   end
 	
 	table.insert(self.ChildControls, control)
@@ -551,123 +557,6 @@ function BaseControl:SendCharacterEvent()
 end
 
 
-class('Draggable')(BaseControl)
-
-function Draggable:__init(width, height)
-	self.DragStartPoint = false
-	self.DragStartClickedPos = false
-	self.DragEnablded = true
-	self.IsDragging = false
-	self.DragButton = InputKey.MouseButton0
-
-	self.DragPos = Vector(0,0,0)
-
-	if(height and width) then
-		self:CreateRootFrame(width, height)
-		
-		self:SetupHitRec()
-	end
-end
-
-function Draggable:SetRootFrame(frame)
-	BaseControl.SetRootFrame(self, frame)
-	self.DragRoot = frame
-end
-
-function Draggable:OnClick(button, down)
-
-	if(button == self.DragButton) then
-		if(down) then
-			if(self.DragEnablded) then
-			  --this shouldn't happen normaly but if someone mouse button is dieing
-			  if(self.IsDragging) then
-			    self:OnDragStop(true)
-				 return true
-			  end
-
-			  self:DragStartUp()
-			end
-		else
-			if(self.IsDragging) then
-				self:OnDragStop()
-			end
-			self.DragStage = -1
-		end
-		
-		return true
-	end
-	
-	return false
-end
-
-function Draggable:DragStartUp()
-  self.DragStartPos = {Client.GetCursorPosScreen()}
-	self.DragStage = 0
-	
-	GUIManager.RegisterCallback(self, "MouseMove", "DragMouseMove")
-end
-
-function Draggable:OnDragStart()
-	self.DragStage = 1
-	self.IsDragging = true
-	
-	local vec = self.RootFrame:GetPosition()
-	self.FrameStartPos = {vec.x, vec.y}
-	
-	GetGUIManager():DragStarted(self, self.DragButton)
-end
-
-function Draggable:DragMouseMove(x,y)
-
-  --maybe have a min move amount check here
-  if(self.DragStage == 0) then
-    self:OnDragStart()
-  end
-
-	if(self.IsDragging) then
-		self.DragPos.x = self.FrameStartPos[1]+(x-self.DragStartPos[1])
-		self.DragPos.y = self.FrameStartPos[2]+(y-self.DragStartPos[2])
-
-		self.DragRoot:SetPosition(self.DragPos)
-	else
-		GUIManager.UnregisterCallback(self, "MouseMove")
-	end
-end
-
-function Draggable:OnDragStop(dontSetPositon)
-  
-  local x,y = Client.GetCursorPosScreen()
-  
-  GetGUIManager():DragStopped(self)
-	self.IsDragging = false
-	
-	GUIManager.UnregisterCallback(self, "MouseMove")
-
-	if(not dontSetPositon and (self.DragStartPos[1] ~= x or self.DragStartPos[2] ~= y)) then
-	  self:SetPosition(self.DragPos)
-	end
-end
-
-function Draggable:CancelDrag()
-  if(self.IsDragging) then
-    self:OnDragStop()
-  end
-end
-
-
-function Draggable:Mixin(tbl)
-  tbl.OnDragStart = self.OnDragStart
-  tbl.DragStartUp = self.DragStartUp
-  tbl.OnDragStop = self.OnDragStop
-  tbl.DragMouseMove = self.DragMouseMove
-  tbl.SetRootFrame = self.SetRootFrame
-  tbl.OnClick = self.OnClick  
-end
-
---local f = CreateFrame("test")
-
---f:SetColor(Color(1,0,1,1))
---f:SetPoint("Center", 30, 40)
 
 ButtonMixin = {}
 
