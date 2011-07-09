@@ -26,21 +26,21 @@ end
 function GUIManagerEx:SetHooks()
   ClassHooker:SetClassCreatedIn("GUIManager", "lua/GUIManager.lua")
   self:HookClassFunction("GUIManager", "Initialize")
-  self:HookClassFunction("GUIManager", "SendKeyEvent", self.SendKeyEvent):SetPassHandle(true)
+  self:RawHookClassFunction("GUIManager", "SendKeyEvent", self.SendKeyEvent):SetPassHandle(true)
   self:HookClassFunction("GUIManager", "SendCharacterEvent", self.SendCharacterEvent):SetPassHandle(true)
   self:HookClassFunction("GUIManager", "Update")
   
   //self:ReplaceClassFunction("GUIManager", "_SharedCreate")
   self:HookClassFunction("GUIManager", "DestroyGUIScript")
   self:ReplaceClassFunction("GUIManager", "DestroyGUIScriptSingle")
-
-  self:HookLibraryFunction(HookType.Post, "Client", "ReloadGraphicsOptions", "CheckGraphicsOptions")
+  
   //self:HookLibraryFunction(HookType.Post, "Client", "SetCursor", function(cursor) Shared.Message(tostring(cursor or "nil")) end)
 end
 
 function GUIManagerEx:Initialize(self)
   self.TopLevelFrames = {}
 	self.AddedFrames = {}
+	self.KeyDown = {}
 	
 	GUIManager.Callbacks = CallbackHandler:New(GUIManager)
 	GUIManager.DblClickSpeed = 0.5
@@ -64,18 +64,26 @@ function GUIManagerEx:DestroyGUIScriptSingle(self, scriptName)
   
 end
 
-function GUIManagerEx:CheckGraphicsOptions()
-  self.CheckSceenResNextFrame = 0
-end
-
 local WheelMessages = nil
 
+local NoUpEvent = {
+  [InputKey.MouseZ] = true,
+  [InputKey.MouseX] = true,
+  [InputKey.MouseY] = true,
+}
+
 --self is really GUIManager
-function GUIManagerEx.SendKeyEvent(handle, self, key, down, ...)
+function GUIManagerEx.SendKeyEvent(handle, self, key, down)
 	PROFILE("MouseTracker:SendKeyEvent")
 
   if(not Client.GetMouseVisible()) then
     
+  end
+  local IsRepeat = false
+
+  if(not NoUpEvent[key]) then
+    IsRepeat = self.KeyDown[key] and down
+    self.KeyDown[key] = down
   end
 
   if(key == InputKey.MouseZ and GetWheelMessages) then
@@ -111,13 +119,13 @@ function GUIManagerEx.SendKeyEvent(handle, self, key, down, ...)
   local focus = self.FocusedFrame
   local eventHandled = false
   
-  if(focus and focus.SendKeyEvent and focus:SendKeyEvent(key, down, ...)) then
+  if(focus and focus.SendKeyEvent and focus:SendKeyEvent(key, down, IsRepeat)) then
     eventHandled = true
   end
 
   if(key == InputKey.MouseX or key == InputKey.MouseY) then
     self.MouseMoved = true
-   return
+   return key, down
 	end
 
 	if(self.EatKeyUp == key) then
@@ -143,6 +151,8 @@ function GUIManagerEx.SendKeyEvent(handle, self, key, down, ...)
 	  handle:BlockOrignalCall()
 		handle:SetReturn(true)
 	end
+	
+	return key, down, IsRepeat
 end
 
 function GUIManagerEx.SendCharacterEvent(handle, self, ...)
@@ -158,20 +168,6 @@ end
 function GUIManagerEx:Update(self, time)
   
 	WheelMessages = nil
-  
-  if(GUIManagerEx.CheckSceenResNextFrame) then
-    local newValue = GUIManagerEx.CheckSceenResNextFrame+1
-    
-    if(newValue == 2) then
-      if(CheckUpdateScreenRes()) then
-        self:ScreenSizeChanged()
-      end
-      GUIManagerEx.CheckSceenResNextFrame = nil
-    else
-      GUIManagerEx.CheckSceenResNextFrame = newValue
-    end
-  end
-  
   
   if(self.FocusedFrame and not self.FocusedFrame:IsShown()) then
     self:ClearFocus()

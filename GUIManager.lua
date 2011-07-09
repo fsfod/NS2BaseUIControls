@@ -113,13 +113,20 @@ function GUIManager:CheckRemoveFrame(frame)
 	return false
 end
 
-function GUIManager:ScreenSizeChanged()
+function GUIManager:SendKeyEvent(key, down, isRepeat)
 
-  local width,height = Client.GetScreenWidth(),Client.GetScreenHeight()
-
-  for i,frame in ipairs(self.TopLevelFrames) do
-    frame:OnScreenSizeChanged(width,height)
-  end
+    for index, script in ipairs(self.scripts) do
+        if script:SendKeyEvent(key, down, isRepeat) then
+            return true
+        end
+    end
+    for index, script in ipairs(self.scriptsSingle) do
+        if script[1]:SendKeyEvent(key, down, isRepeat) then
+            return true
+        end
+    end
+    return false
+    
 end
 
 function GUIManager:SetMainMenu(menuFrame)
@@ -312,11 +319,6 @@ local Features = {
   OnMouseWheel = 4,
 }
 
-local ChildHas = {}
-
-for name, value in pairs(Features) do
-  ChildHas["ChildHas"..name] = lshift(value, 16)
-end
 
 function GUIManager:TraverseFrames(frameList, x, y, filter, callback)
   assert(frameList)
@@ -441,6 +443,7 @@ function GUIManager:OnMouseMove()
 	  self:TraverseFrames(self:GetFrameList(), x, y, 2, self.DoFrameOnEnter)
 	end
 end
+
 
 function GUIManager:GetFrameList() 
   if(self.MainMenu and not self.MainMenu.Hidden) then

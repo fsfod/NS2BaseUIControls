@@ -227,7 +227,7 @@ function BaseControl:SetPosition(VecOrX, y)
 	end
 end
 
-function BaseControl:OnScreenSizeChanged()
+function BaseControl:OnResolutionChanged(oldX, oldY, width, height)
   self:UpdatePosition()
 end
 
@@ -555,8 +555,6 @@ end
 
 function BaseControl:SendCharacterEvent()
 end
-
-
 
 ButtonMixin = {}
 

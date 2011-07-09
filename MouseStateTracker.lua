@@ -14,9 +14,11 @@ if(not MouseStateTracker) then
     StackTop = 0,
     DeathPersist = {
       chat = true,
+      scoreboard = true,
     },
     RoundPersist = {
       chat = true,
+      scoreboard = true,
     },
 
     MouseFunctions = {
@@ -76,6 +78,19 @@ function MouseStateTracker:SetHooks(startup)
   self:PostHookClassFunction("Marine", "CloseMenu", function()
     self:TryPopState("buymenu")
   end)
+  
+   ClassHooker:SetClassCreatedIn("GUIScoreboard")
+  
+  self:PostHookClassFunction("GUIScoreboard", "_SetMouseVisible", function(scoreSelf)
+    if(scoreSelf.mouseVisible) then
+      if(not self.OwnerToState["scoreboard"]) then
+        self:PushState("scoreboard", true, false, false)
+      end
+    else
+      self:TryPopState("scoreboard")
+    end
+  end)
+  
   
   //self:HookLibraryFunction(HookType.Post, "Client", "SetPitch", function() 
   //  self:PrintDebug("Client.SetPitch")
