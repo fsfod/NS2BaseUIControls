@@ -1,5 +1,6 @@
 ScaleMixin = {}
 
+
 function ScaleMixin:SetSize(VecOrX, y, SkipHitRecUpdate)
 
 	local scale = GUIMananger.Scale
