@@ -1,29 +1,29 @@
 /*
 enum XAnchor = {
-	GUIItem.Top
-	GUIItem.Center
-	GUIItem.Bottom
+  GUIItem.Top
+  GUIItem.Center
+  GUIItem.Bottom
 }
 
 enum YAnchor = {
-	GUIItem.Left,
-	GUIItem.Middle,
-	GUIItem.Right
+  GUIItem.Left,
+  GUIItem.Middle,
+  GUIItem.Right
 }
 */
 
 local PointToAnchor = {
-	Top = {GUIItem.Middle, GUIItem.Top},
-	Bottom = {GUIItem.Middle, GUIItem.Bottom},
-	Left = {GUIItem.Left, GUIItem.Center},
-	Right = {GUIItem.Right, GUIItem.Center},
-	
-	TopLeft = {GUIItem.Left, GUIItem.Top},
-	TopRight = {GUIItem.Right, GUIItem.Top},
-	BottomLeft = {GUIItem.Left, GUIItem.Bottom},
-	BottomRight = {GUIItem.Right, GUIItem.Bottom},
-	
-	Center = {GUIItem.Middle, GUIItem.Center},
+  Top = {GUIItem.Middle, GUIItem.Top},
+  Bottom = {GUIItem.Middle, GUIItem.Bottom},
+  Left = {GUIItem.Left, GUIItem.Center},
+  Right = {GUIItem.Right, GUIItem.Center},
+  
+  TopLeft = {GUIItem.Left, GUIItem.Top},
+  TopRight = {GUIItem.Right, GUIItem.Top},
+  BottomLeft = {GUIItem.Left, GUIItem.Bottom},
+  BottomRight = {GUIItem.Right, GUIItem.Bottom},
+  
+  Center = {GUIItem.Middle, GUIItem.Center},
 }
 
 PointToAnchor.top = PointToAnchor.Top
@@ -39,13 +39,13 @@ PointToAnchor.center = PointToAnchor.Center
 local WrapVector = Vector()
 
 function classL(className, base)
-	local  t = {}
-	
-	for funcname,func in pairs(base) do
-		t[funcname] = func
-	end
-	
-	_G[className] = t
+  local  t = {}
+  
+  for funcname,func in pairs(base) do
+    t[funcname] = func
+  end
+  
+  _G[className] = t
 end
 
 local bor = bit.bor
@@ -58,9 +58,9 @@ local OnMouseWheelFlag = 4
 class'BaseControl' 
 
 function BaseControl:__init(width, height, ...)
-	if(width) then
-		self:Initialize(width, height, ...)
-	end
+  if(width) then
+    self:Initialize(width, height, ...)
+  end
 end
 
 function BaseControl:Initialize(width, height)
@@ -108,24 +108,24 @@ function BaseControl:Uninitialize()
     self.ChildControls = nil
   end
   
-	if(self.RootFrame) then
+  if(self.RootFrame) then
     GUI.DestroyItem(self.RootFrame)
     self.RootFrame = nil  
   end
 end
 
 function BaseControl:CreateRootFrame(width, height)
-	local bg = GUIManager:CreateGraphicItem()
-		bg:SetSize(Vector(width, height, 0))
-		self:SetRootFrame(bg)
+  local bg = GUIManager:CreateGraphicItem()
+    bg:SetSize(Vector(width, height, 0))
+    self:SetRootFrame(bg)
 
-	return self.RootFrame
+  return self.RootFrame
 end
 
 function BaseControl:SetRootFrame(frame)
-	self.RootFrame = frame
-	self.Size = Vector(frame:GetSize())
-	self.Position = Vector(frame:GetPosition())
+  self.RootFrame = frame
+  self.Size = Vector(frame:GetSize())
+  self.Position = Vector(frame:GetPosition())
 end
 
 function BaseControl:SetTexture(texture, x1, y1, x2, y2)
@@ -169,24 +169,24 @@ function BaseControl:CreateFontString(fontSizeOrTemplate, anchorPoint, x, y)
   local font
 
   if(type(fontSizeOrTemplate) == "number") then
-	  font = GUIManager:CreateTextItem()
-	  font:SetFontSize(fontSizeOrTemplate)
+    font = GUIManager:CreateTextItem()
+    font:SetFontSize(fontSizeOrTemplate)
    
-	  if(anchorPoint) then
-	  	local point = PointToAnchor[anchorPoint]
-	  	font:SetAnchor(point[1], point[2])
-	  end
-	else
-	 font = fontSizeOrTemplate:CreateFontString()
-	end
+    if(anchorPoint) then
+      local point = PointToAnchor[anchorPoint]
+      font:SetAnchor(point[1], point[2])
+    end
+  else
+   font = fontSizeOrTemplate:CreateFontString()
+  end
 
-	if(x) then
-	  font:SetPosition(Vector(x, y, 0))
-	end
-	
-	self:AddGUIItemChild(font)
-	
-	return font
+  if(x) then
+    font:SetPosition(Vector(x, y, 0))
+  end
+  
+  self:AddGUIItemChild(font)
+  
+  return font
 end
 
 function BaseControl:SetLayer(layer)
@@ -195,36 +195,36 @@ end
 
 function BaseControl:SetColor(redOrColour, g, b, a)
   
-	if(g) then
-		redOrColour = Color(redOrColour, g, b, a)
-	end
-	
-	self.RootFrame:SetColor(redOrColour)
+  if(g) then
+    redOrColour = Color(redOrColour, g, b, a)
+  end
+  
+  self.RootFrame:SetColor(redOrColour)
 end
 
 function BaseControl:SetPosition(VecOrX, y)
-	
-	if(y) then
-		if(not self.Position) then
-		  self.Position = Vector(VecOrX, y, 0)
-		else
-			self.Position.x = VecOrX
-			self.Position.y = y
-		end
-	else
-	  if(not self.Position) then
-		  self.Position = Vector(VecOrX)
-		else
-		  self.Position.x = VecOrX.x
-		  self.Position.y = VecOrX.y
-		end
-	end
-	
-	self.RootFrame:SetPosition(self.Position)
-	
-	if(self.HitRec and self.Size and self.Parent) then
-		self:UpdateHitRec()
-	end
+  
+  if(y) then
+    if(not self.Position) then
+      self.Position = Vector(VecOrX, y, 0)
+    else
+      self.Position.x = VecOrX
+      self.Position.y = y
+    end
+  else
+    if(not self.Position) then
+      self.Position = Vector(VecOrX)
+    else
+      self.Position.x = VecOrX.x
+      self.Position.y = VecOrX.y
+    end
+  end
+  
+  self.RootFrame:SetPosition(self.Position)
+  
+  if(self.HitRec and self.Size and self.Parent) then
+    self:UpdateHitRec()
+  end
 end
 
 function BaseControl:OnResolutionChanged(oldX, oldY, width, height)
@@ -234,46 +234,46 @@ end
 function BaseControl:UpdatePosition()
   
   if(self.SpecialAnchor) then
-		self:SetPoint(unpack(self.SpecialAnchor))
-	elseif(self.HitRec) then
-	  self:UpdateHitRec()
-	end
+    self:SetPoint(unpack(self.SpecialAnchor))
+  elseif(self.HitRec) then
+    self:UpdateHitRec()
+  end
 end
 
 function BaseControl:SetSize(VecOrX, y, SkipHitRecUpdate)
-	
-	if(y) then
-		self.Size.x = VecOrX
-		self.Size.y = y
-	else
-	  if(not self.Size) then
-		  self.Size = Vector(VecOrX)
-		else
-		  self.Size.x = VecOrX.x
-		  self.Size.y = VecOrX.y
-		end
-	end
-	
-	self.RootFrame:SetSize(self.Size)
-		
-	if(self.SpecialAnchor and not SkipHitRecUpdate) then
-		self:SetPoint(unpack(self.SpecialAnchor))
-	end
-	
-	if(not SkipHitRecUpdate) then
-		if(self.HitRec and self.Position and self.Parent) then
-			self:UpdateHitRec()
-		end
-	
-		--Should really optimize this for only controls that not anchored to Left and Top
-		if(self.ChildControls) then
-			for _,frame in ipairs(self.ChildControls) do			
-				if(frame.HitRec) then
-					frame:UpdateHitRec()
-				end
-			end
-		end
-	end
+  
+  if(y) then
+    self.Size.x = VecOrX
+    self.Size.y = y
+  else
+    if(not self.Size) then
+      self.Size = Vector(VecOrX)
+    else
+      self.Size.x = VecOrX.x
+      self.Size.y = VecOrX.y
+    end
+  end
+  
+  self.RootFrame:SetSize(self.Size)
+    
+  if(self.SpecialAnchor and not SkipHitRecUpdate) then
+    self:SetPoint(unpack(self.SpecialAnchor))
+  end
+  
+  if(not SkipHitRecUpdate) then
+    if(self.HitRec and self.Position and self.Parent) then
+      self:UpdateHitRec()
+    end
+  
+    --Should really optimize this for only controls that not anchored to Left and Top
+    if(self.ChildControls) then
+      for _,frame in ipairs(self.ChildControls) do      
+        if(frame.HitRec) then
+          frame:UpdateHitRec()
+        end
+      end
+    end
+  end
 end
 
 function BaseControl:GetHeight()
@@ -336,40 +336,40 @@ end
 
 --should only update HitRec when were parented to something 
 function BaseControl:UpdateHitRec(rec)
-	
-	local xAnchor = self.RootFrame:GetXAnchor()
-	local yAnchor = self.RootFrame:GetYAnchor()
-	
-	local Pos = self.Position
-	local x,y
-	
-	if(not self.Parent and xAnchor == GUIItem.Left and yAnchor == GUIItem.Top) then
-		x,y = Pos.x,Pos.y
-	else
-		local Size = (self.Parent or UIParent).Size
-	
-		if(xAnchor == GUIItem.Left) then
-			x = Pos.x
-		elseif(xAnchor == GUIItem.Right) then
-			x = Size.x+Pos.x
-		else
-			x = Pos.x+(Size.x/2)
-		end
+  
+  local xAnchor = self.RootFrame:GetXAnchor()
+  local yAnchor = self.RootFrame:GetYAnchor()
+  
+  local Pos = self.Position
+  local x,y
+  
+  if(not self.Parent and xAnchor == GUIItem.Left and yAnchor == GUIItem.Top) then
+    x,y = Pos.x,Pos.y
+  else
+    local Size = (self.Parent or UIParent).Size
+  
+    if(xAnchor == GUIItem.Left) then
+      x = Pos.x
+    elseif(xAnchor == GUIItem.Right) then
+      x = Size.x+Pos.x
+    else
+      x = Pos.x+(Size.x/2)
+    end
 
-		if(yAnchor == GUIItem.Top) then
-			y = Pos.y
-		elseif(yAnchor == GUIItem.Bottom) then
-			y = Size.y+Pos.y
-		else
-			y = Pos.y+(Size.y/2)
-		end
-	end
-	
-	rec = rec or self.HitRec
-	 rec[1] = x
-	 rec[2] = y
-	 rec[3] = x+self.Size.x
-	 rec[4] = y+self.Size.y
+    if(yAnchor == GUIItem.Top) then
+      y = Pos.y
+    elseif(yAnchor == GUIItem.Bottom) then
+      y = Size.y+Pos.y
+    else
+      y = Pos.y+(Size.y/2)
+    end
+  end
+  
+  rec = rec or self.HitRec
+   rec[1] = x
+   rec[2] = y
+   rec[3] = x+self.Size.x
+   rec[4] = y+self.Size.y
 end
 
 function BaseControl:AddGUIItemChild(frame)
@@ -378,16 +378,16 @@ end
 
 function BaseControl:AddChild(control)
 
-	if(not self.ChildControls) then
-		self.ChildControls = {}
-	end
-	
-	self:AddGUIItemChild(control.RootFrame)
-	control.Parent = self
-	
-	if(control.OnParentSet) then
-		control:OnParentSet()
-	end
+  if(not self.ChildControls) then
+    self.ChildControls = {}
+  end
+  
+  self:AddGUIItemChild(control.RootFrame)
+  control.Parent = self
+  
+  if(control.OnParentSet) then
+    control:OnParentSet()
+  end
 
   if(control.HitRec) then
     control:UpdateHitRec()
@@ -398,8 +398,8 @@ function BaseControl:AddChild(control)
   if(flags ~= 0 and flags ~= band(flags, self.ChildFlags)) then
     self:NotifyChildFlags(flags)
   end
-	
-	table.insert(self.ChildControls, control)
+  
+  table.insert(self.ChildControls, control)
 end
 
 function BaseControl:NotifyChildFlags(flags)
@@ -413,7 +413,7 @@ function BaseControl:NotifyChildFlags(flags)
   end
 
   if(parent and band(parent.ChildFlags, flags) ~= flags) then
-  	parent:NotifyChildFlags(flags)
+    parent:NotifyChildFlags(flags)
   end
 end
 
@@ -463,47 +463,47 @@ function BaseControl:FireEvent(Action, ...)
     return Action[1](unpack(Action, 2), ...)
   else
     if(type(Action) == "string") then
-  	  if(not _G[Action]) then
-  	    RawPrint("BaseControl:FireEvent Could not find global function named ".. Action)
-  	   return
-  	  end
-  	  Action = _G[Action]
-  	end
+      if(not _G[Action]) then
+        RawPrint("BaseControl:FireEvent Could not find global function named ".. Action)
+       return
+      end
+      Action = _G[Action]
+    end
     return Action(...)
   end
 end
 
 --the control needs to set its size if it want to pass a reltivePoint
 function BaseControl:SetPoint(point, x, y, reltivePoint)
-	
-	local root = self.RootFrame
-	
-	if(reltivePoint) then
-		self.SpecialAnchor = {point, x, y, reltivePoint}
-	end
-	
-	local point = PointToAnchor[point]
-	root:SetAnchor(point[1], point[2])
+  
+  local root = self.RootFrame
+  
+  if(reltivePoint) then
+    self.SpecialAnchor = {point, x, y, reltivePoint}
+  end
+  
+  local point = PointToAnchor[point]
+  root:SetAnchor(point[1], point[2])
 
-	--the point a controls position is based off is TopLeft in the ns2 gui system
-	if(reltivePoint) then
-		local relpoint = PointToAnchor[reltivePoint]
-		local Size = self.Size
-		
-		if(relpoint[1] == GUIItem.Right) then
-			x = (-Size.x)+x
-		elseif(relpoint[1] == GUIItem.Middle) then
-			x = x-(Size.x/2)
-		end
-		
-		if(relpoint[2] == GUIItem.Bottom) then
-			y = (-Size.y)+y
-		elseif(relpoint[2] == GUIItem.Center) then
-			y = y-(Size.y/2)
-		end
-	end
+  --the point a controls position is based off is TopLeft in the ns2 gui system
+  if(reltivePoint) then
+    local relpoint = PointToAnchor[reltivePoint]
+    local Size = self.Size
+    
+    if(relpoint[1] == GUIItem.Right) then
+      x = (-Size.x)+x
+    elseif(relpoint[1] == GUIItem.Middle) then
+      x = x-(Size.x/2)
+    end
+    
+    if(relpoint[2] == GUIItem.Bottom) then
+      y = (-Size.y)+y
+    elseif(relpoint[2] == GUIItem.Center) then
+      y = y-(Size.y/2)
+    end
+  end
 
-	self:SetPosition(x, y)
+  self:SetPosition(x, y)
 end
 
 function BaseControl:Show()
@@ -583,14 +583,14 @@ function ButtonMixin:OnClick(button, down)
       end
 
       if(self.ClickAction) then
-		    self:FireEvent(self.ClickAction)
-		  end
-		else
-		  if(self.Clicked) then
+        self:FireEvent(self.ClickAction)
+      end
+    else
+      if(self.Clicked) then
         self:Clicked(false)
       end
-		end
-	end
+    end
+  end
 end
 
 
@@ -620,19 +620,19 @@ function FontTemplate:SetBold()
 end
 
 function FontTemplate:SetFontName(name)
-	self.FontName = name
+  self.FontName = name
 end
 
 function FontTemplate:SetFontSize(size)
-	self.FontSize = size
+  self.FontSize = size
 end
 
 function FontTemplate:SetColour(redOrColour, g, b, a)
-	if(not g) then
-		self.Colour = Color(colour)
-	else
-		self.Colour = Color(redOrColour, g, b, a)
-	end
+  if(not g) then
+    self.Colour = Color(colour)
+  else
+    self.Colour = Color(redOrColour, g, b, a)
+  end
 end
 
 function FontTemplate:SetCenterAlignAndAnchor()
@@ -646,30 +646,30 @@ function FontTemplate:SetTextAlignment(x, y)
 end
 
 function FontTemplate:Apply(font)
-	
-	if(self.FontName) then
-		font:SetFontName(self.FontName)
-	end
-	
-	if(self.FontSize) then
-		font:SetFontSize(self.FontSize)
-	end
-	
-	if(self.Bold) then
-	  font:SetFontIsBold(true)
-	end
+  
+  if(self.FontName) then
+    font:SetFontName(self.FontName)
+  end
+  
+  if(self.FontSize) then
+    font:SetFontSize(self.FontSize)
+  end
+  
+  if(self.Bold) then
+    font:SetFontIsBold(true)
+  end
 
-	if(self.TextAlignmentX) then
-	  font:SetTextAlignmentX(self.TextAlignmentX)
+  if(self.TextAlignmentX) then
+    font:SetTextAlignmentX(self.TextAlignmentX)
     font:SetTextAlignmentY(self.TextAlignmentY)
-	end
-	
-	if(self.XAnchor) then
-	  font:SetAnchor(self.XAnchor, self.YAnchor)
-	end
-	
-	if(self.Colour) then
-		font:SetColor(self.Colour)
-	end
+  end
+  
+  if(self.XAnchor) then
+    font:SetAnchor(self.XAnchor, self.YAnchor)
+  end
+  
+  if(self.Colour) then
+    font:SetColor(self.Colour)
+  end
 end
 

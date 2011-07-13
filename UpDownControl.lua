@@ -66,7 +66,7 @@ function UpDownControl:OnMouseWheel(direction)
     direction = -1
   end
 
-	self:SetValue(self.Value+(self.StepSize*direction), true)
+  self:SetValue(self.Value+(self.StepSize*direction), true)
 end
 
 function UpDownControl:SetValue(value, fromInput)

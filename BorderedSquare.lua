@@ -11,15 +11,15 @@ local BackgroundColor = Color(0.588, 0.627, 0.666, 1)
 local Red = Color(1,0,0,1)
 
 function BorderedSquare:__init(width, height, lineWidth, skipSetSize)
-	
-	self.LineWidth = lineWidth or DefaultLineWidth 
-	height = height or DefaultSize
-	width = width or DefaultSize
-	
-	BaseControl.Initialize(self, width, height)
-	
+  
+  self.LineWidth = lineWidth or DefaultLineWidth 
+  height = height or DefaultSize
+  width = width or DefaultSize
+  
+  BaseControl.Initialize(self, width, height)
+  
   local bg = self.RootFrame
-	  bg:SetColor(BackgroundColor)
+    bg:SetColor(BackgroundColor)
   
   local top = GUIManager:CreateGraphicItem()
     top:SetColor(BorderColour)
@@ -28,7 +28,7 @@ function BorderedSquare:__init(width, height, lineWidth, skipSetSize)
   local bottom = GUIManager:CreateGraphicItem()
     bottom:SetAnchor(GUIItem.Left, GUIItem.Bottom)
     //the wonky rounding of the coorinates cause this to look wrong
-		//bottom:SetPosition(Vector(0,-self.LineWidth, 0))
+    //bottom:SetPosition(Vector(0,-self.LineWidth, 0))
     bottom:SetColor(BorderColour)
   self.Bottom = bottom
   
@@ -39,7 +39,7 @@ function BorderedSquare:__init(width, height, lineWidth, skipSetSize)
   local right = GUIManager:CreateGraphicItem()
     right:SetAnchor(GUIItem.Right, GUIItem.Top)
     //the wonky rounding of the coorinates cause this to look wrong
-		//right:SetPosition(Vector(-self.LineWidth,0, 0))
+    //right:SetPosition(Vector(-self.LineWidth,0, 0))
     right:SetColor(BorderColour)
   self.Right = right
   
@@ -58,14 +58,14 @@ function BorderedSquare:__init(width, height, lineWidth, skipSetSize)
 end
 
 function BorderedSquare:SetBorderColour(colour)
-	self.Left:SetColor(colour)
-	self.Right:SetColor(colour)
-	self.Top:SetColor(colour)
-	self.Bottom:SetColor(colour)
+  self.Left:SetColor(colour)
+  self.Right:SetColor(colour)
+  self.Top:SetColor(colour)
+  self.Bottom:SetColor(colour)
 end
 
 function BorderedSquare:SetBackgroundColor(colour)
-	self.RootFrame:SetColor(colour)
+  self.RootFrame:SetColor(colour)
 end
 
 function BorderedSquare:SetSize(width, height)
@@ -108,9 +108,9 @@ function BasePage:__init(width, height, titleString)
   local title = GUIManager:CreateTextItem()
     title:SetFontSize(20)
     title:SetText(titleString)
-	  title:SetAnchor(GUIItem.Center, GUIItem.Middle)
-	  title:SetTextAlignmentX(GUIItem.Align_Center)
-	  title:SetTextAlignmentY(GUIItem.Align_Center)
+    title:SetAnchor(GUIItem.Center, GUIItem.Middle)
+    title:SetTextAlignmentX(GUIItem.Align_Center)
+    title:SetTextAlignmentY(GUIItem.Align_Center)
   self.Title = title
 ///title:GetTextWidth(titleString)+40
 

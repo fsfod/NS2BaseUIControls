@@ -268,7 +268,7 @@ function DropDownMenu:OnEnter()
 end
 
 function DropDownMenu:MouseMove(x, y)
-	local hitrec = self.HitRec
+  local hitrec = self.HitRec
 
   local index = self:GetItemAtCoords(x-hitrec[1], y-hitrec[2])
 

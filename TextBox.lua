@@ -145,7 +145,7 @@ function TextBox:UpdateCarret()
 end
 
 function TextBox:InsertChar(char)
-	local currentText = self.Text:GetWideText()
+  local currentText = self.Text:GetWideText()
   local currentTextLength = currentText:length()
   
   if(self.CarretPos == currentTextLength) then
@@ -167,7 +167,7 @@ function TextBox:InsertChar(char)
 end
 
 function TextBox:DeleteChar(index)
-	local currentText = self.Text:GetWideText()
+  local currentText = self.Text:GetWideText()
   local currentTextLength = currentText:length()
   
   if(index == currentTextLength) then
@@ -209,16 +209,16 @@ function TextBox:SendKeyEvent(key, down)
         
         self:FireEvent(self.TextChanged)
       end
-		elseif(key == InputKey.Left) then
-			if(self.CarretPos > 0) then
-				self.CarretPos = self.CarretPos-1
-			end
-			self:UpdateCarret()
+    elseif(key == InputKey.Left) then
+      if(self.CarretPos > 0) then
+        self.CarretPos = self.CarretPos-1
+      end
+      self:UpdateCarret()
     elseif key == InputKey.Right then
-			if(self.CarretPos < CharCount) then
-				self.CarretPos = self.CarretPos+1
-			end
-			self:UpdateCarret()
+      if(self.CarretPos < CharCount) then
+        self.CarretPos = self.CarretPos+1
+      end
+      self:UpdateCarret()
     elseif(key == InputKey.Return and not self.IgnoreReturn) then
       if(self.Focused) then
         GetGUIManager():ClearFocus()

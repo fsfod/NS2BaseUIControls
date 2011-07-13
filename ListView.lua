@@ -12,12 +12,12 @@ function LVTextItem:__init(owner, fontsize)
   end
   
   local font = GUIManager:CreateTextItem()
-	 font:SetFontSize(self.FontSize)
-	 font:SetColor(white)
-	 font:SetPosition(self.TextOffset)
-	self.Text = font
-	
-	self.PositionVector = Vector(0,0,0)
+   font:SetFontSize(self.FontSize)
+   font:SetColor(white)
+   font:SetPosition(self.TextOffset)
+  self.Text = font
+  
+  self.PositionVector = Vector(0,0,0)
 end
 
 function LVTextItem:SetData(msg)
@@ -64,25 +64,25 @@ ListView.SelectedItemColor = Color(0, 0, 0.3, 1)
 
 
 function ListView:Initialize(width, height, itemCreator, itemHeight, itemSpacing)
-	
-	height = height or ListView.DefaultHeight
-	width = width or ListView.DefaultWidth
-	
-	self.ItemSpacing = itemSpacing or self.ItemSpacing or 1
-	self.ItemHeight = itemHeight or self.ItemHeight or 16	
-	self.ItemDistance = self.ItemHeight + self.ItemSpacing
-	self.ScrollBarWidth = 20
-	
-	self.TraverseChildFirst = true
-	
-	if(self.ItemsSelectble == nil) then
-	  self.ItemsSelectble = true
-	end
-	
-	BaseControl.Initialize(self, width, height)
+  
+  height = height or ListView.DefaultHeight
+  width = width or ListView.DefaultWidth
+  
+  self.ItemSpacing = itemSpacing or self.ItemSpacing or 1
+  self.ItemHeight = itemHeight or self.ItemHeight or 16  
+  self.ItemDistance = self.ItemHeight + self.ItemSpacing
+  self.ScrollBarWidth = 20
+  
+  self.TraverseChildFirst = true
+  
+  if(self.ItemsSelectble == nil) then
+    self.ItemsSelectble = true
+  end
+  
+  BaseControl.Initialize(self, width, height)
 
-	local bg = self.RootFrame
-	  self:SetColor(Color(0.5,0.5,0.5,0.5))
+  local bg = self.RootFrame
+    self:SetColor(Color(0.5,0.5,0.5,0.5))
 
   local selectBG = GUIManager:CreateGraphicItem()
     selectBG:SetIsVisible(false)
@@ -90,29 +90,29 @@ function ListView:Initialize(width, height, itemCreator, itemHeight, itemSpacing
     bg:AddChild(selectBG)
   self.SelectBG = selectBG
 
-	self.ItemsAnchor = GUIManager:CreateGraphicItem()
-	self.ItemsAnchor:SetColor(Color(0,0,0,0))
-	bg:AddChild(self.ItemsAnchor)
-	
-	self.CreateItem = itemCreator or self.CreateItem or CreateTextItem
-	
-	local scrollbar = ScrollBar()
-	 scrollbar:SetPoint("TopRight", 0, 0, "TopRight")
-	 scrollbar.ValueChanged = {self.OnScrollChanged, self}
-	 scrollbar:SetStepSize(1)
-	 scrollbar:DisableScrolling()
-	 scrollbar:Hide()
-	self.ScrollBar = scrollbar
-	self:AddChild(scrollbar)
+  self.ItemsAnchor = GUIManager:CreateGraphicItem()
+  self.ItemsAnchor:SetColor(Color(0,0,0,0))
+  bg:AddChild(self.ItemsAnchor)
+  
+  self.CreateItem = itemCreator or self.CreateItem or CreateTextItem
+  
+  local scrollbar = ScrollBar()
+   scrollbar:SetPoint("TopRight", 0, 0, "TopRight")
+   scrollbar.ValueChanged = {self.OnScrollChanged, self}
+   scrollbar:SetStepSize(1)
+   scrollbar:DisableScrolling()
+   scrollbar:Hide()
+  self.ScrollBar = scrollbar
+  self:AddChild(scrollbar)
 
   self.ScrollHiddenUntilNeeded = true
 
   self.Items = {}
   
-	self:SetSize(width, height)
+  self:SetSize(width, height)
 
-	self:CreateItems()
-	self.AnchorPosition = Vector(0,0,0)
+  self:CreateItems()
+  self.AnchorPosition = Vector(0,0,0)
 end
 
 function ListView:Uninitialize()
@@ -134,27 +134,27 @@ function ListView:ClampViewStart()
    return oldValue ~= self.ViewStart
   end
   
-	local extra = #self.ItemDataList-self.MaxVisibleItems
-	
-	if(extra < 0) then
-	  self.ViewStart = 1
+  local extra = #self.ItemDataList-self.MaxVisibleItems
+  
+  if(extra < 0) then
+    self.ViewStart = 1
   elseif(self.ViewStart > extra+1) then
-	  self.ViewStart = extra+1
-	  self.ScrollBar:SetValue(self.ViewStart)
-	end
-	
-	return oldValue ~= self.ViewStart
+    self.ViewStart = extra+1
+    self.ScrollBar:SetValue(self.ViewStart)
+  end
+  
+  return oldValue ~= self.ViewStart
 end
  
 function ListView:UpdateScrollbarRange()
-	local extra = (self.ItemDataList and #self.ItemDataList-self.MaxVisibleItems) or 0
+  local extra = (self.ItemDataList and #self.ItemDataList-self.MaxVisibleItems) or 0
 
   local ScrollBar = self.ScrollBar
 
   if(extra > 0) then
     if(self.ScrollHiddenUntilNeeded and ScrollBar.Hidden) then
       ScrollBar:Show()
-	  end
+    end
     
     if(ScrollBar.Disabled) then
       ScrollBar:EnableScrolling()
@@ -164,12 +164,12 @@ function ListView:UpdateScrollbarRange()
     ScrollBar:SetMinMax(1, extra+1)
   else
     if(self.ScrollHiddenUntilNeeded) then
-		  ScrollBar:Hide()
-		end
-		
-		if(not ScrollBar.Disabled) then
-		  ScrollBar:DisableScrolling()
-		end
+      ScrollBar:Hide()
+    end
+    
+    if(not ScrollBar.Disabled) then
+      ScrollBar:DisableScrolling()
+    end
   end
 end
  
@@ -192,7 +192,7 @@ function ListView:OnMaxVisibleChanged(maxVisible)
     end
     
     self:UpdateScrollbarRange()
-	else
+  else
     self:CreateItems()
   end
   
@@ -210,15 +210,15 @@ end
 
 function ListView:SetItemHeight(height, adjustFrameHeight)
   self.ItemHeight = height
-	self.ItemDistance = height + self.ItemSpacing
-	
-	self:ResetPositions()
-	
-	if(adjustFrameHeight) then
-	  self:SetSize(self:GetWidth(), self:GetHeightForLineCount(self.MaxVisibleItems))
-	else
-	  self:OnMaxVisibleChanged(math.floor(self:GetHeight()/self.ItemDistance))
-	end
+  self.ItemDistance = height + self.ItemSpacing
+  
+  self:ResetPositions()
+  
+  if(adjustFrameHeight) then
+    self:SetSize(self:GetWidth(), self:GetHeightForLineCount(self.MaxVisibleItems))
+  else
+    self:OnMaxVisibleChanged(math.floor(self:GetHeight()/self.ItemDistance))
+  end
 end
 
 function ListView:SetSize(width, height)
@@ -306,12 +306,12 @@ end
 function ListView:OnClick(button, down, x,y)
 
   if(not down) then
-	  if(self.ClickedItem) then
-	    self.ClickedItem:OnClick(button, false)
-	    self.ClickedItem = nil
-	  end
-	  
-	  return
+    if(self.ClickedItem) then
+      self.ClickedItem:OnClick(button, false)
+      self.ClickedItem = nil
+    end
+    
+    return
   end
   
 ----start of item hit dection and selection code-------
@@ -389,7 +389,7 @@ end
 function ListView:ListSizeChanged()
 
   local ListSize = #self.ItemDataList
-	local extra = ListSize-self.MaxVisibleItems
+  local extra = ListSize-self.MaxVisibleItems
 
   if(self.SelectedItem and self.SelectedItem > ListSize) then
     self:ResetSelection()
@@ -402,33 +402,33 @@ function ListView:ListSizeChanged()
 
   self:UpdateScrollbarRange()
 
-	if(extra <= 0) then
-		self:RefreshItems()
-	 return
-	end
+  if(extra <= 0) then
+    self:RefreshItems()
+   return
+  end
 
   --dont autoscroll if were not at the end of the list except if our list has just been set
   if(DoAutoScroll) then
     self:SetListToIndex(extra+1)
-	else
-	  if(prevSize and prevSize > ListSize) then
-	    self:ClampViewStart()
-	  end
-	  
-		--do a refresh if the list has just been set and there more items than MaxVisibleItems so just do a refresh since were no auto scrolling
-		if(not prevSize or prevSize <= self.MaxVisibleItems) then
+  else
+    if(prevSize and prevSize > ListSize) then
+      self:ClampViewStart()
+    end
+    
+    --do a refresh if the list has just been set and there more items than MaxVisibleItems so just do a refresh since were no auto scrolling
+    if(not prevSize or prevSize <= self.MaxVisibleItems) then
       self:RefreshItems()
     end
   end
 end
 
 function ListView:SetDataList(list)
-	self.ItemDataList = list
-	
-	self:ResetSelection()
-	self.ViewStart = 1
-	self.PrevListSize = nil
-	self:ListSizeChanged()
+  self.ItemDataList = list
+  
+  self:ResetSelection()
+  self.ViewStart = 1
+  self.PrevListSize = nil
+  self:ListSizeChanged()
 end
 
 function ListView:ListDataModifed()
@@ -460,8 +460,8 @@ function ListView:RefreshItems()
 
   self.EnteredEntry = nil
 
-	for i=1,self.MaxVisibleItems do
-	  if(i <= TotalCount) then
+  for i=1,self.MaxVisibleItems do
+    if(i <= TotalCount) then
       self.Items[i]:SetData(self.ItemDataList[i+self.ViewStart-1], SelectedIndex == i)
     else
       self.Items[i]:OnHide()
@@ -486,23 +486,23 @@ end
 
 function ListView:SetListToIndex(index, fromScrollBar)
 
-	self.ViewStart = index
-	self:ClampViewStart()
+  self.ViewStart = index
+  self:ClampViewStart()
 
-	if(not fromScrollBar) then
+  if(not fromScrollBar) then
     self.ScrollBar:SetValue(self.ViewStart)
   end
  
-	self:RefreshItems()
+  self:RefreshItems()
 end
 
 function ListView:OnScrollChanged(value)
-	self:SetListToIndex(math.floor(value), true)
+  self:SetListToIndex(math.floor(value), true)
 end
 
 function ListView:SetYScroll(y)
-	self.AnchorPosition.y = y
-	self.ItemsAnchor:SetPosition(self.AnchorPosition)
+  self.AnchorPosition.y = y
+  self.ItemsAnchor:SetPosition(self.AnchorPosition)
 end
 
 function ListView:CreateItems(startIndex)
@@ -519,14 +519,14 @@ function ListView:CreateItems(startIndex)
      item:SetPosition(x, (height+self.ItemSpacing)*(i-1))
      //item:SetWidth(width)
 
-		self.Items[i] = item
+    self.Items[i] = item
   end
 end
 
 function ListView:ResetPositions()
-	local x = 0
+  local x = 0
 
-	for i=1,#self.Items do
+  for i=1,#self.Items do
     self.Items[i]:SetPosition(x, self.ItemDistance*(i-1))
   end
 end

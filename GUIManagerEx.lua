@@ -11,12 +11,12 @@ function GUIManagerEx:OnClientLuaFinished()
 end
 
 function GUIManagerEx:OnLoad()
-	self:SetHooks()
-	self:LoadScriptAfter("lua/GUIManager.lua", "GUIManager.lua")
-	
-	self:HookFileLoadFinished("lua/Skulk_Client.lua", "SetSkulkViewTilt")
-	
-	MouseStateTracker:Init()
+  self:SetHooks()
+  self:LoadScriptAfter("lua/GUIManager.lua", "GUIManager.lua")
+  
+  self:HookFileLoadFinished("lua/Skulk_Client.lua", "SetSkulkViewTilt")
+  
+  MouseStateTracker:Init()
 end
 
 function GUIManagerEx:SetSkulkViewTilt()
@@ -39,11 +39,11 @@ end
 
 function GUIManagerEx:Initialize(self)
   self.TopLevelFrames = {}
-	self.AddedFrames = {}
-	self.KeyDown = {}
-	
-	GUIManager.Callbacks = CallbackHandler:New(GUIManager)
-	GUIManager.DblClickSpeed = 0.5
+  self.AddedFrames = {}
+  self.KeyDown = {}
+  
+  GUIManager.Callbacks = CallbackHandler:New(GUIManager)
+  GUIManager.DblClickSpeed = 0.5
 end
 
 function GUIManagerEx:DestroyGUIScript(self, frame)
@@ -74,7 +74,7 @@ local NoUpEvent = {
 
 --self is really GUIManager
 function GUIManagerEx.SendKeyEvent(handle, self, key, down)
-	PROFILE("MouseTracker:SendKeyEvent")
+  PROFILE("MouseTracker:SendKeyEvent")
 
   if(not Client.GetMouseVisible()) then
     
@@ -87,33 +87,33 @@ function GUIManagerEx.SendKeyEvent(handle, self, key, down)
   end
 
   if(key == InputKey.MouseZ and GetWheelMessages) then
-		if(WheelMessages == nil) then
-		 WheelMessages = GetWheelMessages() or false
-		 
-		  if(WheelMessages) then
-		    RawPrint("WheelMsgs %i", #WheelMessages)
-		  end
-		end
-		
-		if(WheelMessages and #WheelMessages ~= 0) then
-		  local direction = WheelMessages[1]
-		  table.remove(WheelMessages, 1)
-		  
-		  
-		  self.WheelDirection = direction
-		  
-		  local x,y = Client.GetCursorPosScreen()
-		  self:TraverseFrames(self:GetFrameList(), x, y, 4, self.DoOnMouseWheel)
-		  
-		  
-		  if(direction == 1) then
-		    //RawPrint("WheelUp")
-		  elseif(direction == -1) then
-		    //RawPrint("WheelDown")
-		  else
-		   // RawPrint(direction or "nil")
-		  end
-	  end
+    if(WheelMessages == nil) then
+     WheelMessages = GetWheelMessages() or false
+     
+      if(WheelMessages) then
+        RawPrint("WheelMsgs %i", #WheelMessages)
+      end
+    end
+    
+    if(WheelMessages and #WheelMessages ~= 0) then
+      local direction = WheelMessages[1]
+      table.remove(WheelMessages, 1)
+      
+      
+      self.WheelDirection = direction
+      
+      local x,y = Client.GetCursorPosScreen()
+      self:TraverseFrames(self:GetFrameList(), x, y, 4, self.DoOnMouseWheel)
+      
+      
+      if(direction == 1) then
+        //RawPrint("WheelUp")
+      elseif(direction == -1) then
+        //RawPrint("WheelDown")
+      else
+       // RawPrint(direction or "nil")
+      end
+    end
   end
 
   local focus = self.FocusedFrame
@@ -126,12 +126,12 @@ function GUIManagerEx.SendKeyEvent(handle, self, key, down)
   if(key == InputKey.MouseX or key == InputKey.MouseY) then
     self.MouseMoved = true
    return key, down
-	end
+  end
 
-	if(self.EatKeyUp == key) then
-	  self.EatKeyUp = nil
-	 eventHandled = true
-	end
+  if(self.EatKeyUp == key) then
+    self.EatKeyUp = nil
+   eventHandled = true
+  end
 
   local IsClick = (key == InputKey.MouseButton0 or key == InputKey.MouseButton1 or key == InputKey.MouseButton3)
   local ProcessClick = true
@@ -143,16 +143,16 @@ function GUIManagerEx.SendKeyEvent(handle, self, key, down)
     ProcessClick = not player or not (player.buyMenu or player.showingBuyMenu)
   end
 
-	if(not eventHandled and IsClick and ProcessClick) then
-		eventHandled = self:MouseClick(key, down)
-	end
-	  
-	if(eventHandled) then
-	  handle:BlockOrignalCall()
-		handle:SetReturn(true)
-	end
-	
-	return key, down, IsRepeat
+  if(not eventHandled and IsClick and ProcessClick) then
+    eventHandled = self:MouseClick(key, down)
+  end
+    
+  if(eventHandled) then
+    handle:BlockOrignalCall()
+    handle:SetReturn(true)
+  end
+  
+  return key, down, IsRepeat
 end
 
 function GUIManagerEx.SendCharacterEvent(handle, self, ...)
@@ -161,13 +161,13 @@ function GUIManagerEx.SendCharacterEvent(handle, self, ...)
   
   if(focus and focus.SendCharacterEvent and focus:SendCharacterEvent(...)) then
     handle:BlockOrignalCall()
-		handle:SetReturn(true)
+    handle:SetReturn(true)
   end
 end
 
 function GUIManagerEx:Update(self, time)
   
-	WheelMessages = nil
+  WheelMessages = nil
   
   if(self.FocusedFrame and not self.FocusedFrame:IsShown()) then
     self:ClearFocus()

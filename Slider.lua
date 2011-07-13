@@ -2,7 +2,7 @@
 class 'Slider'(ScrollBar)
 
 function Slider:__init(width, height, minValue, maxValue)
-	ScrollBar.__init(self, width, height)
+  ScrollBar.__init(self, width, height)
   
   self:SetColor(Color(0.15, 0.15, 0.15, 1))
 
@@ -33,11 +33,11 @@ function Slider:BarDragEnded()
 
   if(self.NoValueChangedWhileDraging) then
     if(self.ConfigBinding) then
-	    self.ConfigBinding:SetValue(self.Value)
-	  end
-		
-	  self:FireEvent(self.ValueChanged, self.Value)
-	end
+      self.ConfigBinding:SetValue(self.Value)
+    end
+    
+    self:FireEvent(self.ValueChanged, self.Value)
+  end
 end
 
 
@@ -54,9 +54,9 @@ function Slider:InteralSetValue(value, fromSlider, fromInput)
   self.Value = Clamp(value, self.MinValue, self.MaxValue)
 
   if(not fromSlider) then
-		self.Bar:SetValuePosition((self.Value-self.MinValue)/self.Range)
-	end
-	
+    self.Bar:SetValuePosition((self.Value-self.MinValue)/self.Range)
+  end
+  
   if(self.AmountText) then
     local text = (self.ValueConverter and self.ValueConverter(self.Value)) or string.format("%.2f", self.Value)
     
@@ -65,8 +65,8 @@ function Slider:InteralSetValue(value, fromSlider, fromInput)
 
   if(not self.NoValueChangedWhileDraging or not fromSlider) then
     if(not fromInput and self.ConfigBinding and fromSlider) then
-	   self.ConfigBinding:SetValue(self.Value)
-	  end
+     self.ConfigBinding:SetValue(self.Value)
+    end
 
     if(not fromInput) then
       self:FireEvent(self.ValueChanged, self.Value, fromSlider)

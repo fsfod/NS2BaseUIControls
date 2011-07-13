@@ -124,7 +124,7 @@ function MouseStateTracker:ArmoryBuy_Hook(objSelf, player, elapsedTime, useAttac
   end
   
   if(player.showingBuyMenu and not self.OwnerToState["buymenu"]) then
-  	self:PushState("buymenu", true, false, false)
+    self:PushState("buymenu", true, false, false)
   end
 end
 
@@ -263,16 +263,16 @@ function MouseStateTracker:PushState(ownerName, mouseVisble, mouseCaptured, mous
   
   local exists = self.OwnerToState[ownerName]
 
-	if(exists) then
-	  local index = self:GetStateIndex(ownerName) or -1
-	  
-		Print("MouseStateTracker:PushState Warning found %s state already in stack at index %i", ownerName, index)
+  if(exists) then
+    local index = self:GetStateIndex(ownerName) or -1
+    
+    Print("MouseStateTracker:PushState Warning found %s state already in stack at index %i", ownerName, index)
     
     
     if(index ~= -1 ) then
       table.remove(self.StateStack, index)
-		end
-	end
+    end
+  end
 
   local state = {
     Owner = ownerName,

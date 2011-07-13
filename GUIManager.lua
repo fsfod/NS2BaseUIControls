@@ -24,28 +24,28 @@ end
 
 function GUIManager:_SharedCreate(scriptName)
   
-	local creationFunction = _G[scriptName]
-		
-	if(not creationFunction) then
-		Script.Load("lua/" .. scriptName .. ".lua")
-		creationFunction = _G[scriptName]
+  local creationFunction = _G[scriptName]
+    
+  if(not creationFunction) then
+    Script.Load("lua/" .. scriptName .. ".lua")
+    creationFunction = _G[scriptName]
   end
 
-	local newScript 
+  local newScript 
 
-	if creationFunction == nil then
-		Shared.Message("Error: Failed to load GUI script named " .. scriptName)
-	 return nil
-	end
-	
+  if creationFunction == nil then
+    Shared.Message("Error: Failed to load GUI script named " .. scriptName)
+   return nil
+  end
+  
   local success, newScript = SafeCall(creationFunction)
-	  
-	if(not success) then
-	  return nil
-	end 
-	
-	newScript._scriptName = scriptName
-	newScript:Initialize()
+    
+  if(not success) then
+    return nil
+  end 
+  
+  newScript._scriptName = scriptName
+  newScript:Initialize()
 
   if(newScript.HitRec or newScript.OnClick or newScript.OnEnter) then
     self:AddFrame(newScript)
@@ -56,21 +56,21 @@ end
 
 function GUIManager:AddFrame(frame)
 
-	if(not frame.HitRec) then
-		error("frame needs to contain a HitRec")
-	end
+  if(not frame.HitRec) then
+    error("frame needs to contain a HitRec")
+  end
 
-	self.AddedFrames[frame] = true
-	frame.Parent = UIParent
-	
+  self.AddedFrames[frame] = true
+  frame.Parent = UIParent
+  
 
-	frame:UpdateHitRec()
+  frame:UpdateHitRec()
 
   if(frame.OnParentSet) then
     self:OnParentSet()
   end
 
-	table.insert(self.TopLevelFrames, frame)
+  table.insert(self.TopLevelFrames, frame)
 end
 
 function GUIManager:RemoveFrame(frame, destroyFrame)  
@@ -100,17 +100,17 @@ function GUIManager:CheckRemoveFrame(frame)
     self:ClearMouseOver()
   end
 
-	if(frame.RootFrame or frame.HitRec) then
-		
-		for index, frm in ipairs(self.TopLevelFrames) do
-			if(frame == frm ) then
-				table.remove(self.TopLevelFrames, index)
-			 return true
-			end
-		end
-	end
-	
-	return false
+  if(frame.RootFrame or frame.HitRec) then
+    
+    for index, frm in ipairs(self.TopLevelFrames) do
+      if(frame == frm ) then
+        table.remove(self.TopLevelFrames, index)
+       return true
+      end
+    end
+  end
+  
+  return false
 end
 
 function GUIManager:SendKeyEvent(key, down, isRepeat)
@@ -169,12 +169,12 @@ function GUIManager:MouseHidden()
 
   self:ClearMouseOver()
 
-	if(self.ClickedFrame) then
-		self.ClickedFrame:OnClick(self.ClickedButton, false)
-		self.ClickedFrame = nil
-	end
-	
-	self:ClearFocus()
+  if(self.ClickedFrame) then
+    self.ClickedFrame:OnClick(self.ClickedButton, false)
+    self.ClickedFrame = nil
+  end
+  
+  self:ClearFocus()
 end
 
 
@@ -192,13 +192,13 @@ function GUIManager:DoOnClick(frame, x, y)
 end
 
 function GUIManager:MouseClick(button, down)
-	PROFILE("MouseTracker:MouseClick")
+  PROFILE("MouseTracker:MouseClick")
 
   --even trigger a mouseup if the click is a from a diffent button
-	if(self.ClickedFrame) then
-		self.ClickedFrame:OnClick(self.ClickedButton, false)
-		self.ClickedFrame = nil
-	end
+  if(self.ClickedFrame) then
+    self.ClickedFrame:OnClick(self.ClickedButton, false)
+    self.ClickedFrame = nil
+  end
 
   if(not down) then
     return
@@ -236,15 +236,15 @@ function GUIManager:MouseClick(button, down)
   local clicked = self.ClickedFrame
   
   if(clicked) then
-		if(clicked.OnFocusGained) then
-			self:SetFocus(clicked)
-		else
-			if(clearFocus) then
-				self:ClearFocus()
-			end
-		end
-	else
-	  self:ClearFocus()
+    if(clicked.OnFocusGained) then
+      self:SetFocus(clicked)
+    else
+      if(clearFocus) then
+        self:ClearFocus()
+      end
+    end
+  else
+    self:ClearFocus()
   end
   
   return ClickInFrame
@@ -262,11 +262,11 @@ function GUIManager:ClearMouseOver()
 
   if(current) then
     if(current.OnLeave) then
-	    SafeCall(current.OnLeave, current)
-	  end
-	  
-	  current.Entered = false
-	end
+      SafeCall(current.OnLeave, current)
+    end
+    
+    current.Entered = false
+  end
 
   self.CurrentMouseOver = nil
 end
@@ -402,32 +402,32 @@ function GUIManager:DoOnEnter(frame, x, y)
 end
 
 function GUIManager:OnMouseMove()
-	PROFILE("MouseTracker:OnMouseMove")
+  PROFILE("MouseTracker:OnMouseMove")
 
   local x,y = Client.GetCursorPosScreen()
-	
-	if(self.CurrentMouseOver and not self.ActiveDrag) then
-	  local Current = self.CurrentMouseOver
-	  
-	  --a frame is required to have there HitRec in the same positon as the value returned by there GetScreenPosition function
-	  local position = Current:GetScreenPosition()
-	  local hitRec = Current.HitRec
+  
+  if(self.CurrentMouseOver and not self.ActiveDrag) then
+    local Current = self.CurrentMouseOver
+    
+    --a frame is required to have there HitRec in the same positon as the value returned by there GetScreenPosition function
+    local position = Current:GetScreenPosition()
+    local hitRec = Current.HitRec
 
     --use the hit rectangle to get the size of the frame
-	  local right = position.x+(hitRec[3]-hitRec[1]) 
-	  local bottom = position.y+(hitRec[4]-hitRec[2])
+    local right = position.x+(hitRec[3]-hitRec[1]) 
+    local bottom = position.y+(hitRec[4]-hitRec[2])
 
-	  if(not Current:IsShown() or x < position.x or y < position.y or x > right or y > bottom) then
-	    self:ClearMouseOver()
-	  end
-	end
+    if(not Current:IsShown() or x < position.x or y < position.y or x > right or y > bottom) then
+      self:ClearMouseOver()
+    end
+  end
 
   --fire mouse move after we've done OnLeave but before OnEnter so OnEnter/OnLeave frame code is more sane 
-	self.Callbacks:Fire("MouseMove", x, y)
+  self.Callbacks:Fire("MouseMove", x, y)
 
-	if(not self.CurrentMouseOver and not self.ActiveDrag) then
-	  self:TraverseFrames(self:GetFrameList(), x, y, 2, self.DoOnEnter)
-	end
+  if(not self.CurrentMouseOver and not self.ActiveDrag) then
+    self:TraverseFrames(self:GetFrameList(), x, y, 2, self.DoOnEnter)
+  end
 end
 
 
@@ -442,10 +442,10 @@ end
 function GUIManager:DragStarted(frame, button)
   
   if(self.ActiveDrag) then
-		error("DragStarted: There is another drag already active")
-	else
-	  self.ActiveDrag = frame
-	end
+    error("DragStarted: There is another drag already active")
+  else
+    self.ActiveDrag = frame
+  end
 end
 
 function GUIManager:DragStopped()
