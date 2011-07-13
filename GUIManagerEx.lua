@@ -103,7 +103,7 @@ function GUIManagerEx.SendKeyEvent(handle, self, key, down)
 		  self.WheelDirection = direction
 		  
 		  local x,y = Client.GetCursorPosScreen()
-		  self:TraverseFrames(self:GetFrameList(), x, y, 4, self.DoFrameOnMouseWheel)
+		  self:TraverseFrames(self:GetFrameList(), x, y, 4, self.DoOnMouseWheel)
 		  
 		  
 		  if(direction == 1) then

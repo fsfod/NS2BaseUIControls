@@ -178,25 +178,17 @@ function GUIManager:MouseHidden()
 end
 
 
-function GUIManager:DoClick(frame, x, y)
-  local result
+function GUIManager:DoOnClick(frame, x, y)
 
-  if(frame.TraverseChildFirst and frame.ChildControls) then
-    result = self:TraverseFrames(frame.ChildControls, x, y, 1, self.DoClick)    
+  local result = frame:OnClick(self.ClickedButton, true, x, y)
+  
+  --if the frames OnClick function didn't return anything we treat that as they accepted the click
+  if(result == nil or result == true) then
+    self.ClickedFrame = frame
+   return true
   end
 
-  if(not result) then
-    result = frame:OnClick(self.ClickedButton, true, x, y)
-    
-    --if the frames OnClick function didn't return anything we treat that as they accepted the click
-    if(result == nil or result == true) then
-      self.ClickedFrame = frame
-      
-      result = true
-    end
-  end
-
-  return result
+  return false
 end
 
 function GUIManager:MouseClick(button, down)
@@ -233,7 +225,7 @@ function GUIManager:MouseClick(button, down)
   local ClickInFrame = false
   local prevClicked = self.ClickedFrame
 
-  self:TraverseFrames(self:GetFrameList(), MouseX, MouseY, 1, self.DoClick)
+  self:TraverseFrames(self:GetFrameList(), MouseX, MouseY, 1, self.DoOnClick)
   
   //self:DoFrameOnClick(self.MainMenu, button, MouseX, MouseY) 
   
@@ -376,27 +368,21 @@ function GUIManager:IsMouseStillInFrame(frame)
 end
 
 
-function GUIManager:DoFrameOnMouseWheel(frame, x, y)
-  --try all the child controls first if the frame has requested it
-  if(frame.TraverseChildFirst and frame.ChildControls) then
-    result = self:TraverseFrames(frame.ChildControls, x, y, 4, self.DoFrameOnMouseWheel)
-  end
+function GUIManager:DoOnMouseWheel(frame, x, y)
 
-  if(not result and self.WheelDirection) then
-    result = frame:OnMouseWheel(self.WheelDirection, x, y)
+  local result = frame:OnMouseWheel(self.WheelDirection, x, y)
   
-
-    if(result == nil or result == true) then
-      self.WheelDirection = nil
+  --if the frames OnEnter function didn't return anything we treat that as they accepted the Enter event
+  if(result == nil or result == true) then
+    self.WheelDirection = nil
     
-      return true
-    end
+    return true
   end
 
   return false
 end
 
-function GUIManager:DoFrameOnEnter(frame, x, y)
+function GUIManager:DoOnEnter(frame, x, y)
 
   if(self.CurrentMouseOver) then
     error("GUIManager:DoFrameOnEnter found CurrentMouseOver still set")
@@ -440,7 +426,7 @@ function GUIManager:OnMouseMove()
 	self.Callbacks:Fire("MouseMove", x, y)
 
 	if(not self.CurrentMouseOver and not self.ActiveDrag) then
-	  self:TraverseFrames(self:GetFrameList(), x, y, 2, self.DoFrameOnEnter)
+	  self:TraverseFrames(self:GetFrameList(), x, y, 2, self.DoOnEnter)
 	end
 end
 
