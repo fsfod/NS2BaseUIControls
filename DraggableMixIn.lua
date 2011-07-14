@@ -51,7 +51,7 @@ function Draggable:DragStartUp()
   self.DragStartPos = {Client.GetCursorPosScreen()}
   self.DragStage = 0
   
-  GUIManager.RegisterCallback(self, "MouseMove", "DragMouseMove")
+  self:RegisterForMouseMove("DragMouseMove")
 end
 
 function Draggable:OnDragStart()
@@ -61,7 +61,7 @@ function Draggable:OnDragStart()
   local vec = self.RootFrame:GetPosition()
   self.FrameStartPos = {vec.x, vec.y}
   
-  GetGUIManager():DragStarted(self, self.DragButton)
+  self:GetGUIManager():DragStarted(self, self.DragButton)
 end
 
 function Draggable:DragMouseMove(x,y)
@@ -77,7 +77,7 @@ function Draggable:DragMouseMove(x,y)
 
     self.DragRoot:SetPosition(self.DragPos)
   else
-    GUIManager.UnregisterCallback(self, "MouseMove")
+    self:UnregisterForMouseMove()
   end
 end
 
@@ -85,10 +85,10 @@ function Draggable:OnDragStop(dontSetPositon)
   
   local x,y = Client.GetCursorPosScreen()
   
-  GetGUIManager():DragStopped(self)
+  self:GetGUIManager():DragStopped(self)
   self.IsDragging = false
   
-  GUIManager.UnregisterCallback(self, "MouseMove")
+  self:UnregisterForMouseMove()
 
   if(not dontSetPositon and (self.DragStartPos[1] ~= x or self.DragStartPos[2] ~= y)) then
     self:SetPosition(self.DragPos)

@@ -300,7 +300,7 @@ function SliderButton:DragMouseMove(x,y)
         self.Parent:OnSliderMoved(self.CurrentValuePositon/self.MaxValuePos)
       end
   else
-    GUIManager.UnregisterCallback(self, "MouseMove")
+    self:UnregisterForMouseMove()
   end
 end
 

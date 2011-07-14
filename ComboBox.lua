@@ -146,7 +146,7 @@ function ComboBox:ToggleDropDown(down)
   if(not self.DropDownOpen) then
     local dropdown
     
-    if(GetGUIManager():IsMainMenuChild(self)) then
+    if( self:GetGUIManager():IsMainMenuChild(self)) then
       MenuDropDown = MenuDropDown or DropDownMenu(self:GetWidth(), self:GetHeight()*7)
       self.DropDown = MenuDropDown
     else
@@ -186,14 +186,10 @@ end
 
 function DropDownMenu:CheckUnparent()
   
-  local GUIMgr = GetGUIManager()
+  local GUIMgr =  self:GetGUIManager()
 
   if(self.Owner) then
-    if(GUIMgr:IsMainMenuChild(owner)) then
-      self.Parent:RemoveChild(self)
-    else
-      GUIMgr:CheckRemoveFrame(self)
-    end
+    GUIMgr:RemoveFrame(self)
   end
 end
 
@@ -205,7 +201,7 @@ function DropDownMenu:Open(owner, position, list, index)
   self.ViewStart = 1
 
   local height = #list*self.ItemDistance
-  local x,y = GUIManager.GetSpaceToScreenEdges(position)
+  local x,y = self:GetGUIManager().GetSpaceToScreenEdges(position)
 
   --make sure our list doesn't run offscreen
   if(height > y) then
@@ -214,20 +210,22 @@ function DropDownMenu:Open(owner, position, list, index)
   self:SetPosition(position)
   self:SetSize(owner:GetWidth(), height)
 
-  local GUIMgr = GetGUIManager()
+  local GUIMgr = self:GetGUIManager()
 
   if(self.Hidden) then
     GUIMgr:AddFrame(self)
-    GUIMgr:SetFocus(self)
+    
     self:Show()
+    GUIMgr:SetFocus(self)
   else
-    GUIManager.UnregisterCallback(self, "MouseMove")
+    self:UnregisterForMouseMove()
   end
 
+  /*
   if(GUIMgr:IsMainMenuChild(owner)) then
     GUIMgr:ParentToMainMenu(self)
   end
-  
+  */
   self:Show()
   
   self:SetDataList(list)
@@ -243,7 +241,7 @@ function DropDownMenu:Close(fromClick)
     return
   end
   
-  GUIManager.UnregisterCallback(self, "MouseMove")
+  self:UnregisterForMouseMove()
   
   self:Hide()
     
@@ -264,7 +262,7 @@ function DropDownMenu:Update()
 end
 
 function DropDownMenu:OnEnter()
-  GUIManager.RegisterCallback(self, "MouseMove")
+  self:RegisterForMouseMove()
 end
 
 function DropDownMenu:MouseMove(x, y)
@@ -279,5 +277,5 @@ function DropDownMenu:MouseMove(x, y)
 end
 
 function DropDownMenu:OnLeave()
-  GUIManager.UnregisterCallback(self, "MouseMove")
+  self:UnregisterForMouseMove()
 end

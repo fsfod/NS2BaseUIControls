@@ -94,11 +94,11 @@ end
 function BaseControl:Uninitialize()
 
   if(self.Focused) then
-    GetGUIManager():ClearFocusIfFrame(self)
+    self:GetGUIManager():ClearFocusIfFrame(self)
   end
 
   if(self.Entered) then
-    GetGUIManager():ClearMouseOver()
+    self:GetGUIManager():ClearMouseOver()
   end
   
   if(self.ChildControls) then
@@ -126,6 +126,10 @@ function BaseControl:SetRootFrame(frame)
   self.RootFrame = frame
   self.Size = Vector(frame:GetSize())
   self.Position = Vector(frame:GetPosition())
+end
+
+function BaseControl:GetGUIManager()
+  return GUIMenuManager
 end
 
 function BaseControl:SetTexture(texture, x1, y1, x2, y2)
@@ -520,12 +524,20 @@ function BaseControl:Hide()
   self.Hidden = true
   
   if(self.Focused) then
-    GetGUIManager():ClearFocus()
+     self:GetGUIManager():ClearFocus()
   end
   
   if(self.RootFrame) then
    self.RootFrame:SetIsVisible(false)
   end
+end
+
+function BaseControl:RegisterForMouseMove(functionName)
+  self:GetGUIManager().RegisterCallback(self, "MouseMove", functionName)
+end
+
+function BaseControl:UnregisterForMouseMove()
+  self:GetGUIManager().UnregisterCallback(self, "MouseMove")
 end
 
 function BaseControl:IsInParentChain(parent)

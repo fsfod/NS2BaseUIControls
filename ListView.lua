@@ -327,7 +327,7 @@ function ListView:OnClick(button, down, x,y)
 
     if(not item.OnClick) then
       if(self.ItemDblClicked and self.LastClickTime and self.LastClickedIndex == DataIndex and 
-        (Client.GetTime()-self.LastClickTime) < GUIManager.DblClickSpeed) then
+        (Client.GetTime()-self.LastClickTime) < self:GetGUIManager().DblClickSpeed) then
 
         self:FireEvent(self.ItemDblClicked, self.ItemDataList[DataIndex], DataIndex)
       end

@@ -56,7 +56,7 @@ function TextBox:OnFocusGained()
 end
 
 function TextBox:SetFocus()
-  GetGUIManager():SetFocus(self)
+  self:GetGUIManager():SetFocus(self)
 end
 
 function TextBox:OnFocusLost()
@@ -221,11 +221,11 @@ function TextBox:SendKeyEvent(key, down)
       self:UpdateCarret()
     elseif(key == InputKey.Return and not self.IgnoreReturn) then
       if(self.Focused) then
-        GetGUIManager():ClearFocus()
+        self:GetGUIManager():ClearFocus()
       end
     elseif key == InputKey.Escape then
       if(self.Focused) then
-        GetGUIManager():ClearFocus()
+        self:GetGUIManager():ClearFocus()
       end
     else
       return false
