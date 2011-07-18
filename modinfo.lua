@@ -7,6 +7,8 @@ MountSource = true
 ScriptList = {
   "UIHelpers.lua",
   "MouseStateTracker.lua",
+  "BaseGUIManager.lua",
+  "GUIMenuManager.lua",
   "GUIManagerEx.lua",
   "ConfigDataBinder.lua",
   "BaseControl.lua",
@@ -14,6 +16,7 @@ ScriptList = {
   "DraggableMixIn.lua",
   "ControlStyles.lua",
   "BorderedSquare.lua",
+  "MenuButton.lua",
   "ScrollBar.lua",
   "Slider.lua",
   "ListView.lua",

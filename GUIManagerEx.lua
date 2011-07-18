@@ -17,6 +17,8 @@ function GUIManagerEx:OnLoad()
   self:HookFileLoadFinished("lua/Skulk_Client.lua", "SetSkulkViewTilt")
   
   MouseStateTracker:Init()
+  
+  GUIMenuManager:Initialize()
 end
 
 function GUIManagerEx:SetSkulkViewTilt()
@@ -25,7 +27,7 @@ end
 
 function GUIManagerEx:SetHooks()
   ClassHooker:SetClassCreatedIn("GUIManager", "lua/GUIManager.lua")
-  self:HookClassFunction("GUIManager", "Initialize")
+  //self:HookClassFunction("GUIManager", "Initialize")
   self:RawHookClassFunction("GUIManager", "SendKeyEvent", self.SendKeyEvent):SetPassHandle(true)
   self:HookClassFunction("GUIManager", "SendCharacterEvent", self.SendCharacterEvent):SetPassHandle(true)
   self:HookClassFunction("GUIManager", "Update")
@@ -37,14 +39,6 @@ function GUIManagerEx:SetHooks()
   //self:HookLibraryFunction(HookType.Post, "Client", "SetCursor", function(cursor) Shared.Message(tostring(cursor or "nil")) end)
 end
 
-function GUIManagerEx:Initialize(self)
-  self.TopLevelFrames = {}
-  self.AddedFrames = {}
-  self.KeyDown = {}
-  
-  GUIManager.Callbacks = CallbackHandler:New(GUIManager)
-  GUIManager.DblClickSpeed = 0.5
-end
 
 function GUIManagerEx:DestroyGUIScript(self, frame)
   self:CheckRemoveFrame(frame)
@@ -72,19 +66,20 @@ local NoUpEvent = {
   [InputKey.MouseY] = true,
 }
 
+local KeyDown = {}
+
 --self is really GUIManager
 function GUIManagerEx.SendKeyEvent(handle, self, key, down)
   PROFILE("MouseTracker:SendKeyEvent")
 
-  if(not Client.GetMouseVisible()) then
-    
-  end
   local IsRepeat = false
 
   if(not NoUpEvent[key]) then
-    IsRepeat = self.KeyDown[key] and down
-    self.KeyDown[key] = down
+    IsRepeat = KeyDown[key] and down
+    KeyDown[key] = down
   end
+
+  local eventHandled, wheelDirection
 
   if(key == InputKey.MouseZ and GetWheelMessages) then
     if(WheelMessages == nil) then
@@ -100,11 +95,7 @@ function GUIManagerEx.SendKeyEvent(handle, self, key, down)
       table.remove(WheelMessages, 1)
       
       
-      self.WheelDirection = direction
-      
-      local x,y = Client.GetCursorPosScreen()
-      self:TraverseFrames(self:GetFrameList(), x, y, 4, self.DoOnMouseWheel)
-      
+      wheelDirection = direction     
       
       if(direction == 1) then
         //RawPrint("WheelUp")
@@ -113,46 +104,21 @@ function GUIManagerEx.SendKeyEvent(handle, self, key, down)
       else
        // RawPrint(direction or "nil")
       end
+    else
+      //just eat any extra wheel events this frame
+      //even if windows is configured to 1 scroll for 1 wheel click we can still get more than 1 scroll for a single scroll event if the wheel is spinning fast enough
+      eventHandled = true
     end
   end
 
-  local focus = self.FocusedFrame
-  local eventHandled = false
-  
-  if(focus and focus.SendKeyEvent and focus:SendKeyEvent(key, down, IsRepeat)) then
-    eventHandled = true
-  end
+  eventHandled = eventHandled or GUIMenuManager:SendKeyEvent(key, down, IsRepeat, wheelDirection) //or GameGUIManager:SendKeyEvent(key, down, IsRepeat) 
 
-  if(key == InputKey.MouseX or key == InputKey.MouseY) then
-    self.MouseMoved = true
-   return key, down
-  end
-
-  if(self.EatKeyUp == key) then
-    self.EatKeyUp = nil
-   eventHandled = true
-  end
-
-  local IsClick = (key == InputKey.MouseButton0 or key == InputKey.MouseButton1 or key == InputKey.MouseButton3)
-  local ProcessClick = true
-
-  //hack to handle when the buy menu is open
-  if(IsClick and (not MainMenuMod or not MainMenuMod:IsMenuOpen())) then
-    local player = Client.GetLocalPlayer()
-    
-    ProcessClick = not player or not (player.buyMenu or player.showingBuyMenu)
-  end
-
-  if(not eventHandled and IsClick and ProcessClick) then
-    eventHandled = self:MouseClick(key, down)
-  end
-    
   if(eventHandled) then
     handle:BlockOrignalCall()
     handle:SetReturn(true)
   end
   
-  return key, down, IsRepeat
+  return key, down, IsRepeat, wheelDirection
 end
 
 function GUIManagerEx.SendCharacterEvent(handle, self, ...)
