@@ -129,7 +129,15 @@ function BaseControl:SetRootFrame(frame)
 end
 
 function BaseControl:GetGUIManager()
-  return GUIMenuManager
+  
+  if(not self.CachedGUIManager) then
+    
+    assert(self.Parent, "Unable to get the correct GUIManager for the control because it has no parent")
+    
+    self.CachedGUIManager = self.Parent:GetGUIManager()
+  end
+  
+  return self.CachedGUIManager
 end
 
 function BaseControl:SetTexture(texture, x1, y1, x2, y2)

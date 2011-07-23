@@ -12,50 +12,84 @@ end
 
 function GUIManagerEx:OnLoad()
   self:SetHooks()
-  self:LoadScriptAfter("lua/GUIManager.lua", "GUIManager.lua")
+  
+  Event.Hook("UpdateClient", function() self:Update() end)
   
   self:HookFileLoadFinished("lua/Skulk_Client.lua", "SetSkulkViewTilt")
   
   MouseStateTracker:Init()
   
   GUIMenuManager:Initialize()
+  GameGUIManager:Initialize()
 end
 
 function GUIManagerEx:SetSkulkViewTilt()
   OnCommandSkulkViewTilt(Client.GetOptionBoolean("DisableSkulkViewTilt", false) and "false")
 end
 
+local function CheckLoadedAndType(scriptName)
+ local frameClass = _G[scriptName]
+
+  if(not frameClass) then
+    Script.Load("lua/" .. scriptName .. ".lua")
+    frameClass = _G[scriptName]
+  end
+
+  return frameClass and frameClass:isa("BaseControl")
+end
+
 function GUIManagerEx:SetHooks()
   ClassHooker:SetClassCreatedIn("GUIManager", "lua/GUIManager.lua")
-  //self:HookClassFunction("GUIManager", "Initialize")
+
   self:RawHookClassFunction("GUIManager", "SendKeyEvent", self.SendKeyEvent):SetPassHandle(true)
   self:HookClassFunction("GUIManager", "SendCharacterEvent", self.SendCharacterEvent):SetPassHandle(true)
-  self:HookClassFunction("GUIManager", "Update")
-  
-  //self:ReplaceClassFunction("GUIManager", "_SharedCreate")
-  self:HookClassFunction("GUIManager", "DestroyGUIScript")
-  self:ReplaceClassFunction("GUIManager", "DestroyGUIScriptSingle")
-  
-  //self:HookLibraryFunction(HookType.Post, "Client", "SetCursor", function(cursor) Shared.Message(tostring(cursor or "nil")) end)
-end
 
-
-function GUIManagerEx:DestroyGUIScript(self, frame)
-  self:CheckRemoveFrame(frame)
-end
-
-function GUIManagerEx:DestroyGUIScriptSingle(self, scriptName)
+  self:HookClassFunction("GUIManager", "CreateGUIScript"):SetPassHandle(true)
+  self:HookClassFunction("GUIManager", "CreateGUIScriptSingle"):SetPassHandle(true)
   
-  for index, script in ipairs(self.scriptsSingle) do
-    if script[2] == scriptName then
-      if table.removevalue(self.scriptsSingle, script) then
-        self:CheckRemoveFrame(self, script[1])
-        SafeCall(script[1].Uninitialize, script[1])
-       break
-      end
+  self:HookClassFunction("GUIManager", "GetGUIScriptSingle", function(handle, self, scriptName) 
+
+    if(CheckLoadedAndType(scriptName)) then
+      handle:BlockOrignalCall()
+      handle:SetReturn(GameGUIManager.SingleInstance[scriptName])
     end
-  end
+  end):SetPassHandle(true)
+
+  self:HookClassFunction("GUIManager", "DestroyGUIScript", function(self, frame)
+    
+    if(frame and frame:isa("BaseControl")) then
+      GameGUIManager:RemoveFrame(frame)
+    end
+  end)
   
+  self:HookClassFunction("GUIManager", "DestroyGUIScriptSingle"):SetPassHandle(true)
+end
+
+function GUIManagerEx:CreateGUIScript(handle, self, scriptName)
+
+  if(CheckLoadedAndType(scriptName)) then
+    handle:BlockOrignalCall()
+
+    handle:SetReturn(GameGUIManager:CreateFrame(scriptName))
+  end
+end
+
+function GUIManagerEx:CreateGUIScriptSingle(handle, self, scriptName)
+
+  if(CheckLoadedAndType(scriptName)) then
+    handle:BlockOrignalCall()
+    handle:SetReturn(GameGUIManager:GetSingleInstanceControl(scriptName))
+  end
+end
+
+function GUIManagerEx:DestroyGUIScriptSingle(handle, self, scriptName)
+
+  if(CheckLoadedAndType(scriptName)) then
+    GameGUIManager:DestroySingleInstance(scriptName)
+
+    handle:BlockOrignalCall()
+    handle:SetReturn(true)
+  end
 end
 
 local WheelMessages = nil
@@ -94,7 +128,11 @@ function GUIManagerEx.SendKeyEvent(handle, self, key, down)
       local direction = WheelMessages[1]
       table.remove(WheelMessages, 1)
       
-      
+      for i,dir in ipairs(WheelMessages) do
+        if((dir < 0 and direction < 0) or (dir > 0 and direction > 0)) then
+          direction = direction+dir
+        end
+      end
       wheelDirection = direction     
       
       if(direction == 1) then
@@ -111,7 +149,7 @@ function GUIManagerEx.SendKeyEvent(handle, self, key, down)
     end
   end
 
-  eventHandled = eventHandled or GUIMenuManager:SendKeyEvent(key, down, IsRepeat, wheelDirection) //or GameGUIManager:SendKeyEvent(key, down, IsRepeat) 
+  eventHandled = eventHandled or GUIMenuManager:SendKeyEvent(key, down, IsRepeat, wheelDirection) or GameGUIManager:SendKeyEvent(key, down, IsRepeat, wheelDirection) 
 
   if(eventHandled) then
     handle:BlockOrignalCall()
@@ -123,40 +161,14 @@ end
 
 function GUIManagerEx.SendCharacterEvent(handle, self, ...)
 
-  local focus = self.FocusedFrame
-  
-  if(focus and focus.SendCharacterEvent and focus:SendCharacterEvent(...)) then
+  if(GUIMenuManager:SendCharacterEvent(...) or GameGUIManager:SendCharacterEvent(...)) then
     handle:BlockOrignalCall()
     handle:SetReturn(true)
   end
 end
 
-function GUIManagerEx:Update(self, time)
-  
+function GUIManagerEx:Update()
   WheelMessages = nil
-  
-  if(self.FocusedFrame and not self.FocusedFrame:IsShown()) then
-    self:ClearFocus()
-  end
-
-  local MouseVisible = Client.GetMouseVisible()
-  
-  if(MouseVisible) then
-    if(not self.MouseIsVisible) then
-      self:MouseShown()
-      self.MouseIsVisible = true
-    end
-    
-    if(self.MouseMoved) then
-      self:OnMouseMove()
-      self.MouseMoved = false
-    end
-  else
-    if(self.MouseIsVisible) then
-      self:MouseHidden()
-      self.MouseIsVisible = false
-    end
-  end
 end
 
 if(HotReload) then

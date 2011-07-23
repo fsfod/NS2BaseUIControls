@@ -98,6 +98,7 @@ end
 function Draggable:CancelDrag()
   if(self.IsDragging) then
     self:OnDragStop()
+    self.DragStage = -1
   end
 end
 
@@ -106,7 +107,11 @@ function Draggable:Mixin(tbl)
   tbl.OnDragStart = self.OnDragStart
   tbl.DragStartUp = self.DragStartUp
   tbl.OnDragStop = self.OnDragStop
+  
   tbl.DragMouseMove = self.DragMouseMove
+  
+  tbl.CancelDrag = self.CancelDrag
+  
   tbl.SetRootFrame = self.SetRootFrame
   tbl.OnClick = self.OnClick  
 end

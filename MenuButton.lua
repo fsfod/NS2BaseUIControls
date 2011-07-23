@@ -37,6 +37,7 @@ function UIButton:Initialize(labelText, width, height)
 	
   local centerBg = GUIManager:CreateGraphicItem()
    centerBg:SetTexture("ui/ButtonBg.dds")
+   //centerBg:SetColor(Color(1, 1, 1, 1))
    centerBg:SetIsVisible(false)	 
 	self.CenterBg = centerBg
 	center:AddChild(centerBg)
@@ -78,7 +79,7 @@ function UIButton:SetLabel(label)
 end
 
 function UIButton:OnEnter()
-	self.CenterSquare:SetColor(Color(1, 1, 1, 1))
+	self.CenterSquare:SetColor(Color(0.1, 0.1, 0.1, 1))
 	self.CenterBg:SetIsVisible(true)
 	PlayerUI_PlayButtonEnterSound()
 end

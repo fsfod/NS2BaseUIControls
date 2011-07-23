@@ -185,11 +185,9 @@ function DropDownMenu:EntryPicked(data, index)
 end
 
 function DropDownMenu:CheckUnparent()
-  
-  local GUIMgr =  self:GetGUIManager()
 
-  if(self.Owner) then
-    GUIMgr:RemoveFrame(self)
+  if(self.Parent) then
+    self:GetGUIManager():RemoveFrame(self)
   end
 end
 
@@ -200,17 +198,18 @@ function DropDownMenu:Open(owner, position, list, index)
   self.Owner = owner
   self.ViewStart = 1
 
+  local GUIMgr = owner:GetGUIManager()
+
   local height = #list*self.ItemDistance
-  local x,y = self:GetGUIManager().GetSpaceToScreenEdges(position)
+  local x,y = GUIMgr:GetSpaceToScreenEdges(position)
 
   --make sure our list doesn't run offscreen
   if(height > y) then
     height = math.floor(y/self.ItemDistance)*self.ItemDistance
   end
+  
   self:SetPosition(position)
   self:SetSize(owner:GetWidth(), height)
-
-  local GUIMgr = self:GetGUIManager()
 
   if(self.Hidden) then
     GUIMgr:AddFrame(self)

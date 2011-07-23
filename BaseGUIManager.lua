@@ -9,8 +9,38 @@ local bor = bit.bor
 function BaseGUIManager:Initialize()
   Event.Hook("UpdateClient", function() self:Update() end)
 
+  Event.Hook("ResolutionChanged", function(...) self:OnResolutionChanged(...) end)
+
   self.Callbacks = CallbackHandler:New(self)  
   self.TopLevelFrames = {}
+  self.ClickedFrames = {}
+end
+
+function BaseGUIManager:CreateAnchorFrame(width, height, layer)
+  self.AnchorSize = Vector(width, height, 0)
+
+  local anchorFrame = GUI.CreateItem()
+    anchorFrame:SetColor(Color(0, 0, 0, 0))
+    anchorFrame:SetSize(self.AnchorSize)
+    anchorFrame:SetLayer(layer or 0)
+  self.AnchorFrame = anchorFrame
+end
+
+function BaseGUIManager:OnResolutionChanged(oldX, oldY, width, height)
+
+  if(self.AnchorSize) then
+    self.AnchorSize.x = width
+    self.AnchorSize.y = height
+  end
+
+  if(self.AnchorFrame) then
+    self.AnchorFrame:SetSize(self.AnchorSize)
+  end
+  
+  for _,frame in pairs(self.TopLevelFrames) do
+    frame:UpdatePosition()
+    frame:OnResolutionChanged(oldX, oldY, width, height)
+  end
 end
 
 function BaseGUIManager:SendKeyEvent(key, down, IsRepeat, wheelDirection)
@@ -19,14 +49,18 @@ function BaseGUIManager:SendKeyEvent(key, down, IsRepeat, wheelDirection)
     return false
   end
 
-  if(key == InputKey.MouseX or key == InputKey.MouseY) then
-    self.MouseMoved = true
+  if(key == InputKey.MouseX or key == InputKey.MouseY) then    
+    
+    if(not self.DoneMouseMove) then
+      self:OnMouseMove()
+      self.DoneMouseMove = true
+    end
+
    return false
   end
 
   if(key == InputKey.MouseButton0 or key == InputKey.MouseButton1 or key == InputKey.MouseButton3) then
-    self:MouseClick(key, down)
-   return true
+    return self:MouseClick(key, down)
   end
 
   local focus = self.FocusedFrame
@@ -72,24 +106,27 @@ function BaseGUIManager:Activate()
 end
 
 function BaseGUIManager:Deactivate()
-
   self.Active = false
 
-  local clicked =self.ClickedFrame 
-
-  if(clicked) then
-    SafeCall(clicked.OnClick, clicked, self.ClickedButton, false)
-		self.ClickedFrame = nil
-	end
-
-	self:ClearFocus()
-  
-  self:ClearMouseOver()
+  self:ClearStateData()
 end
 
-function BaseGUIManager:Update()
+function BaseGUIManager:ClearStateData()
   
-  if(not self:IsActive()) then
+  self:ClearMouseOver()
+
+  self:SendMouseUps()
+
+	self:ClearFocus()
+
+  self:CancelDrag()
+  
+  self.DoneMouseMove = false
+end
+
+function BaseGUIManager:Update(force)
+  
+  if(not force and not self:IsActive()) then
     return
   end
 
@@ -97,10 +134,7 @@ function BaseGUIManager:Update()
     self:ClearFocus()
   end
 
-  if(self.MouseMoved) then
-    self:OnMouseMove()
-    self.MouseMoved = false
-  end
+  self.DoneMouseMove = false
   
   self:UpdateFrames()
 end
@@ -139,6 +173,8 @@ end
 function BaseGUIManager:RemoveFrame(frame, destroyFrame)  
   assert(frame.Parent == self.TopLevelUIParent)
 
+  self:ClearStatesSetToFrame(frame)
+
   local removed = table.removevalue(self.TopLevelFrames, frame)
 
   if(self.AnchorFrame) then
@@ -154,6 +190,47 @@ function BaseGUIManager:RemoveFrame(frame, destroyFrame)
   end
 end
 
+function BaseGUIManager:ClearStatesSetToFrame(frame)
+  
+  assert(frame)
+  
+  if(frame == self.CurrentMouseOver) then
+    self:ClearMouseOver()
+  end
+
+  if(frame == self.FocusedFrame) then
+    self:ClearFocus()
+  end
+
+  
+  for button, clickedFrame in pairs(self.ClickedFrames) do
+    if(clickedFrame == frame) then
+      self:SendMouseUpClick(button)
+    end
+  end
+
+  if(frame == self.ActiveDrag) then
+    self:CancelDrag()
+  end
+end
+
+function BaseGUIManager:SendMouseUps()
+  
+  for button, frame in pairs(self.ClickedFrames) do
+    self:SendMouseUpClick(button)
+  end
+end
+
+function BaseGUIManager:SendMouseUpClick(button)
+
+  local clicked = self.ClickedFrames[button]
+
+	if(clicked) then
+	  SafeCall(clicked.OnClick, clicked, button, false)
+		self.ClickedFrames[button] = nil
+	end
+end
+
 function BaseGUIManager:DoOnClick(frame, x, y)
 
   local success, result = SafeCall(frame.OnClick, frame, self.ClickedButton, true, x, y)
@@ -164,7 +241,9 @@ function BaseGUIManager:DoOnClick(frame, x, y)
  
   --if the frames OnClick function didn't return anything we treat that as they accepted the click
   if(result == nil or result == true) then
-    self.ClickedFrame = frame
+    self.ClickedFrames[self.ClickedButton] = frame
+    
+    self.ClickedButton = nil
     
     return true
   end
@@ -172,17 +251,20 @@ function BaseGUIManager:DoOnClick(frame, x, y)
   return result
 end
 
+function BaseGUIManager:PassOnClickEvent(button, down)
+  return false
+end
+
 function BaseGUIManager:MouseClick(button, down)
 	PROFILE("MouseTracker:MouseClick")
 
   --even trigger a mouseup if the click is a from a diffent button
-	if(self.ClickedFrame) then
-		self.ClickedFrame:OnClick(self.ClickedButton, false)
-		self.ClickedFrame = nil
+	if(self.ClickedFrames[button]) then
+		self:SendMouseUpClick(button)
 	end
 
   if(not down) then
-    return
+    return not self:PassOnClickEvent(button, down)
   end
 
   self.ClickedButton = button
@@ -204,17 +286,17 @@ function BaseGUIManager:MouseClick(button, down)
   end
 
   local ClickInFrame = false
-  local prevClicked = self.ClickedFrame
+  local prevClicked = self.ClickedFrames
 
   self:TraverseFrames(self:GetFrameList(), MouseX, MouseY, 1, self.DoOnClick)
 
-  if(self.ClickedFrame and self.ClickedFrame ~= prevClicked) then
+  if(self.ClickedButton == nil) then
     ClickInFrame = true
   end
 
-  local clicked = self.ClickedFrame
+  local clicked = self.ClickedFrames
   
-  if(clicked) then
+  if(ClickInFrame) then
 		if(clicked.OnFocusGained) then
 			self:SetFocus(clicked)
 		else
@@ -226,7 +308,7 @@ function BaseGUIManager:MouseClick(button, down)
 	  self:ClearFocus()
   end
   
-  return ClickInFrame
+  return not self:PassOnClickEvent(button, down, ClickInFrame)
 end
 
 function BaseGUIManager:ClearFocusIfFrame(frame)
@@ -277,7 +359,7 @@ function BaseGUIManager:SetFocus(frame)
     SafeCall(frame.OnFocusGained, frame, old)
   end
   
-   frame.Focused = true
+  frame.Focused = true
 end
 
 function BaseGUIManager:IsFocusedSet()
@@ -433,7 +515,20 @@ function BaseGUIManager:GetFrameList()
   return self.TopLevelFrames
 end
 
+function BaseGUIManager:CancelDrag()
+
+  local draggedFrame = self.ActiveDrag
+
+  if(draggedFrame) then
+    SafeCall(draggedFrame.CancelDrag, draggedFrame)
+  end
+  
+  self.ActiveDrag = nil
+end
+
 function BaseGUIManager:DragStarted(frame, button)
+  
+  assert(frame.CancelDrag)
   
   if(self.ActiveDrag) then
 		error("DragStarted: There is another drag already active")
@@ -450,7 +545,7 @@ function BaseGUIManager:GetCursorPos()
   return Client.GetCursorPosScreen()
 end
 
-function BaseGUIManager.GetSpaceToScreenEdges(xOrVec, y)
+function BaseGUIManager:GetSpaceToScreenEdges(xOrVec, y)
   
   local xResult,yResult
   

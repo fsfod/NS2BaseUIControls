@@ -8,6 +8,7 @@ GUIMenuManager = {
   Name = "GUIMenuManager",
   MenuLayer = 20,
   DefaultMenuClass = "GUIMainMenu",
+  MessageBoxClass = "MessageBox",
 
   PageInfos = {},
   OptionPageList = {},
@@ -27,6 +28,7 @@ UIMenuParent = {
   GetYAnchor = function() return GUIItem.Top end,
   IsShown = function() return GUIMenuManager:IsMenuOpen() end,
   ChildFlags = 255,
+  GetGUIManager = function() return GUIMenuManager end,
 }
 
 GUIMenuManager.TopLevelUIParent = UIMenuParent
@@ -34,25 +36,18 @@ end
 
 function GUIMenuManager:Initialize()
   BaseGUIManager.Initialize(self)
-  
-  self.AchorSize = Vector(Client.GetScreenWidth(), Client.GetScreenHeight(), 0)
-  UIMenuParent.Size = self.AchorSize 
 
-  local anchorFrame = GUI.CreateItem()
+  self:CreateAnchorFrame(Client.GetScreenWidth(), Client.GetScreenHeight(), self.MenuLayer)
 
-  anchorFrame:SetColor(Color(0, 0, 0, 0))
-  anchorFrame:SetSize(self.AchorSize)
-  anchorFrame:SetLayer(self.MenuLayer)
-
-  self.AnchorFrame = anchorFrame
-  UIMenuParent.RootFrame = anchorFrame
+  UIMenuParent.Size = self.AnchorSize 
+  UIMenuParent.RootFrame = self.AnchorFrame
 end
 
 local msgBoxTable = {}
 
 function GUIMenuManager:GetFrameList()
-  if(self.MsgBox) then
-    msgBoxTable[1] = self.MsgBox
+  if(self.MessageBox) then
+    msgBoxTable[1] = self.MessageBox
 
    return msgBoxTable
   else
@@ -136,42 +131,76 @@ end
 
 GUIMenuManager.IsActive = GUIMenuManager.IsMenuOpen
 
-function GUIMenuManager:ShowMessage(Message, ...)  
-  local msgString = Message
+function GUIMenuManager:CreateMessageBox()
+  
+  local Creator = _G[self.MessageBoxClass]
+  
+  assert(Creator)
+  
+  local success, msgBoxOrError = pcall(Creator)
+  
+  if(not success) then
+    Print("Error while Creating MessageBox:%s", msgBoxOrError)
+   return
+  end
+    
+  self.IntenalMesssageBox = msgBoxOrError
+  
+  msgBoxOrError:Hide()
+  msgBoxOrError.Parent = UIMenuParent
+  
+  msgBoxOrError:SetPoint("Center", 0, 0, "Center")
+  
+  self.AnchorFrame:AddChild(msgBoxOrError.RootFrame)
+end
+
+function GUIMenuManager:GetDefaultMessageBox()
+  if(not self.IntenalMesssageBox) then
+    self:CreateMessageBox()
+  end
+  
+  return self.IntenalMesssageBox
+end
+
+function GUIMenuManager:ShowMessage(message, ...)  
   
   if(select('#', ...) ~= 0) then
-    msgString = string.format(Message, ...)
+    message = string.format(message, ...)
   end
 
-  self.MsgBox = self.DefaultMsgBox
-  self.MsgBox:Open("SimpleMsg", msgString)
+  self.MessageBox = self:GetDefaultMessageBox()
+  self.MessageBox:Open("SimpleMsg", message)
 end
 
-function GUIMenuManager:ShowMessageBox(msgBox)
+function GUIMenuManager:ShowMessageBox(messageBox)
+  assert(messageBox.Close)
+  
   self:CheckCloseMsgBox()
-  
-  if(msgBox.Parent ~= UIParent) then
-    self:ParentToMainMenu(msgBox)
+
+  if(messageBox.Parent ~= UIMenuParent) then 
+    messageBox.Parent = UIMenuParent
+    self.AnchorFrame:AddChild(messageBox.RootFrame)
   end
   
-  msgBox:SetPoint("Center", 0, 0, "Center")
+  messageBox:SetPoint("Center", 0, 0, "Center")
 
-  self.MsgBox = msgBox
-  msgBox:Show()
+  self.MessageBox = messageBox
+  messageBox:Show()
 end
 
-function GUIMenuManager:MsgBoxClosed()
-  assert(self.MsgBox.Hidden)
-  self.MsgBox = nil
+function GUIMenuManager:MesssageBoxClosed(messageBox)
+  assert(self.MessageBox.Hidden)
+  self.MessageBox = nil
 end
 
 function GUIMenuManager:CheckCloseMsgBox()
 
-  local msgBox = self.MsgBox
+  local msgBox = self.MessageBox
  
   if(msgBox) then
     SafeCall(msgBox, msgBox.Close)
-    msgBox = nil
+    
+    self.MessageBox = nil
   end
 end
 
@@ -202,11 +231,15 @@ function GUIMenuManager:ShowMenu(message)
     end
   end
   
+  self:Activate()
+  
   MouseStateTracker:SetMainMenuState()
   
   if(message) then
     self:ShowMessage(message)
   end
+  
+  GameGUIManager:Deactivate()
 end
 
 function GUIMenuManager:CloseMenu()
@@ -214,10 +247,14 @@ function GUIMenuManager:CloseMenu()
   if(self:IsMenuOpen()) then
     self.MainMenu:Hide()
   end
+  
+  self:Deactivate()
 
   MouseStateTracker:ClearMainMenuState()
 
   self:CheckCloseMsgBox()
+  
+  GameGUIManager:Activate()
 end
 
 function GUIMenuManager:ReturnToMainPage()
@@ -226,10 +263,10 @@ function GUIMenuManager:ReturnToMainPage()
   self.MainMenu:ReturnToMainPage()
 end
 
-function GUIMenuManager:SwitchToPage(page)
+function GUIMenuManager:ShowPage(page)
   self:CheckCloseMsgBox()
 
-  self.MainMenu:SwitchToPage(page)
+  self.MainMenu:ShowPage(page)
 end
 
 function GUIMenuManager:RecreatePage(pageName)
