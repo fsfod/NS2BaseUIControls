@@ -38,6 +38,7 @@ function TextBox:__init(width, height, fontsize, fontname)
 end
 
 function TextBox:OnClick()
+  self:SetFocus()
 end
 
 function TextBox:SetFont(fontname)
@@ -119,10 +120,8 @@ function TextBox:UpdateCarret()
   local offset
   
   if(self.CarretPos ~= currentTextLength) then
-     local tempText = currentText:sub(1, self.CarretPos)
-     self.Text:SetWideText(tempText)
-     
-     offset = self.Text:GetTextWidth(text)
+     local tempText = text:sub(1, self.CarretPos)//currentText:sub(1, self.CarretPos) no way to get the width of wide text or convert a 
+     offset = self.Text:GetTextWidth(tempText)
      
      self.Text:SetWideText(currentText)
   else
