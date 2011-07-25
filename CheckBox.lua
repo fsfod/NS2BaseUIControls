@@ -132,6 +132,15 @@ end
 
 function CheckButton:OnClick(button, down)
   if(down and button == InputKey.MouseButton0) then
-    self:SetCheckedState(self.Parent:OnCheckedToggled(self))
+    
+    local checked = self.Parent:OnCheckedToggled(self)
+    
+    self:SetCheckedState(checked)
+    
+    if(checked) then
+      PlayerUI_PlayCheckboxOnSound()
+    else
+      PlayerUI_PlayCheckboxOffSound()
+    end
   end
 end

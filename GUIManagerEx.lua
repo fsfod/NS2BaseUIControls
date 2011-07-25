@@ -117,11 +117,7 @@ function GUIManagerEx.SendKeyEvent(handle, self, key, down)
 
   if(key == InputKey.MouseZ and GetWheelMessages) then
     if(WheelMessages == nil) then
-     WheelMessages = GetWheelMessages() or false
-     
-      if(WheelMessages) then
-        RawPrint("WheelMsgs %i", #WheelMessages)
-      end
+      WheelMessages = GetWheelMessages() or false
     end
     
     if(WheelMessages and #WheelMessages ~= 0) then
@@ -133,15 +129,8 @@ function GUIManagerEx.SendKeyEvent(handle, self, key, down)
           direction = direction+dir
         end
       end
-      wheelDirection = direction     
       
-      if(direction == 1) then
-        //RawPrint("WheelUp")
-      elseif(direction == -1) then
-        //RawPrint("WheelDown")
-      else
-       // RawPrint(direction or "nil")
-      end
+      wheelDirection = direction     
     else
       //just eat any extra wheel events this frame
       //even if windows is configured to 1 scroll for 1 wheel click we can still get more than 1 scroll for a single scroll event if the wheel is spinning fast enough
