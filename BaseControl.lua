@@ -128,6 +128,17 @@ function BaseControl:SetRootFrame(frame)
   self.Position = Vector(frame:GetPosition())
 end
 
+function BaseControl:GUIManagerChanged(newGUIManager)
+
+  if(self.CachedGUIManager) then
+    self.CachedGUIManager = newGUIManager
+
+    for _,frame in ipairs(self.ChildControls) do
+      frame:GUIManagerChanged(newGUIManager)
+    end
+  end
+end
+
 function BaseControl:GetGUIManager()
   
   if(not self.CachedGUIManager) then

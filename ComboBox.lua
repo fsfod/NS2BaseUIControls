@@ -145,26 +145,26 @@ function ComboBox:ToggleDropDown(down)
 
   if(not self.DropDownOpen) then
     local dropdown
-    
-    if( self:GetGUIManager():IsMainMenuChild(self)) then
-      MenuDropDown = MenuDropDown or DropDownMenu(self:GetWidth(), self:GetHeight()*7)
-      self.DropDown = MenuDropDown
-    else
-      if(not NormalDropDown) then
-        NormalDropDown = DropDownMenu(self:GetWidth(), self:GetHeight()*7)
-        NormalDropDown.RootFrame:SetLayer(1)
-      end
 
-      self.DropDown = NormalDropDown
-    end
+    if(not NormalDropDown) then
+      NormalDropDown = DropDownMenu(self:GetWidth(), self:GetHeight()*7)
       
+      local oldUninitialize = NormalDropDown.Uninitialize
+      
+      NormalDropDown.Uninitialize = function(self) 
+        NormalDropDown = nil
+        oldUninitialize(self) 
+      end
+      //self.DropDown = NormalDropDown
+    end
+
     local pos = self:GetScreenPosition()
     
-    self.DropDown:Open(self, Vector(pos.x, pos.y+self:GetHeight()+3, 0), self.LabelCache, self.SelectedIndex)      
+    NormalDropDown:Open(self, Vector(pos.x, pos.y+self:GetHeight()+3, 0), self.LabelCache, self.SelectedIndex)      
     
     self.DropDownOpen = true
   else
-    self.DropDown:Close()   
+    NormalDropDown:Close()   
     self.DropDownOpen = false
   end
   
@@ -243,11 +243,9 @@ function DropDownMenu:Close(fromClick)
   self:UnregisterForMouseMove()
   
   self:Hide()
-    
-  if(not fromClick) then
-    self.Owner:DropDownClosed()
-  end
-  
+
+  self.Owner:DropDownClosed()
+
   self:CheckUnparent()
   
   self.Owner = nil
@@ -277,4 +275,27 @@ end
 
 function DropDownMenu:OnLeave()
   self:UnregisterForMouseMove()
+end
+
+function DropDownMenu:SendKeyEvent(key, down, isRepeat)
+
+  if not self.Hidden and down and key == InputKey.Escape then
+    self:Close(true)    
+   return true
+  end
+  
+  return false
+end
+
+function DropDownMenu:Uninitialize()
+  
+  if(self.Entered) then
+    self:UnregisterForMouseMove()
+  end
+  
+  if(self.Owner) then
+    self.Owner:DropDownClosed()
+  end
+  
+  ListView.Uninitialize(self)
 end

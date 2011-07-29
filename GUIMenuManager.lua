@@ -38,9 +38,10 @@ function GUIMenuManager:Initialize()
   BaseGUIManager.Initialize(self)
 
   self:CreateAnchorFrame(Client.GetScreenWidth(), Client.GetScreenHeight(), self.MenuLayer)
+end
 
-  UIMenuParent.Size = self.AnchorSize 
-  UIMenuParent.RootFrame = self.AnchorFrame
+function GUIMenuManager:DoLayerFix()
+  self:RecreateAnchorAndUpdateFrames(Client.GetScreenWidth(), Client.GetScreenHeight(), self.MenuLayer, self.IntenalMesssageBox, self.MessageBox)
 end
 
 local msgBoxTable = {}
@@ -132,7 +133,7 @@ end
 GUIMenuManager.IsActive = GUIMenuManager.IsMenuOpen
 
 function GUIMenuManager:CreateMessageBox()
-  
+
   local Creator = _G[self.MessageBoxClass]
   
   assert(Creator)
@@ -198,7 +199,7 @@ function GUIMenuManager:CheckCloseMsgBox()
   local msgBox = self.MessageBox
  
   if(msgBox) then
-    SafeCall(msgBox, msgBox.Close)
+    SafeCall(msgBox.Close, msgBox)
     
     self.MessageBox = nil
   end
@@ -239,6 +240,8 @@ function GUIMenuManager:ShowMenu(message)
     self:ShowMessage(message)
   end
   
+  self.AnchorFrame:SetIsVisible(true)
+  
   GameGUIManager:Deactivate()
 end
 
@@ -253,6 +256,8 @@ function GUIMenuManager:CloseMenu()
   MouseStateTracker:ClearMainMenuState()
 
   self:CheckCloseMsgBox()
+  
+  self.AnchorFrame:SetIsVisible(false)
   
   GameGUIManager:Activate()
 end

@@ -24,7 +24,6 @@ UIParent = {
 GameGUIManager.TopLevelUIParent = UIParent
 
 else
-  
   UIParent = GameGUIManager.TopLevelUIParent
 end
 
@@ -32,9 +31,23 @@ function GameGUIManager:Initialize()
   BaseGUIManager.Initialize(self)
 
   self:CreateAnchorFrame(Client.GetScreenWidth(), Client.GetScreenHeight())
+  
+  Event.Hook("ClientDisconnected", function() self:Reset() end)
+end
 
-  UIParent.Size = self.AnchorSize 
+function GameGUIManager:Reset()
+
+  self:DestroyAllFrames()
+
+  self:CreateAnchorFrame(Client.GetScreenWidth(), Client.GetScreenHeight())
+  
   UIParent.RootFrame = self.AnchorFrame
+  UIParent.Size = self.AnchorSize
+  
+  self.SingleInstance = {}
+  
+  //WORKAROUND for layers going all wierd
+  GUIMenuManager:DoLayerFix()
 end
 
 function GameGUIManager:DestroySingleInstance(name)

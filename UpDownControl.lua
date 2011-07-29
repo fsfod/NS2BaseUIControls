@@ -59,18 +59,14 @@ function UpDownControl:UpdateTextBox()
 end
 
 function UpDownControl:OnMouseWheel(direction)
-  
-  if(direction > 0) then
-    direction = 1
-  else
-    direction = -1
-  end
+
+  //direction = direction/GetWheelScrollLineCount()
 
   self:SetValue(self.Value+(self.StepSize*direction), true)
 end
 
 function UpDownControl:SetValue(value, fromInput)
- 
+
   if(self.ClampFraction) then
     if(math.floor(value) == self.Value) then
       self:UpdateTextBox()
@@ -83,7 +79,7 @@ function UpDownControl:SetValue(value, fromInput)
   self.Value = Clamp(value, self.MinValue, self.MaxValue)
 
   self:UpdateTextBox()
-  
+
   if(fromInput) then
     self:FireEvent(self.ValueChanged, self.Value)
   end

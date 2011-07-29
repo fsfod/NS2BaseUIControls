@@ -1,6 +1,10 @@
+
+if(not BaseGUIManager) then
+  
 BaseGUIManager = {
   DblClickSpeed = 0.5,
 }
+end
 
 
 local band = bit.band
@@ -16,6 +20,49 @@ function BaseGUIManager:Initialize()
   self.ClickedFrames = {}
 end
 
+function BaseGUIManager:RecreateAnchorAndUpdateFrames(width, height, layer, ...)
+
+  local oldAnchor = self.AnchorFrame
+
+  self:CreateAnchorFrame(width, height, layer)
+
+  for _,frame in ipairs(self.TopLevelFrames) do
+    oldAnchor:RemoveChild(frame.RootFrame)
+    self.AnchorFrame:AddChild(frame.RootFrame)
+  end
+  
+  --handle any extra frames the caller has passed
+  for _,frame in ipairs({...}) do
+    if(frame) then
+      oldAnchor:RemoveChild(frame.RootFrame)
+      self.AnchorFrame:AddChild(frame.RootFrame)
+    end
+  end
+  
+  GUI.DestroyItem(oldAnchor)
+end
+
+function BaseGUIManager:DestroyAllFrames()
+
+  self:ClearStateData()
+
+  for _,frame in ipairs(self.TopLevelFrames) do
+    if(frame.Uninitialize) then
+      SafeCall(frame.Uninitialize, frame)
+    end
+  end
+
+  --failsafe incase any frames errored during there Uninitialize
+  if(self.AnchorFrame) then
+    GUI.DestroyItem(self.AnchorFrame)
+
+    self.AnchorFrame = nil
+  end
+
+  self.TopLevelFrames = {}
+  self.ClickedFrames = {}
+end
+
 function BaseGUIManager:CreateAnchorFrame(width, height, layer)
   self.AnchorSize = Vector(width, height, 0)
 
@@ -23,7 +70,13 @@ function BaseGUIManager:CreateAnchorFrame(width, height, layer)
     anchorFrame:SetColor(Color(0, 0, 0, 0))
     anchorFrame:SetSize(self.AnchorSize)
     anchorFrame:SetLayer(layer or 0)
+
   self.AnchorFrame = anchorFrame
+
+  if(self.TopLevelUIParent) then
+    self.TopLevelUIParent.RootFrame = anchorFrame
+    self.TopLevelUIParent.Size = self.AnchorSize
+  end
 end
 
 function BaseGUIManager:OnResolutionChanged(oldX, oldY, width, height)
@@ -183,6 +236,9 @@ function BaseGUIManager:RemoveFrame(frame, destroyFrame)
 
   if(destroyFrame and frame.Uninitialize) then
     SafeCall(frame.Uninitialize, frame)
+  else
+    frame.Parent = nil
+    frame:GUIManagerChanged(nil)
   end
 
   if(not removed) then
@@ -226,8 +282,9 @@ function BaseGUIManager:SendMouseUpClick(button)
   local clicked = self.ClickedFrames[button]
 
 	if(clicked) then
+	  self.ClickedFrames[button] = nil
+	  
 	  SafeCall(clicked.OnClick, clicked, button, false)
-		self.ClickedFrames[button] = nil
 	end
 end
 
@@ -321,6 +378,8 @@ function BaseGUIManager:ClearMouseOver()
 
   local current = self.CurrentMouseOver
 
+  self.CurrentMouseOver = nil
+  
   if(current) then
     if(current.OnLeave) then
 	    SafeCall(current.OnLeave, current)
@@ -328,8 +387,6 @@ function BaseGUIManager:ClearMouseOver()
 	  
 	  current.Entered = false
 	end
-
-  self.CurrentMouseOver = nil
 end
 
 function BaseGUIManager:ClearFocus(newFocus)
@@ -337,14 +394,14 @@ function BaseGUIManager:ClearFocus(newFocus)
   local focus = self.FocusedFrame
   
   if(focus) then
+    self.FocusedFrame = nil
+     
     focus.Focused = false
     
     if(focus.OnFocusLost) then
       SafeCall(focus.OnFocusLost, focus, newFocus)
     end
   end
- 
-  self.FocusedFrame = nil
 end
  
 function BaseGUIManager:SetFocus(frame)
@@ -518,12 +575,12 @@ end
 function BaseGUIManager:CancelDrag()
 
   local draggedFrame = self.ActiveDrag
+  
+  self.ActiveDrag = nil
 
   if(draggedFrame) then
     SafeCall(draggedFrame.CancelDrag, draggedFrame)
   end
-  
-  self.ActiveDrag = nil
 end
 
 function BaseGUIManager:DragStarted(frame, button)
