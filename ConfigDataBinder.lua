@@ -258,7 +258,7 @@ end
 
 function ConfigDataBind:SaveStoredValue()
 
-  if(self.DelayValue) then
+  if(self.DelayValue ~= nil) then
     if(self.MultiValue) then
       self:InternalMultiSetValue(unpack(self.DelayValue))
     else
