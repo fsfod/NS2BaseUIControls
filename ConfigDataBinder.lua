@@ -193,6 +193,8 @@ function ConfigDataBind:SetValue(...)
   else
     value = ...
   end
+ 
+  assert(value ~= nil)
 
   if(self.DelaySave) then
     self.DelayValue = value

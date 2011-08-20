@@ -17,6 +17,7 @@ UIParent = {
   GetXAnchor = function() return GUIItem.Left end,
   GetYAnchor = function() return GUIItem.Top end,
   IsShown = function() return true end,
+  Flags = 0,
   ChildFlags = 255,
   GetGUIManager = function() return GameGUIManager end,
 }

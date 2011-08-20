@@ -51,9 +51,13 @@ end
 local bor = bit.bor
 local band = bit.band
 
-local OnClickFlag = 1
-local OnEnterFlag = 2
-local OnMouseWheelFlag = 4
+ControlFlags = {
+  OnClick = 1,
+  OnEnter = 2,
+  OnMouseWheel = 4,
+  Draggable = 8,
+  IsWindow = 16,
+}
 
 class'BaseControl' 
 
@@ -72,15 +76,15 @@ function BaseControl:Initialize(width, height)
   end
 
   if(self.OnClick) then
-    flags = OnClickFlag
+    flags = ControlFlags.OnClick
   end
   
   if(self.OnEnter) then
-    flags = bor(flags, OnEnterFlag)
+    flags = bor(flags, ControlFlags.OnEnter)
   end
   
   if(self.OnMouseWheel) then
-    flags = bor(flags,OnMouseWheelFlag)
+    flags = bor(flags, ControlFlags.OnMouseWheel)
   end 
   
   self.Flags = flags
@@ -223,6 +227,10 @@ function BaseControl:SetColor(redOrColour, g, b, a)
   end
   
   self.RootFrame:SetColor(redOrColour)
+end
+
+function BaseControl:GetPosition()
+  return self.Position or self.RootFrame:GetPosition()
 end
 
 function BaseControl:SetPosition(VecOrX, y)
@@ -450,6 +458,28 @@ function BaseControl:RemoveChild(frame)
   return found
 end
 
+local IsWindowFlag = ControlFlags.IsWindow
+
+function BaseControl:GetTopLevelParentWindow()
+
+  if(band(self.Flags, IsWindowFlag) ~= 0) then
+    return self
+  end
+
+  local lastFoundWindow
+  local nextParent = self.Parent
+
+  while nextParent do   
+    if(band(nextParent.Flags, IsWindowFlag) ~= 0) then
+      lastFoundWindow = nextParent
+    end
+
+    nextParent = nextParent.Parent
+  end
+
+  return lastFoundWindow
+end
+
 function BaseControl:SetupHitRec()
   self.HitRec = {0, 0, 0, 0}
   
@@ -578,6 +608,17 @@ function BaseControl:IsShown()
   return true
 end
 
+function BaseControl:SetDraggable(dragButton)
+  self.DragButton = dragButton or InputKey.MouseButton0
+  self.DragEnabled = true
+
+  self:AddFlag(ControlFlags.Draggable)
+end
+
+function BaseControl:AddFlag(flagBit)
+  self.Flags = bor(self.Flags, flagBit)
+end
+
 function BaseControl:Update()
 end
 
@@ -596,7 +637,7 @@ end
 function ButtonMixin:__init()
   
   if(self.ClickSound == nil) then
-    self.ClickSound = buttonClickSound
+    self.ClickSound = "sound/ns2.fev/common/button_click"
   end
   
   self:SetupHitRec()

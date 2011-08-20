@@ -3,7 +3,7 @@ class('Draggable')(BaseControl)
 function Draggable:__init(width, height)
   self.DragStartPoint = false
   self.DragStartClickedPos = false
-  self.DragEnablded = true
+  self.DragEnabled = true
   self.IsDragging = false
   self.DragButton = InputKey.MouseButton0
 
@@ -25,7 +25,7 @@ function Draggable:OnClick(button, down)
 
   if(button == self.DragButton) then
     if(down) then
-      if(self.DragEnablded) then
+      if(self.DragEnabled) then
         --this shouldn't happen normaly but if someone mouse button is dieing
         if(self.IsDragging) then
           self:OnDragStop(true)
@@ -101,7 +101,6 @@ function Draggable:CancelDrag()
     self.DragStage = -1
   end
 end
-
 
 function Draggable:Mixin(tbl)
   tbl.OnDragStart = self.OnDragStart

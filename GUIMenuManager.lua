@@ -27,17 +27,23 @@ UIMenuParent = {
   GetXAnchor = function() return GUIItem.Left end,
   GetYAnchor = function() return GUIItem.Top end,
   IsShown = function() return GUIMenuManager:IsMenuOpen() end,
+  Flags = 0,
   ChildFlags = 255,
   GetGUIManager = function() return GUIMenuManager end,
 }
 
 GUIMenuManager.TopLevelUIParent = UIMenuParent
+
+else
+  UIMenuParent = GUIMenuManager.TopLevelUIParent
 end
 
 function GUIMenuManager:Initialize()
   BaseGUIManager.Initialize(self)
 
   self:CreateAnchorFrame(Client.GetScreenWidth(), Client.GetScreenHeight(), self.MenuLayer)
+
+  self.CurrentWindowLayer = self.MenuLayer+1
 end
 
 function GUIMenuManager:DoLayerFix()
@@ -52,23 +58,25 @@ function GUIMenuManager:GetFrameList()
 
    return msgBoxTable
   else
-    //self.TopLevelFrames[1] will always contain self.MainMenu
-    return self.TopLevelFrames
+    //self.AllFrames[1] will always contain self.MainMenu
+    return self.AllFrames
   end
 end
 
 function GUIMenuManager:SetMainMenu(menuFrame)
   
   if(self.MainMenu) then
-    table.removevalue(self.TopLevelFrames, self.MainMenu)
+    table.removevalue(self.AllFrames, self.MainMenu)
+    table.removevalue(self.NonWindowList, self.MainMenu)
   end
-  
+
   menuFrame.Parent = UIMenuParent
   menuFrame:SetPosition(0, 0)
-  
+
   self.MainMenu = menuFrame
-  
-  table.insert(self.TopLevelFrames, 1, menuFrame)
+
+  table.insert(self.NonWindowList, 1, menuFrame)
+  table.insert(self.AllFrames, 1, menuFrame)
 end
 
 function GUIMenuManager:IsMainMenuChild(frame)
@@ -217,6 +225,46 @@ function GUIMenuManager:CreateMenu()
     self:SetMainMenu(menuOrErrorMsg)
   else
     Print("Error while Creating Menu:%s", menuOrErrorMsg)
+   return false
+  end
+  
+  return true
+end
+
+function GUIMenuManager:RecreateMenu()
+  //don't instantly recreate it since it could of been called by a buttons on click
+  self.AsyncRecreate = true
+end
+
+function GUIMenuManager:InternalRecreateMenu()
+  self.MainMenu = nil
+  self.CreatedMenu = false
+
+  self.MessageBox = nil
+  self.IntenalMesssageBox = nil
+  
+  self:DestroyAllFrames()
+  
+  self:CreateAnchorFrame(Client.GetScreenWidth(), Client.GetScreenHeight(), self.MenuLayer)
+  
+  if(self:CreateMenu()) then
+    self.AnchorFrame:SetIsVisible(true)
+  end
+
+  self.CurrentWindowLayer = self.MenuLayer+1
+
+  //retrigger any mouseover stuff for the new menu
+  self:OnMouseMove()
+end
+
+function GUIMenuManager:Update()
+  BaseGUIManager.Update(self)
+
+  if(self.AsyncRecreate) then
+    //clear it before the call incase it fails so were not constantly trying to recreate
+    self.AsyncRecreate = nil
+    
+    self:InternalRecreateMenu()
   end
 end
 
