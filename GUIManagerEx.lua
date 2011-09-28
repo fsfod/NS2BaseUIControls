@@ -17,6 +17,12 @@ function GUIManagerEx:OnLoad()
   
   self:HookFileLoadFinished("lua/Skulk_Client.lua", "SetSkulkViewTilt")
   
+  
+  if(StartupLoader) then
+    StartupLoader:AddReducedLuaScript("lua/GUIManager.lua")
+    StartupLoader:AddReducedLuaScript("lua/Main.lua")
+  end
+  
   MouseStateTracker:Init()
   
   GUIMenuManager:Initialize()
@@ -100,10 +106,10 @@ local NoUpEvent = {
   [InputKey.MouseY] = true,
 }
 
+
 local KeyDown = {}
 
---self is really GUIManager
-function GUIManagerEx.SendKeyEvent(handle, self, key, down)
+function GUIManagerEx.PreProcessKeyEvent(key, down)
   PROFILE("MouseTracker:SendKeyEvent")
 
   local IsRepeat = false
@@ -119,24 +125,33 @@ function GUIManagerEx.SendKeyEvent(handle, self, key, down)
     if(WheelMessages == nil) then
       WheelMessages = GetWheelMessages() or false
     end
-    
+
     if(WheelMessages and #WheelMessages ~= 0) then
-      local direction = WheelMessages[1]
+      wheelDirection = WheelMessages[1]
       table.remove(WheelMessages, 1)
       
       for i,dir in ipairs(WheelMessages) do
-        if((dir < 0 and direction < 0) or (dir > 0 and direction > 0)) then
-          direction = direction+dir
+        if((dir < 0 and wheelDirection < 0) or (dir > 0 and wheelDirection > 0)) then
+          wheelDirection = wheelDirection+dir
         end
       end
-      
-      wheelDirection = direction     
     else
-      //just eat any extra wheel events this frame
+      //just eat any extra wheel events this frame that the engine sent
       //even if windows is configured to 1 scroll for 1 wheel click we can still get more than 1 scroll for a single scroll event if the wheel is spinning fast enough
       eventHandled = true
     end
   end
+  
+  return eventHandled, IsRepeat, wheelDirection
+end
+
+local PreProcessKeyEvent = GUIManagerEx.PreProcessKeyEvent
+
+
+function GUIManagerEx.SendKeyEvent(handle, self, key, down)
+  PROFILE("MouseTracker:SendKeyEvent")
+
+  local eventHandled, IsRepeat, wheelDirection = PreProcessKeyEvent(key, down)
 
   eventHandled = eventHandled or GUIMenuManager:SendKeyEvent(key, down, IsRepeat, wheelDirection) or GameGUIManager:SendKeyEvent(key, down, IsRepeat, wheelDirection) 
 

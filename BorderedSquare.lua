@@ -97,13 +97,21 @@ function BorderedSquare:SetSize(width, height)
   self.Bottom:SetPositon(SizeVec)*/
 end
 
+
+
 class 'BasePage'(BorderedSquare)
 
-function BasePage:__init(width, height, titleString)
+function BasePage:__init(width, height, pageName, titleString)
   
   BorderedSquare.__init(self, width, height, 2)
 
+  self.PageName = pageName
+
   self:SetColor(PageBgColour)
+
+  if(not titleString) then 
+    titleString = pageName
+  end
 
   local title = GUIManager:CreateTextItem()
     title:SetFontSize(20)
@@ -119,7 +127,29 @@ function BasePage:__init(width, height, titleString)
     titlebox:SetColor(Color(0.1, 0.1, 0.1, 1))
     titlebox:AddGUIItemChild(title)
    self:AddChild(titlebox)
+   
+  if(GUIMenuManager.WindowedModeActive) then
+   local closeButton = CloseButton(self)
+    closeButton:SetPoint("TopRight", -5, 5, "TopRight")
+    self:AddChild(closeButton)
+  end
 end
+
+function BasePage:AddBackButton(point, x, y, relPoint)
   
+  //dont need back buttons for window pages
+  if(GUIMenuManager.WindowedModeActive) then
+    return
+  end
+  
+  local backButton = UIButton("Back to menu")
+    backButton:SetPoint(point, x, y, relPoint)
+    backButton.ClickAction = function() self.Parent:ReturnToMainPage() end
+  self:AddChild(backButton)
+end
+
+function BasePage:Close()
+  self:Hide()
+end
   
   

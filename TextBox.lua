@@ -5,6 +5,8 @@ local Space = string.byte(" ", 1)
 function TextBox:__init(width, height, fontsize, fontname)
   BorderedSquare.__init(self, width, height, 2)
   
+  self:AddFlag(ControlFlags.Focusable)
+
   self.CarretPos = 0
   
   self:SetBackgroundColor(Color(0.06,0.06,0.06, 0.8))
@@ -109,7 +111,7 @@ end
 
 function TextBox:SendCharacterEvent(character)
   self:InsertChar(character)
-  self:FireEvent(self.TextChanged)
+  self:FireEvent(self.TextChanged, self:GetText())
  return true
 end
 
@@ -200,13 +202,13 @@ function TextBox:SendKeyEvent(key, down)
          
         self:UpdateCarret()
         
-        self:FireEvent(self.TextChanged)
+        self:FireEvent(self.TextChanged, self:GetText())
       end
     elseif(key == InputKey.Delete) then
       if CharCount > 0 and self.CarretPos ~= CharCount then
         self:DeleteChar(self.CarretPos+1)
         
-        self:FireEvent(self.TextChanged)
+        self:FireEvent(self.TextChanged, self:GetText())
       end
     elseif(key == InputKey.Left) then
       if(self.CarretPos > 0) then

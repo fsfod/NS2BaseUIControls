@@ -95,9 +95,9 @@ function ScrollBar:OnMouseWheel(direction)
   if(not self.SideScroll) then
     direction = -direction
   end
-  
+
   local amount = (self.Range*self.StepSize)*direction
-    
+ 
   if(not self.Disabled) then
     self:InteralSetValue(self.Value+amount)
   end
@@ -201,10 +201,9 @@ function ScrollBar:OnClick(button, down, x,y)
   end
 end
 
-class 'SliderButton'(Draggable)
+class 'SliderButton'(BaseControl)
 
 function SliderButton:__init()
-  Draggable.__init(self)
   BaseControl.Initialize(self, 30, 30)
   
   self:SetColor(Color(0.78, 0.3, 0, 1))
@@ -213,6 +212,8 @@ function SliderButton:__init()
   self.MaxValuePos = 500
   self.CurrentValuePositon = 0
   self.StartPositon = {0, 0}
+
+  self:SetDraggable()
 end
 
 function SliderButton:OnEnter()
@@ -221,10 +222,6 @@ end
 
 function SliderButton:OnLeave()
   self:SetColor(Color(0.78, 0.3, 0, 1))
-end
-
-function SliderButton:OnClick(...)
-  Draggable.OnClick(self, ...)
 end
 
 function SliderButton:SetValuePosition(percent)
@@ -243,7 +240,7 @@ function SliderButton:SetMaxValuePositon(max)
   self:UpdatePosition()
 end
 
-function SliderButton:UpdatePosition(newPos)
+function SliderButton:UpdatePosition()
   
   if(not self.SideScroll) then
     self:SetPosition(self.StartPositon[1], self.StartPositon[2]+self.CurrentValuePositon, true)
@@ -262,57 +259,39 @@ function SliderButton:SetPosition(x, y, DragSetPosiiton)
 end
 
 function SliderButton:OnDragStart()
-  Draggable.OnDragStart(self)
-  
-  if(not self.SideScroll) then
-    self.DragPos.x = self.Position.x
-    self.MouseMin = self.DragStartPos[2]-self.CurrentValuePositon
-  else
-    self.DragPos.y = self.Position.y
-    self.MouseMin = self.DragStartPos[1]-self.CurrentValuePositon
-  end
 
-  self.MouseMax = self.MouseMin+self.MaxValuePos
+  self.DragStartOffset = self.CurrentValuePositon
   
   self.Parent:BarDragStarted(self)
 end
 
-function SliderButton:DragMouseMove(x,y)
-
-  if(self.DragStage == 0) then
-    self:OnDragStart()
-  end
+function SliderButton:OnDragMove(pos)
   
-  if(self.IsDragging) then
-    local MousePos = ((not self.SideScroll and y) or x)-self.MouseMin
-    local NewPosiiton = Clamp(MousePos, self.MinValuePos, self.MaxValuePos)
+  local offset = pos.y
+  
+  if(self.SideScroll) then
+    offset = pos.x
+  end
+
+  offset = Clamp(self.DragStartOffset+offset, self.MinValuePos, self.MaxValuePos)
+  
+  if(offset ~= self.CurrentValuePositon) then
+    self.CurrentValuePositon = offset
     
-      if(NewPosiiton ~= self.CurrentValuePositon) then
-        self.CurrentValuePositon = Clamp(MousePos, self.MinValuePos, self.MaxValuePos)
-      
-        if(not self.SideScroll) then
-          self.DragPos.y = self.StartPositon[2]+self.CurrentValuePositon
-        else
-          self.DragPos.x = self.StartPositon[1]+self.CurrentValuePositon
-        end
-      
-        self.DragRoot:SetPosition(self.DragPos)
-        self.Parent:OnSliderMoved(self.CurrentValuePositon/self.MaxValuePos)
-      end
-  else
-    self:UnregisterForMouseMove()
+    self:UpdatePosition()
+
+    self.Parent:OnSliderMoved(offset/self.MaxValuePos)
   end
 end
 
 function SliderButton:OnDragStop()
-  Draggable.OnDragStop(self, true)
-  
+
   if(not self.SideScroll) then
     self:SetPosition(self.Position.x, self.StartPositon[2]+self.CurrentValuePositon, true)
   else
     self:SetPosition(self.StartPositon[1]+self.CurrentValuePositon, self.Position.y,  true)
   end
-  
+
   self.Parent:BarDragEnded()
 end
 

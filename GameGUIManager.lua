@@ -119,7 +119,7 @@ end
 
 function GameGUIManager:Update()
   
-  for _,frame in ipairs(self.TopLevelFrames) do
+  for _,frame in ipairs(self.AllFrames) do
     frame:Update()
   end
 

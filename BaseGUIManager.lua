@@ -20,8 +20,13 @@ function BaseGUIManager:Initialize()
   self.ClickedFrames = {}
   
   self:ClearFrameLists()
+  
+  self.DummyWindowList = {true}
 
   self.ClickFlags = bor(bor(ControlFlags.OnClick, ControlFlags.Draggable), ControlFlags.IsWindow)
+  
+  self.BaseWindowLayer = 2
+  self.CurrentWindowLayer = 2
 end
 
 function BaseGUIManager:ClearFrameLists()
@@ -125,7 +130,7 @@ function BaseGUIManager:SendKeyEvent(key, down, IsRepeat, wheelDirection)
   end
 
   if(key == InputKey.MouseButton0 or key == InputKey.MouseButton1 or key == InputKey.MouseButton3) then
-    return self:MouseClick(key, down)
+    return self:OnMouseClick(key, down)
   end
 
   local focus = self.FocusedFrame
@@ -189,6 +194,10 @@ function BaseGUIManager:ClearStateData()
   self.DoneMouseMove = false
 end
 
+function BaseGUIManager:AsyncRemoveAndDestroy(frame)
+  
+end
+
 function BaseGUIManager:Update(force)
   
   if(not force and not self:IsActive()) then
@@ -211,8 +220,21 @@ function BaseGUIManager:UpdateFrames()
   end
 end
 
-function BaseGUIManager:BringWindowToFront(windowFrame)
+function BaseGUIManager:GetWindowIndex(windowFrame)
+  
   assert(type(windowFrame.WindowZ) == "number")
+
+  for i, window in ipairs(self.WindowList) do
+    if(windowFrame == window) then
+      return i
+    end
+  end
+  
+  return nil
+end
+
+function BaseGUIManager:BringWindowToFront(windowFrame)
+  assert(self:GetWindowIndex(windowFrame), "BringWindowToFront: window was not found in the window list")
     
   if(windowFrame.WindowZ ~= self.CurrentWindowLayer) then
 
@@ -227,6 +249,93 @@ function BaseGUIManager:BringWindowToFront(windowFrame)
   end
 end
 
+function BaseGUIManager:MoveWindowToLayer(windowFrame, layerZ)
+
+  assert(windowIndex, "BringWindowToFront: window was not found in the window list")
+
+  windowFrame.WindowZ = layerZ
+
+  local oldWindow, windowIndex
+
+  for i, window in ipairs(self.WindowList) do
+    if(window.WindowZ == layerZ and window ~= windowFrame) then
+      oldWindow = window
+    end
+   
+    if(windowFrame == window) then
+      windowIndex = i
+    end
+  end
+
+  assert(windowIndex)
+
+  if(oldWindow) then
+    oldWindow.WindowZ = oldWindow.WindowZ-0.1
+  end
+
+  table.sort(self.WindowList, function(win1, win2) return win1.WindowZ < win2.WindowZ end)
+  
+  self:CompactWindowLayers()
+end
+
+function BaseGUIManager:CompactWindowLayers()
+
+  local baseLayer = self.BaswWindowLayer
+
+  for i, window in ipairs(self.WindowList) do
+
+    if(window.WindowZ ~= baseLayer+i) then
+      window.WindowZ = baseLayer+i
+      window:SetLayer(baseLayer+i)
+    end
+  end
+  
+  self.CurrentWindowLayer = self.BaseWindowLayer+#self.WindowList
+end
+
+function BaseGUIManager:CreateWindow(className, ...)
+  local frameClass = _G[className]
+
+  if(not frameClass) then
+    error(string.format("CreateWindow: There is no window type named %s", className))
+  end
+
+  if(not frameClass.GetGUIManager) then
+    error(string.format("CreateWindow: Window %s is not derived from BaseControl", className))
+  end
+  
+  local sucess, frame = SafeCall(frameClass, ...)  
+  
+  if(not sucess) then
+    return nil
+  end
+
+  assert(band(frame.Flags, ControlFlags.IsWindow) ~= 0, "CreateWindow: Created Frame is not a window")
+
+  self:AddFrame(frame)
+
+  return frame
+end
+
+function BaseGUIManager:TryCloseTopMostWindow()
+  
+  local count = #self.WindowList
+  
+  if(count ~= 0) then
+
+    for i=count,1,-1 do
+      local window = self.WindowList[i]
+      
+      if(not window.Hidden) then
+        SafeCall(window.Close, window)
+       return true
+      end
+    end
+  end
+  
+  return false
+end
+
 function BaseGUIManager:AddFrame(frame)
   assert(frame.RootFrame)
 
@@ -235,10 +344,6 @@ function BaseGUIManager:AddFrame(frame)
 	end
 
 	frame.Parent = self.TopLevelUIParent
-
-  if(self.AnchorFrame) then
-    self.AnchorFrame:AddChild(frame.RootFrame)
-  end
 
   if(band(frame.Flags, ControlFlags.IsWindow) ~= 0) then
     table.insert(self.WindowList, frame)
@@ -253,7 +358,15 @@ function BaseGUIManager:AddFrame(frame)
     table.insert(self.NonWindowList, frame)
   end
 
+  if(self.AnchorFrame) then
+    self.AnchorFrame:AddChild(frame.RootFrame)
+  end
+
   //frame.RootFrame:SetLayer(self.MenuLayer+1)
+
+  if(not frame.Position) then
+    frame.Position = Vector(0, 0, 0)
+  end
 
 	frame:UpdateHitRec()
 
@@ -334,8 +447,8 @@ function BaseGUIManager:SendMouseUpClick(button)
 
 	if(clicked) then
 	  self.ClickedFrames[button] = nil
-	  
-	  if(clicked.OnClick) then
+
+	  if(clicked.OnClick and clicked.RootFrame) then
 	    SafeCall(clicked.OnClick, clicked, button, false)
 	  end
 	end
@@ -343,7 +456,7 @@ end
 
 function BaseGUIManager:DoOnClick(frame, x, y)
 
-  local success, result
+  local success, result = false, false
 
   if(frame.OnClick) then
     success, result = SafeCall(frame.OnClick, frame, self.ClickedButton, true, x, y)
@@ -353,20 +466,20 @@ function BaseGUIManager:DoOnClick(frame, x, y)
     end
   end
 
-  local parentWindow = frame:GetTopLevelParentWindow()
-
-  if(parentWindow) then
-    self:BringWindowToFront(parentWindow)
+  if(band(frame.Flags, ControlFlags.Focusable) ~= 0) then
+    self:SetFocus(frame)
   end
-  
+
   local dragStart = false
-    
-  if(band(frame.Flags, ControlFlags.Draggable) ~= 0 and frame.DragButton == self.ClickedButton and frame.DragEnabled) then
+
+  //we ignore windows because they handled in MouseClick
+  if(not frame:IsWindowFrame() and band(frame.Flags, ControlFlags.Draggable) ~= 0 and frame.DragButton == self.ClickedButton and frame.DragEnabled) then
     self:DragPreStart(frame, self.ClickedButton, self:GetCursorPos())
     dragStart = true
   end
-  
-  --if the frames OnClick function didn't return anything we treat that as they accepted the click
+
+  --if the frames OnClick function didn't return anything or returned true we treat that as they accepted the click
+  --if it returned false we return false and the frame traversal continues
   if(result == nil or result == true or dragStart) then
     self.ClickedFrames[self.ClickedButton] = frame
     
@@ -382,10 +495,9 @@ function BaseGUIManager:PassOnClickEvent(button, down)
   return false
 end
 
-function BaseGUIManager:MouseClick(button, down)
-	PROFILE("MouseTracker:MouseClick")
+function BaseGUIManager:OnMouseClick(button, down)
+	PROFILE("BaseGUIManager:OnMouseClick")
 
-  --even trigger a mouseup if the click is a from a diffent button
 	if(self.ClickedFrames[button]) then
 		self:SendMouseUpClick(button)
 	end
@@ -393,10 +505,12 @@ function BaseGUIManager:MouseClick(button, down)
   if(not down) then
     return not self:PassOnClickEvent(button, down)
   end
-
+  
+  //if any frame happens to Call SetFocus or a focusable frame is clicked this value will get set to false
+  self.FocusUnchanged = true
+  
+  //this will get cleared if a a frame is found in the traverse that has a OnClick functions that either returns nothing or true
   self.ClickedButton = button
-
-  local FrameList = self.AllFrames
 
   local focus = self.FocusedFrame
   local clearFocus = false
@@ -415,28 +529,23 @@ function BaseGUIManager:MouseClick(button, down)
   local ClickInFrame = false
   local prevClicked = self.ClickedFrames
 
-  local foundmatch, ClickInFrame = self:StartTraverseFrames(self.WindowList, MouseX, MouseY, self.ClickFlags, self.DoOnClick)
+  local clickedWindow, result = self:TraverseWindows(MouseX, MouseY, self.ClickFlags, self.DoOnClick, true)
 
-	if(not ClickInFrame) then
+  if(clickedWindow) then
+    if(not result and band(clickedWindow.Flags, ControlFlags.Draggable) ~= 0 and clickedWindow.DragButton == button and clickedWindow.DragEnabled) then
+      self:DragPreStart(clickedWindow, button, self:GetCursorPos())
+
+      self.ClickedFrames[self.ClickedButton] = clickedWindow
+
+      self.ClickedButton = nil
+    end
+  else
     self:TraverseFrames(self:GetFrameList(), MouseX, MouseY, self.ClickFlags, self.DoOnClick)
   end
 
-  if(self.ClickedButton == nil) then
-    ClickInFrame = true
-  end
-
-  local clicked = self.ClickedFrames
-  
-  if(ClickInFrame) then
-		if(clicked.OnFocusGained) then
-			self:SetFocus(clicked)
-		else
-			if(clearFocus) then
-				self:ClearFocus()
-			end
-		end
-	else
-	  self:ClearFocus()
+  //only clear the focus if the click was outside the current focus frame and current focus has not changed during frame traversal
+  if(clearFocus and self.FocusUnchanged) then
+    self:ClearFocus()
   end
   
   return not self:PassOnClickEvent(button, down, ClickInFrame)
@@ -453,12 +562,12 @@ function BaseGUIManager:ClearMouseOver()
   local current = self.CurrentMouseOver
 
   self.CurrentMouseOver = nil
-  
+
   if(current) then
-    if(current.OnLeave) then
+    if(current.OnLeave and current.RootFrame) then
 	    SafeCall(current.OnLeave, current)
 	  end
-	  
+
 	  current.Entered = false
 	end
 end
@@ -479,6 +588,8 @@ function BaseGUIManager:ClearFocus(newFocus)
 end
 
 function BaseGUIManager:SetFocus(frame)
+  
+  self.FocusUnchanged = nil
 
   local old = self.FocusedFrame
 
@@ -503,10 +614,27 @@ local Features = {
   OnMouseWheel = 4,
 }
 
-function BaseGUIManager:StartTraverseFrames(frameList, x, y, filter, callback)
-  self.FirstTraversedFrame = nil
 
-  return self:TraverseFrames(frameList, x, y, filter, callback), self.FirstTraversedFrame ~= nil
+//a special window only traversal function that stops on the first window it finds the point in
+function BaseGUIManager:TraverseWindows(x, y, filter, callback, bringToFront)
+
+  for i=#self.WindowList,1,-1 do
+    local window = self.WindowList[i]
+    local rec = window.HitRec
+
+    if(not window.Hidden and rec and x > rec[1] and y > rec[2] and x < rec[3] and y < rec[4]) then
+     
+      if(bringToFront) then
+        self:BringWindowToFront(window)
+      end
+     
+      self.DummyWindowList[1] = window
+      
+     return window, self:TraverseFrames(self.DummyWindowList, x, y, filter, callback)
+    end
+  end
+
+  return false, false
 end
 
 function BaseGUIManager:TraverseFrames(frameList, x, y, filter, callback)
@@ -519,10 +647,6 @@ function BaseGUIManager:TraverseFrames(frameList, x, y, filter, callback)
     if(not childFrame.Hidden and rec and x > rec[1] and y > rec[2] and x < rec[3] and y < rec[4]) then 
       local result
       local childFlags = band(filter, childFrame.ChildFlags)
-
-        if(not self.FirstTraversedFrame) then
-          self.FirstTraversedFrame = childFrame
-        end
 
         --the control has provided it own Traverse function so try that first before we check the controls flags
         if(childFrame.TraverseGetFrame) then
@@ -592,9 +716,13 @@ function BaseGUIManager:OnMouseWheel(direction)
   local x,y = self:GetCursorPos()
   
   self.WheelDirection = direction
-  
-  local ret = self:TraverseFrames(self:GetFrameList(), x, y, 4, self.DoOnMouseWheel)
-  
+
+  local clickInWindow, ret = self:TraverseWindows(x, y, ControlFlags.OnMouseWheel, self.DoOnMouseWheel)
+	  
+  if(not clickInWindow) then
+    ret = self:TraverseFrames(self:GetFrameList(), x, y, ControlFlags.OnMouseWheel, self.DoOnMouseWheel)
+  end
+
   self.WheelDirection = nil
   
   return ret
@@ -653,10 +781,10 @@ function BaseGUIManager:OnMouseMove()
 	self.Callbacks:Fire("MouseMove", x, y)
 
 	if(not self.CurrentMouseOver and not self.ActiveDrag) then
-	  local foundmatch, foundValidRoot = self:StartTraverseFrames(self.WindowList, x, y, 2, self.DoOnEnter)
+	  local foundValidRoot = self:TraverseWindows(x, y, ControlFlags.OnEnter, self.DoOnEnter)
 	  
 	  if(not foundValidRoot) then
-	    self:TraverseFrames(self:GetFrameList(), x, y, 2, self.DoOnEnter)
+	    self:TraverseFrames(self:GetFrameList(), x, y, ControlFlags.OnEnter, self.DoOnEnter)
 	  end
 	end
 end
@@ -669,21 +797,21 @@ end
 function BaseGUIManager:DragPreStart(frame, button, x, y)
   assert(not self.ActiveDrag, "DragPreStart: cannot start a new drag while one is still active")
 
-  self.DragStartClickPos = {x, y}
+  self.DragStartClickPos = Vector(x, y, 0)
   self.DragPreStartFrame = frame
   self.DragButton = button
 end
 
 function BaseGUIManager:CheckDragStart(x, y)
-  
-  if(self.ActiveDrag or not self.DragPreStartFrame or (self.DragStartClickPos[1] == x and self.DragStartClickPos[2] == y)) then
+
+  if(self.ActiveDrag or not self.DragPreStartFrame or (self.DragStartClickPos.x == x and self.DragStartClickPos.y == y)) then
     return false
   end
 
   local draggedFrame = self.DragPreStartFrame
- 
+
   if(draggedFrame.OnDragStart) then
-    local sucess, result = SafeCall(draggedFrame.OnDragStart, draggedFrame, unpack(self.DragStartClickPos))
+    local sucess, result = SafeCall(draggedFrame.OnDragStart, draggedFrame, self.DragStartClickPos)
     
     --if OnDragStart triggered an error or returned false we stop the drag
     if(not sucess or result == false) then
@@ -691,6 +819,8 @@ function BaseGUIManager:CheckDragStart(x, y)
      return false
     end
   end
+
+  draggedFrame.DragActive = true
 
   local dragRoot = draggedFrame.DragRoot or draggedFrame
 
@@ -711,18 +841,18 @@ function BaseGUIManager:DragMouseMove(x,y)
 
   local activeDrag = self.ActiveDrag
 
-  x = x-self.DragStartClickPos[1]
-  y = y-self.DragStartClickPos[2]
+  local newOffset = Vector(x, y, 0)-self.DragStartClickPos
+  
+  self.DragOffset = newOffset
 
   if(activeDrag.OnDragMove) then
-    SafeCall(activeDrag.OnDragMove, activeDrag, x, y, self.DragFrameStartPos)
+    SafeCall(activeDrag.OnDragMove, activeDrag, self.DragOffset, self.DragFrameStartPos)
    return
   end
 
-  local DragPos = activeDrag.DragPos
+  local DragPos = self.DragFrameStartPos+self.DragOffset
 
-  DragPos.x = self.DragFrameStartPos.x+x
-  DragPos.y = self.DragFrameStartPos.y+y
+  activeDrag.DragPos = DragPos
 
   self.DragRootFrame:SetPosition(DragPos)
 end
@@ -732,23 +862,19 @@ function BaseGUIManager:DragStop(isCancel)
   local activeDrag = self.ActiveDrag
   
   if(activeDrag) then
-    
+
     if(activeDrag.OnDragStop) then
-     local sucess, result = SafeCall(activeDrag.OnDragStop, activeDrag, unpack(self.DragStartPos), self.DragFrameStartPos)
-     
-      --if the OnDragStart triggered an error or returned false we stop the drag
-      if(not sucess or result == false) then
-         self.DragPreStart = nil
-        return false
-      end
+      SafeCall(activeDrag.OnDragStop, activeDrag, self.DragFrameStartPos, self.DragOffset, self.DragStartClickPos)
     end
 
+    activeDrag.DragActive = false
   end
 
   self.DragPreStartFrame = nil
   self.DragRootFrame = nil
   self.DragButton = nil
   self.ActiveDrag = nil
+  self.DragOffset = nil
 end
 
 function BaseGUIManager:CancelDrag()

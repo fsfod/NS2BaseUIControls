@@ -175,8 +175,11 @@ class 'DropDownMenu'(ListView)
 function DropDownMenu:Initialize(width, height)
   ListView.Initialize(self, width, height)
   
-  self.ItemSelected = {self.EntryPicked, self} 
-  self:Hide()
+  self:AddFlag(ControlFlags.IsWindow)
+  
+  self.ItemSelected = {self.EntryPicked, self}
+  self.Hidden = true
+  //self:Hide()
 end
 
 function DropDownMenu:EntryPicked(data, index)
@@ -212,12 +215,12 @@ function DropDownMenu:Open(owner, position, list, index)
   self:SetSize(owner:GetWidth(), height)
 
   if(self.Hidden) then
-    GUIMgr:AddFrame(self)
-    
     self:Show()
+
+    GUIMgr:AddFrame(self)
     GUIMgr:SetFocus(self)
   else
-    self:UnregisterForMouseMove()
+   // self:UnregisterForMouseMove()
   end
 
   /*

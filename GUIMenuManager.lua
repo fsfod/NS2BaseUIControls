@@ -7,8 +7,10 @@ if(not HotReload) then
 GUIMenuManager = {
   Name = "GUIMenuManager",
   MenuLayer = 20,
-  DefaultMenuClass = "GUIMainMenu",
+  MenuClass = "PagedMainMenu",
   MessageBoxClass = "MessageBox",
+  
+  WindowedModeActive = false,
 
   PageInfos = {},
   OptionPageList = {},
@@ -44,6 +46,40 @@ function GUIMenuManager:Initialize()
   self:CreateAnchorFrame(Client.GetScreenWidth(), Client.GetScreenHeight(), self.MenuLayer)
 
   self.CurrentWindowLayer = self.MenuLayer+1
+  
+  Event.Hook("ClientConnected", function() self:OnClientConnected() end)
+  Event.Hook("ClientDisconnected", function() self:OnClientDisconnected() end)
+  
+  self.MenuClass = Client.GetOptionString("MainMenuClass", "ClassicMenu")
+end
+
+function GUIMenuManager:OnResolutionChanged(oldX, oldY, width, height)
+  BaseGUIManager.OnResolutionChanged(self, oldX, oldY, width, height)
+
+  if(self.MainMenu) then
+    local onResolutionChanged = self.MainMenu.OnResolutionChanged
+
+    if(onResolutionChanged) then
+      SafeCall(onResolutionChanged, self.MainMenu, oldX, oldY, width, height)
+    else
+      //if the menu doesn't have a on OnResolutionChanged fallback to just adjusting its size
+      self.MainMenu:SetSize(width, height)
+    end
+  end
+end
+
+function GUIMenuManager:OnClientConnected()
+ 
+  if(self.MainMenu and self.MainMenu.OnClientConnected) then
+    self.MainMenu:OnClientConnected()
+  end
+end
+
+function GUIMenuManager:OnClientDisconnected()
+ 
+  if(self.MainMenu and self.MainMenu.OnClientDisconnected) then
+    self.MainMenu:OnClientDisconnected()
+  end
 end
 
 function GUIMenuManager:DoLayerFix()
@@ -89,6 +125,22 @@ function GUIMenuManager:GetPageInfo(name)
   return self.PageInfos[name]
 end
 
+function GUIMenuManager:IsOptionPage(name)
+  local info = self.PageInfos[name]
+  
+  return info and info.OptionPage
+end
+
+function GUIMenuManager:GetPageList()
+
+  local list = {}
+
+  for name, info in pairs(self.PageInfos) do
+    table.insert(list, name)
+  end
+
+  return list
+end
 
 function GUIMenuManager:RegisterPage(pageName, label, className)
 
@@ -104,7 +156,7 @@ function GUIMenuManager:RegisterPage(pageName, label, className)
     label = pageName
   end
 
-  self.PageInfos[pageName] = {Name = pageName, ClassName = className, OptionPage = false}
+  self.PageInfos[pageName] = {Name = pageName, Label = label, ClassName = className, OptionPage = false}
 end
 
 function GUIMenuManager:RegisterOptionPage(name, label, className)
@@ -140,66 +192,20 @@ end
 
 GUIMenuManager.IsActive = GUIMenuManager.IsMenuOpen
 
-function GUIMenuManager:CreateMessageBox()
 
-  local Creator = _G[self.MessageBoxClass]
-  
-  assert(Creator)
-  
-  local success, msgBoxOrError = pcall(Creator)
-  
-  if(not success) then
-    Print("Error while Creating MessageBox:%s", msgBoxOrError)
-   return
-  end
-    
-  self.IntenalMesssageBox = msgBoxOrError
-  
-  msgBoxOrError:Hide()
-  msgBoxOrError.Parent = UIMenuParent
-  
-  msgBoxOrError:SetPoint("Center", 0, 0, "Center")
-  
-  self.AnchorFrame:AddChild(msgBoxOrError.RootFrame)
-end
+function GUIMenuManager:ShowMessage(title, message, ...)  
 
-function GUIMenuManager:GetDefaultMessageBox()
-  if(not self.IntenalMesssageBox) then
-    self:CreateMessageBox()
-  end
-  
-  return self.IntenalMesssageBox
-end
-
-function GUIMenuManager:ShowMessage(message, ...)  
-  
   if(select('#', ...) ~= 0) then
     message = string.format(message, ...)
   end
 
-  self.MessageBox = self:GetDefaultMessageBox()
-  self.MessageBox:Open("SimpleMsg", message)
-end
-
-function GUIMenuManager:ShowMessageBox(messageBox)
-  assert(messageBox.Close)
+  local msgBox = self:CreateWindow(self.MessageBoxClass, title, message)
   
-  self:CheckCloseMsgBox()
-
-  if(messageBox.Parent ~= UIMenuParent) then 
-    messageBox.Parent = UIMenuParent
-    self.AnchorFrame:AddChild(messageBox.RootFrame)
+  if(msgBox) then
+    msgBox:SetPoint("Center", 0, 0, "Center")
+  else
+    RawPrint(message)
   end
-  
-  messageBox:SetPoint("Center", 0, 0, "Center")
-
-  self.MessageBox = messageBox
-  messageBox:Show()
-end
-
-function GUIMenuManager:MesssageBoxClosed(messageBox)
-  assert(self.MessageBox.Hidden)
-  self.MessageBox = nil
 end
 
 function GUIMenuManager:CheckCloseMsgBox()
@@ -215,8 +221,8 @@ end
 
 function GUIMenuManager:CreateMenu()
   self.CreatedMenu = true
-   
-  local menuClass = _G[self.DefaultMenuClass]
+
+  local menuClass = _G[self.MenuClass]
   assert(menuClass)
 
   local success, menuOrErrorMsg = pcall(menuClass, Client.GetScreenWidth(), Client.GetScreenHeight())
@@ -229,6 +235,18 @@ function GUIMenuManager:CreateMenu()
   end
   
   return true
+end
+
+function GUIMenuManager:SwitchMainMenu(newMenu)
+  assert(type(newMenu) == "string")
+
+  if(self.CreatedMenu) then  
+    self:RecreateMenu()
+  end
+    
+  Client.SetOptionString("MainMenuClass", newMenu)
+  
+  self.MenuClass = newMenu
 end
 
 function GUIMenuManager:RecreateMenu()
@@ -268,6 +286,23 @@ function GUIMenuManager:Update()
   end
 end
 
+function GUIMenuManager:InternalShow()
+  self.Hidden = false
+  
+  if(self.AnchorFrame) then
+   self.AnchorFrame:SetIsVisible(true)
+  end
+end
+
+function GUIMenuManager:InternalHide()
+
+  self.Hidden = true
+  
+  if(self.AnchorFrame) then
+   self.AnchorFrame:SetIsVisible(false)
+  end
+end
+
 function GUIMenuManager:ShowMenu(message)
   
   if(not self.MainMenu) then
@@ -288,7 +323,7 @@ function GUIMenuManager:ShowMenu(message)
     self:ShowMessage(message)
   end
   
-  self.AnchorFrame:SetIsVisible(true)
+  self:InternalShow()
   
   GameGUIManager:Deactivate()
 end
@@ -298,14 +333,14 @@ function GUIMenuManager:CloseMenu()
   if(self:IsMenuOpen()) then
     self.MainMenu:Hide()
   end
-  
+
   self:Deactivate()
 
   MouseStateTracker:ClearMainMenuState()
 
   self:CheckCloseMsgBox()
   
-  self.AnchorFrame:SetIsVisible(false)
+  self:InternalHide()
   
   GameGUIManager:Activate()
 end
@@ -325,5 +360,7 @@ end
 function GUIMenuManager:RecreatePage(pageName)
   self:CheckCloseMsgBox()
 
-  self.MainMenu:RecreatePage(pageName)
+  if(self.MainMenu) then
+    self.MainMenu:RecreatePage(pageName)
+  end
 end

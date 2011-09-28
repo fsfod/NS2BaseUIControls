@@ -1,11 +1,18 @@
-class'MessageBox'(BorderedSquare)
+class'MessageBox'(BaseWindow)
 
-function MessageBox:__init()
-  BorderedSquare.__init(self, 600, 100, 4)
+function MessageBox:__init(title, message)
+  BaseWindow.__init(self, 600, 120, "")
 
-  local msgString = self:CreateFontString(19, "Top", 0, 20)
+  self.DestroyOnClose = true
+
+  local titleText = self:CreateFontString(20, "Top", 0, 4)
+    titleText:SetTextAlignmentX(GUIItem.Align_Center)
+    titleText:SetText(title)
+  self.Title = titleText
+
+  local msgString = self:CreateFontString(17, "Top", 0, 30)
     msgString:SetTextAlignmentX(GUIItem.Align_Center)
-    msgString:SetText("some long really long error message no longer and longer still not long enough")
+    msgString:SetText(message or "some long really long error message no longer and longer still not long enough")
   self.MsgString = msgString
   
   self.CloseAction = {self.Close, self}
@@ -16,19 +23,24 @@ function MessageBox:__init()
   self:AddChild(okButton)
   self.OKButton = okButton
   
-  local cancelButton = UIButton("Cancel")
-   cancelButton:SetPoint("Bottom", -100, -10, "Bottom")
-   cancelButton.ClickAction = self.CloseAction
-   cancelButton:Hide()
-  self:AddChild(cancelButton)
-  self.CancelBtn = cancelButton
+  if(false) then
+    
+    local cancelButton = UIButton("Cancel")
+     cancelButton:SetPoint("Bottom", -100, -10, "Bottom")
+     cancelButton.ClickAction = self.CloseAction
+     cancelButton:Hide()
+    self:AddChild(cancelButton)
+    self.CancelBtn = cancelButton
+  end
   
-  
-  local textBox = TextBox(150, 20, 19)
-    textBox:SetPoint("Right", -30, 0, "Right")
-    textBox:Hide()
-  self:AddChild(textBox)
-  self.TextBox = textBox
+  if(false) then
+
+    local textBox = TextBox(150, 20, 19)
+      textBox:SetPoint("Right", -30, 0, "Right")
+      textBox:Hide()
+    self:AddChild(textBox)
+    self.TextBox = textBox
+  end
   
   
   self.Mode = "SimpleMsg"  
@@ -55,11 +67,4 @@ function MessageBox:SetMode(mode, modeData)
     self.TextBox:Show()
   end
 
-end
-
-function MessageBox:Close()
-  if(not self.Hidden) then
-    self:Hide()
-    GUIMenuManager:MesssageBoxClosed(self)
-  end
 end

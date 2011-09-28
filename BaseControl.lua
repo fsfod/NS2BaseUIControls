@@ -57,6 +57,7 @@ ControlFlags = {
   OnMouseWheel = 4,
   Draggable = 8,
   IsWindow = 16,
+  Focusable = 32,
 }
 
 class'BaseControl' 
@@ -192,23 +193,42 @@ function BaseControl:SetLabel(str, offset, yOffset)
   label:SetPosition(Vector(-(label:GetTextWidth(str)+(offset or 6)), yOffset or 0, 0))
 end
 
-function BaseControl:CreateFontString(fontSizeOrTemplate, anchorPoint, x, y)
+function BaseControl:CreateFontString(fontSizeOrTemplate, anchorPoint, x, y, clipText)
   local font
 
   if(type(fontSizeOrTemplate) == "number") then
     font = GUIManager:CreateTextItem()
     font:SetFontSize(fontSizeOrTemplate)
    
-    if(anchorPoint) then
-      local point = PointToAnchor[anchorPoint]
-      font:SetAnchor(point[1], point[2])
-    end
+    
   else
-   font = fontSizeOrTemplate:CreateFontString()
+    font = fontSizeOrTemplate:CreateFontString()
+    fontSizeOrTemplate = fontSizeOrTemplate.FontSize
+  end
+
+  local point
+
+  if(anchorPoint) then
+    point = PointToAnchor[anchorPoint]
+    font:SetAnchor(point[1], point[2])
   end
 
   if(x) then
     font:SetPosition(Vector(x, y, 0))
+   
+    if(clipText) then
+      local width = self:GetWidth()
+
+      if(anchorPoint) then
+        if(point[1] == GUIItem.Right) then
+          x = (width)+x
+        elseif(point[1] == GUIItem.Middle) then
+          x = x-(width/2)
+        end
+      end
+      
+      font:SetTextClipped(true, width-x, fontSizeOrTemplate)
+    end
   end
   
   self:AddGUIItemChild(font)
@@ -272,7 +292,7 @@ function BaseControl:UpdatePosition()
 end
 
 function BaseControl:SetSize(VecOrX, y, SkipHitRecUpdate)
-  
+
   if(y) then
     self.Size.x = VecOrX
     self.Size.y = y
@@ -284,15 +304,15 @@ function BaseControl:SetSize(VecOrX, y, SkipHitRecUpdate)
       self.Size.y = VecOrX.y
     end
   end
-  
+
   self.RootFrame:SetSize(self.Size)
-    
+
   if(self.SpecialAnchor and not SkipHitRecUpdate) then
     self:SetPoint(unpack(self.SpecialAnchor))
   end
   
   if(not SkipHitRecUpdate) then
-    if(self.HitRec and self.Position and self.Parent) then
+    if(self.HitRec and self.Position and self.Parent and not self.SpecialAnchor) then
       self:UpdateHitRec()
     end
   
@@ -404,7 +424,10 @@ function BaseControl:UpdateHitRec(rec)
 end
 
 function BaseControl:AddGUIItemChild(frame)
+  
   self.RootFrame:AddChild(frame)
+  
+  return frame
 end
 
 function BaseControl:AddChild(control)
@@ -462,7 +485,7 @@ local IsWindowFlag = ControlFlags.IsWindow
 
 function BaseControl:GetTopLevelParentWindow()
 
-  if(band(self.Flags, IsWindowFlag) ~= 0) then
+  if(self:IsWindowFrame()) then
     return self
   end
 
@@ -470,7 +493,7 @@ function BaseControl:GetTopLevelParentWindow()
   local nextParent = self.Parent
 
   while nextParent do   
-    if(band(nextParent.Flags, IsWindowFlag) ~= 0) then
+    if(nextParent:IsWindowFrame()) then
       lastFoundWindow = nextParent
     end
 
@@ -511,9 +534,13 @@ function BaseControl:FireEvent(Action, ...)
   if(not Action) then
     return
   end
-  
+
   if(type(Action) == "table") then
-    return Action[1](unpack(Action, 2), ...)
+    //http://www.lua.org/manual/5.1/manual.html#2.5
+    //we could just pack the extra arguments into the action table and unpack it as the last arg but we would have to clean them out after the call
+    assert(#Action == 2, "Only one extra agument is supported for event tables")
+    
+    return SafeCallResultsOnly(Action[1], /*unpack(Action, 2)*/Action[2], ...)
   else
     if(type(Action) == "string") then
       if(not _G[Action]) then
@@ -522,7 +549,8 @@ function BaseControl:FireEvent(Action, ...)
       end
       Action = _G[Action]
     end
-    return Action(...)
+
+    return SafeCallResultsOnly(Action, ...)
   end
 end
 
@@ -531,8 +559,14 @@ function BaseControl:SetPoint(point, x, y, reltivePoint)
   
   local root = self.RootFrame
   
-  if(reltivePoint) then
-    self.SpecialAnchor = {point, x, y, reltivePoint}
+  if(not reltivePoint) then
+    reltivePoint = point
+  end
+ 
+  self.SpecialAnchor = {point, x, y, reltivePoint}
+
+  if(not x) then
+    x,y = 0,0
   end
   
   local point = PointToAnchor[point]
@@ -617,6 +651,10 @@ end
 
 function BaseControl:AddFlag(flagBit)
   self.Flags = bor(self.Flags, flagBit)
+end
+
+function BaseControl:IsWindowFrame()
+  return band(self.Flags, ControlFlags.IsWindow) ~= 0
 end
 
 function BaseControl:Update()

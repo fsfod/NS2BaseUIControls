@@ -75,8 +75,8 @@ function ListView:Initialize(width, height, itemCreator, itemHeight, itemSpacing
   
   self.TraverseChildFirst = true
   
-  if(self.ItemsSelectble == nil) then
-    self.ItemsSelectble = true
+  if(self.ItemsSelectable == nil) then
+    self.ItemsSelectable = true
   end
   
   BaseControl.Initialize(self, width, height)
@@ -113,6 +113,8 @@ function ListView:Initialize(width, height, itemCreator, itemHeight, itemSpacing
 
   self:CreateItems()
   self.AnchorPosition = Vector(0,0,0)
+
+  self.ItemDataList = {}
 end
 
 function ListView:Uninitialize()
@@ -321,7 +323,7 @@ function ListView:OnClick(button, down, x,y)
     local item = self.Items[index]
     local DataIndex = self.ViewStart+index-1
 
-    if(self.ItemsSelectble) then
+    if(self.ItemsSelectable) then
       self:OnItemSelected(index)
     end
 
@@ -348,6 +350,19 @@ function ListView:ResetSelection()
   self.ClickedItem = nil
   
   self.SelectBG:SetIsVisible(false)
+end
+
+function ListView:SetSelectedItem(item)
+
+  for i,itemEntry in ipairs(self.Items) do
+   
+    if(itemEntry == item) then
+      self:SetSelectedIndex(self.ViewStart+(i-1))
+     return true
+    end
+  end
+
+  return false
 end
 
 function ListView:SetSelectedIndex(index)
@@ -423,6 +438,8 @@ function ListView:ListSizeChanged()
 end
 
 function ListView:SetDataList(list)
+  assert(list)
+  
   self.ItemDataList = list
   
   self:ResetSelection()
@@ -461,11 +478,13 @@ function ListView:RefreshItems()
   self.EnteredEntry = nil
 
   for i=1,self.MaxVisibleItems do
+    local item = self.Items[i]
+    
     if(i <= TotalCount) then
-      self.Items[i]:SetData(self.ItemDataList[i+self.ViewStart-1], SelectedIndex == i)
+      item:SetData(self.ItemDataList[i+self.ViewStart-1], SelectedIndex == i)
     else
-      self.Items[i]:OnHide()
-      self.Items[i].Hidden = true
+      item:OnHide()
+      item.Hidden = true
     end
   end
 end
@@ -515,11 +534,23 @@ function ListView:CreateItems(startIndex)
 
   for i=startIndex,self.MaxVisibleItems do
     local item = self.CreateItem(self, width, height)
-     self.ItemsAnchor:AddChild(item:GetRoot())
+   
+     self.ItemsAnchor:AddChild(item.RootFrame or item:GetRoot())
      item:SetPosition(x, (height+self.ItemSpacing)*(i-1))
-     //item:SetWidth(width)
+     
+
+     if(item.UpdateHitRec) then
+      //if ItemsAnchor is ever moved from our top left corner like when clipped drawing is added and we do pixel instead of whole line scrolling we will have to change ItemsAnchor to a 
+      // BaseControl if the items are BaseControl based
+       item.Parent = self
+       item:UpdateHitRec()
+     end
 
     self.Items[i] = item
+  end
+
+  if(self.SetItemWidths) then
+    
   end
 end
 
