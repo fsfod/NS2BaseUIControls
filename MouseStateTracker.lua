@@ -29,7 +29,7 @@ if(not MouseStateTracker) then
     },
   }
   
-  Event.Hook("Console_resetmouse", function()MouseStateTracker:ClearStack() end)
+  Event.Hook("Console_resetmouse", function() MouseStateTracker:ClearStack() end)
   
 else
   HotReload = true
@@ -58,8 +58,6 @@ function MouseStateTracker:Update()
   //self:ApplyStack()
 end
 
-
-
 function MouseStateTracker:PrintDebug(...)
   if(self.Debug) then
     RawPrint(...)
@@ -75,8 +73,11 @@ function MouseStateTracker:SetHooks(startup)
   self:HookClassFunction("Armory", "OnUse", "ArmoryBuy_Hook")
   self:HookFunction("ArmoryUI_Close", function() self:PopState("buymenu") end)
   
-  self:PostHookClassFunction("Marine", "CloseMenu", function()
-    self:TryPopState("buymenu")
+  self:PostHookClassFunction("Marine", "CloseMenu",
+    function(entitySelf)
+      if entitySelf == Client.GetLocalPlayer()  then
+        self:TryPopState("buymenu")
+      end
   end)
   
    ClassHooker:SetClassCreatedIn("GUIScoreboard")
@@ -119,7 +120,7 @@ function MouseStateTracker:PlayerDied()
 end
 
 function MouseStateTracker:ArmoryBuy_Hook(objSelf, player, elapsedTime, useAttachPoint)
-  if(player ~= Client.GetLocalPlayer()) then
+  if(not player or player ~= Client.GetLocalPlayer()) then
     return
   end
   
@@ -213,6 +214,7 @@ function MouseStateTracker:ClearMainMenuState()
 end
 
 function MouseStateTracker:ClearAllExcept(keepList)
+  self:PrintDebug("MouseStateTracker:ClearAllExcepte")
   
   local LookUpTable = {}
   
@@ -246,6 +248,8 @@ function MouseStateTracker:ClearAllExcept(keepList)
 end
 
 function MouseStateTracker:ClearStack()
+
+  self:PrintDebug("MouseStateTracker:ClearStack")
 
   self.StateStack = {}
   self.OwnerToState = {}
