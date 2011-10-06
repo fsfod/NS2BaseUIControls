@@ -78,13 +78,31 @@ function UIButton:SetLabel(label)
   self.Label:SetText(label)
 end
 
+function UIButton:SetHighlightLock(locked)
+  self.HighlightLocked = locked
+ 
+  if(locked) then
+    self.CenterSquare:SetColor(self.CenterColor)
+  else
+    self.CenterSquare:SetColor(Color(0.1, 0.1, 0.1, 1))
+  end
+
+  self.CenterBg:SetIsVisible(locked)
+end
+
 function UIButton:OnEnter()
-	self.CenterSquare:SetColor(Color(0.1, 0.1, 0.1, 1))
-	self.CenterBg:SetIsVisible(true)
-	PlayerUI_PlayButtonEnterSound()
+
+  if(not self.HighlightLocked) then
+	  self.CenterSquare:SetColor(Color(0.1, 0.1, 0.1, 1))
+	  self.CenterBg:SetIsVisible(true)
+	
+	  PlayerUI_PlayButtonEnterSound()
+	end
 end
 
 function UIButton:OnLeave()
-	self.CenterSquare:SetColor(self.CenterColor)
-	self.CenterBg:SetIsVisible(false)
+  if(not self.HighlightLocked) then
+	  self.CenterSquare:SetColor(self.CenterColor)
+	  self.CenterBg:SetIsVisible(false)
+	end
 end

@@ -293,7 +293,7 @@ function BaseGUIManager:CompactWindowLayers()
   self.CurrentWindowLayer = self.BaseWindowLayer+#self.WindowList
 end
 
-function BaseGUIManager:CreateWindow(className, ...)
+function BaseGUIManager:CreateFrame(className, ...)
   local frameClass = _G[className]
 
   if(not frameClass) then
@@ -309,10 +309,19 @@ function BaseGUIManager:CreateWindow(className, ...)
   if(not sucess) then
     return nil
   end
+  
+  return frame
+end
 
-  assert(band(frame.Flags, ControlFlags.IsWindow) ~= 0, "CreateWindow: Created Frame is not a window")
+function BaseGUIManager:CreateWindow(className, ...)
 
-  self:AddFrame(frame)
+  local frame = self:CreateFrame(className, ...)
+
+  if(frame) then
+    assert(band(frame.Flags, ControlFlags.IsWindow) ~= 0, "CreateWindow: Created Frame is not a window")
+
+    self:AddFrame(frame)
+  end
 
   return frame
 end
