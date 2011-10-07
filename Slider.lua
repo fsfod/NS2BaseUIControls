@@ -1,5 +1,5 @@
 
-class 'Slider'(ScrollBar)
+ControlClass('Slider', ScrollBar)
 
 function Slider:__init(width, height, minValue, maxValue)
   ScrollBar.__init(self, width, height)

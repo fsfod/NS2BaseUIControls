@@ -1,4 +1,4 @@
-class 'UpDownControl'(BaseControl)
+ControlClass('UpDownControl', BaseControl)
 
 UpDownControl.ButtonWidth = 18
 

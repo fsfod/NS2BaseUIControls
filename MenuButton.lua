@@ -1,4 +1,4 @@
-class 'UIButton'(BorderedSquare)
+ControlClass('UIButton', BorderedSquare)
 
 ButtonMixin:Mixin(UIButton)
 

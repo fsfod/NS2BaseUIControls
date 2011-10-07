@@ -1,4 +1,4 @@
-class 'CheckBox'(BaseControl)
+ControlClass('CheckBox', BaseControl)
 
 local Orange = Color(0.8666, 0.3843, 0, 1)
 local DimOrange = Color(0.8666/3, 0.3843/3, 0, 1)
@@ -82,7 +82,7 @@ function CheckBox:IsChecked()
   return self.Checked
 end
 
-class 'CheckButton'(BaseControl)
+ControlClass('CheckButton', BaseControl)
 
 function CheckButton:Initialize(height, checked)
   BaseControl.Initialize(self, height, height)

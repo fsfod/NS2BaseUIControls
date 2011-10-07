@@ -1,5 +1,5 @@
 
-class 'ComboBox'(BorderedSquare)
+ControlClass('ComboBox', BorderedSquare)
 
 function ComboBox:__init(width, height, itemList, labelCreator)
   BorderedSquare.__init(self, width, height, 2)
@@ -170,7 +170,7 @@ function ComboBox:ToggleDropDown(down)
   
 end
 
-class 'DropDownMenu'(ListView)
+ControlClass('DropDownMenu', ListView)
 
 function DropDownMenu:Initialize(width, height)
   ListView.Initialize(self, width, height)

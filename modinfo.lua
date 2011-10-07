@@ -5,6 +5,7 @@ ValidVM = "client"
 MountSource = true
 
 ScriptList = {
+  "ControlClass.lua", 
   "MouseStateTracker.lua",
   
   "ConfigDataBinder.lua",

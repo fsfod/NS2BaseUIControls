@@ -1,6 +1,6 @@
 
 
-class 'BorderedSquare'(BaseControl)
+ControlClass('BorderedSquare', BaseControl)
 
 local DefaultLineWidth = 1
 local DefaultSize = 60
@@ -15,38 +15,33 @@ function BorderedSquare:__init(width, height, lineWidth, skipSetSize)
   self.LineWidth = lineWidth or DefaultLineWidth 
   height = height or DefaultSize
   width = width or DefaultSize
-  
+
   BaseControl.Initialize(self, width, height)
-  
+
   local bg = self.RootFrame
     bg:SetColor(BackgroundColor)
-  
-  local top = GUIManager:CreateGraphicItem()
+
+  local top = self:CreateGUIItem()
     top:SetColor(BorderColour)
   self.Top = top
   
-  local bottom = GUIManager:CreateGraphicItem()
+  local bottom = self:CreateGUIItem()
     bottom:SetAnchor(GUIItem.Left, GUIItem.Bottom)
     //the wonky rounding of the coorinates cause this to look wrong
     //bottom:SetPosition(Vector(0,-self.LineWidth, 0))
     bottom:SetColor(BorderColour)
   self.Bottom = bottom
-  
-  local left = GUIManager:CreateGraphicItem()
+
+  local left = self:CreateGUIItem()
     left:SetColor(BorderColour)
   self.Left = left
   
-  local right = GUIManager:CreateGraphicItem()
+  local right = self:CreateGUIItem()
     right:SetAnchor(GUIItem.Right, GUIItem.Top)
     //the wonky rounding of the coorinates cause this to look wrong
     //right:SetPosition(Vector(-self.LineWidth,0, 0))
     right:SetColor(BorderColour)
   self.Right = right
-  
-  bg:AddChild(top)
-  bg:AddChild(bottom)
-  bg:AddChild(left)
-  bg:AddChild(right)
   
   self.HitRec = {}
   
@@ -69,8 +64,7 @@ function BorderedSquare:SetBackgroundColor(colour)
 end
 
 function BorderedSquare:SetSize(width, height)
-
-  BaseControl.SetSize(self, width, height)
+  BaseControl.ScaledSetSize(self, width, height)
   
   local SizeVec = Vector(width, self.LineWidth, 0)
   
@@ -99,7 +93,7 @@ end
 
 
 
-class 'BasePage'(BorderedSquare)
+ControlClass('BasePage', BorderedSquare)
 
 function BasePage:__init(width, height, pageName, titleString)
   

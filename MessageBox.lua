@@ -1,4 +1,4 @@
-class'MessageBox'(BaseWindow)
+ControlClass('MessageBox', BaseWindow)
 
 function MessageBox:__init(title, message)
   BaseWindow.__init(self, 600, 120, "")

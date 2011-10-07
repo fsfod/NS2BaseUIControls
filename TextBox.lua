@@ -1,4 +1,4 @@
-class 'TextBox'(BorderedSquare)
+ControlClass('TextBox', BorderedSquare)
 
 local Space = string.byte(" ", 1)
 

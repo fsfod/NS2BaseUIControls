@@ -56,7 +56,7 @@ function CreateTextItem()
   return LVTextItem()
 end
 
-class 'ListView'(BaseControl)
+ControlClass('ListView', BaseControl)
 
 ListView.DefaultHeight = 120
 ListView.DefaultWidth = 300

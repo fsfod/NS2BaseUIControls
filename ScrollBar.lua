@@ -1,7 +1,7 @@
 
-//class 'ScrollBar'(Draggable)
+//ControlClass('ScrollBar', Draggable)
 
-class 'ScrollBar'(BaseControl)
+ControlClass('ScrollBar', BaseControl)
 
 local ButtonPadding = 0.1
 local ButtonWidth = 0.8
@@ -201,7 +201,7 @@ function ScrollBar:OnClick(button, down, x,y)
   end
 end
 
-class 'SliderButton'(BaseControl)
+ControlClass('SliderButton', BaseControl)
 
 function SliderButton:__init()
   BaseControl.Initialize(self, 30, 30)
@@ -302,7 +302,7 @@ local ArrowTextures = {
   Right = {45,0, 29,15},
 }
 
-class 'ArrowButton'(BaseControl)
+ControlClass('ArrowButton', BaseControl)
 
 
 local NormalColor = Color(66/255, 66/255, 66/255, 1)

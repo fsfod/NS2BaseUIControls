@@ -38,16 +38,6 @@ PointToAnchor.center = PointToAnchor.Center
 
 local WrapVector = Vector()
 
-function classL(className, base)
-  local  t = {}
-  
-  for funcname,func in pairs(base) do
-    t[funcname] = func
-  end
-  
-  _G[className] = t
-end
-
 local bor = bit.bor
 local band = bit.band
 
@@ -60,7 +50,9 @@ ControlFlags = {
   Focusable = 32,
 }
 
-class'BaseControl' 
+ControlClass('BaseControl')
+
+BaseControl.Scale = 1
 
 function BaseControl:__init(width, height, ...)
   if(width) then
@@ -69,7 +61,7 @@ function BaseControl:__init(width, height, ...)
 end
 
 function BaseControl:Initialize(width, height)
-  
+
   local flags = 0
   
   if(width) then
@@ -133,74 +125,84 @@ function BaseControl:SetRootFrame(frame)
   self.Position = Vector(frame:GetPosition())
 end
 
-function BaseControl:GUIManagerChanged(newGUIManager)
+local function MakeCreateGUIItem()
 
-  if(self.CachedGUIManager) then
-    self.CachedGUIManager = newGUIManager
+  local AddChild = GUIItem.AddChild
+  local CreateItem = GUI.CreateItem
+  local SetScale = GUIItem.SetScale
+  local SetPosition = GUIItem.SetPosition
 
-    for _,frame in ipairs(self.ChildControls) do
-      frame:GUIManagerChanged(newGUIManager)
+  local vec = Vector()
+
+  BaseControl.CreateGUIItem = function(self, xOrVec, y)
+  
+    local item = CreateItem()
+    
+    vec.x = self.Scale
+    vec.y = self.Scale
+  
+    SetScale(item, vec)
+    
+    AddChild(self.RootFrame, item)
+    
+    if(xOrVec) then
+      
+      if(y) then
+        vec.x = x
+        vec.y = y
+        
+        xOrVec = vec
+      end
+
+      SetPosition(item, xOrVec)
     end
+    
+    return item
   end
+
+
 end
 
-function BaseControl:GetGUIManager()
+MakeCreateGUIItem()
+
+local tempSize = Vector()
+
+function BaseControl:SetGUIItemSize(itemOrName, x, y)
   
-  if(not self.CachedGUIManager) then
-    
-    assert(self.Parent, "Unable to get the correct GUIManager for the control because it has no parent")
-    
-    self.CachedGUIManager = self.Parent:GetGUIManager()
+  if(type(itemOrName) == "string") then
+    itemOrName = self[itemOrName]
   end
   
-  return self.CachedGUIManager
+  local scale = self.Scale
+  
+  tempSize.x = x*scale
+  
+  itemOrName:SizeSize()
 end
 
-function BaseControl:SetTexture(texture, x1, y1, x2, y2)
-  
-  local path = texture
-  
-  if(type(texture) == "table") then
-    self.RootFrame:SetTexture(texture[1])
-    self.RootFrame:SetTexturePixelCoordinates(texture[2], texture[3], texture[4], texture[5])
-  else
-    self.RootFrame:SetTexture(texture)
-    
-    if(x1) then
-      self.RootFrame:SetTexturePixelCoordinates(x1, y1, x2, y2)
-    end
-  end
-  
-end
+function BaseControl:CreateControl(controlClass, ...)
 
-function BaseControl:SetLabel(str, offset, yOffset)
-  
-  local label = self.BC_Label
-  
-  if(not label) then
-    label = GUIManager:CreateTextItem()
-    label:SetFontSize(17)
-    
-    label:SetTextAlignmentX(GUIItem.Align_Min)
-    label:SetTextAlignmentY(GUIItem.Align_Center)
-    label:SetAnchor(GUIItem.Left, GUIItem.Center)
-    
-    self.BC_Label = label
-    self:AddGUIItemChild(label)
+  local Class = _G[controlClass]
+
+  if(not Class) then
+    error("BaseControl:CreateControl: Control class "..(controlClass or "nil").. "does not exist")
   end
-    
-  label:SetText(str)
-  label:SetPosition(Vector(-(label:GetTextWidth(str)+(offset or 6)), yOffset or 0, 0))
+
+  local control = Class(...)
+
+  //control:__init(...)
+
+  return control
 end
 
 function BaseControl:CreateFontString(fontSizeOrTemplate, anchorPoint, x, y, clipText)
   local font
 
   if(type(fontSizeOrTemplate) == "number") then
+    
     font = GUIManager:CreateTextItem()
     font:SetFontSize(fontSizeOrTemplate)
-   
-    
+
   else
     font = fontSizeOrTemplate:CreateFontString()
     fontSizeOrTemplate = fontSizeOrTemplate.FontSize
@@ -234,6 +236,65 @@ function BaseControl:CreateFontString(fontSizeOrTemplate, anchorPoint, x, y, cli
   self:AddGUIItemChild(font)
   
   return font
+end
+
+function BaseControl:GUIManagerChanged(newGUIManager)
+
+  if(self.CachedGUIManager) then
+    self.CachedGUIManager = newGUIManager
+
+    for _,frame in ipairs(self.ChildControls) do
+      frame:GUIManagerChanged(newGUIManager)
+    end
+  end
+end
+
+function BaseControl:GetGUIManager()
+  
+  if(not self.CachedGUIManager) then
+    
+    assert(self.Parent, "Unable to get the correct GUIManager for the control because it has no parent")
+    
+    self.CachedGUIManager = self.Parent:GetGUIManager()
+  end
+  
+  return self.CachedGUIManager
+end
+
+function BaseControl:SetTexture(texture, x1, y1, x2, y2)
+
+  local path = texture
+
+  if(type(texture) == "table") then
+    self.RootFrame:SetTexture(texture[1])
+    self.RootFrame:SetTexturePixelCoordinates(texture[2], texture[3], texture[4], texture[5])
+  else
+    self.RootFrame:SetTexture(texture)
+    
+    if(x1) then
+      self.RootFrame:SetTexturePixelCoordinates(x1, y1, x2, y2)
+    end
+  end
+end
+
+function BaseControl:SetLabel(str, offset, yOffset)
+  
+  local label = self.BC_Label
+  
+  if(not label) then
+    label = GUIManager:CreateTextItem()
+    label:SetFontSize(17)
+    
+    label:SetTextAlignmentX(GUIItem.Align_Min)
+    label:SetTextAlignmentY(GUIItem.Align_Center)
+    label:SetAnchor(GUIItem.Left, GUIItem.Center)
+    
+    self.BC_Label = label
+    self:AddGUIItemChild(label)
+  end
+    
+  label:SetText(str)
+  label:SetPosition(Vector(-(label:GetTextWidth(str)+(offset or 6)), yOffset or 0, 0))
 end
 
 function BaseControl:SetLayer(layer)
@@ -291,6 +352,33 @@ function BaseControl:UpdatePosition()
   end
 end
 
+function BaseControl:ScaledSetSize(VecOrX, y, SkipHitRecUpdate)
+
+  if(y) then
+    self.Size.x = VecOrX
+    self.Size.y = y
+  else
+    if(not self.Size) then
+      self.Size = Vector(VecOrX)
+    else
+      self.Size.x = VecOrX.x
+      self.Size.y = VecOrX.y
+    end
+  end
+
+  self.RealSize = self.Size*self.Scale
+
+  self.RootFrame:SetSize(self.RealSize)
+
+  if(self.SpecialAnchor and not SkipHitRecUpdate) then
+    self:SetPoint(unpack(self.SpecialAnchor))
+  end
+  
+  if(not SkipHitRecUpdate) then
+    self:TryUpdateHitRec()
+  end
+end
+
 function BaseControl:SetSize(VecOrX, y, SkipHitRecUpdate)
 
   if(y) then
@@ -312,16 +400,21 @@ function BaseControl:SetSize(VecOrX, y, SkipHitRecUpdate)
   end
   
   if(not SkipHitRecUpdate) then
-    if(self.HitRec and self.Position and self.Parent and not self.SpecialAnchor) then
-      self:UpdateHitRec()
-    end
+    self:TryUpdateHitRec()
+  end
+end
+
+function BaseControl:TryUpdateHitRec()
   
-    --Should really optimize this for only controls that not anchored to Left and Top
-    if(self.ChildControls) then
-      for _,frame in ipairs(self.ChildControls) do      
-        if(frame.HitRec) then
-          frame:UpdateHitRec()
-        end
+  if(self.HitRec and self.Position and self.Parent and not self.SpecialAnchor) then
+    self:UpdateHitRec()
+  end
+  
+  --Should really optimize this for only controls that not anchored to Left and Top
+  if(self.ChildControls) then
+    for _,frame in ipairs(self.ChildControls) do      
+      if(frame.HitRec) then
+        frame:UpdateHitRec()
       end
     end
   end

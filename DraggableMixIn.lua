@@ -1,4 +1,4 @@
-class('Draggable')(BaseControl)
+class 'Draggable'
 
 function Draggable:__init(width, height)
   self.DragStartPoint = false

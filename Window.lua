@@ -1,6 +1,6 @@
 
 
-class 'BaseWindow' (BorderedSquare)
+ControlClass("BaseWindow", BorderedSquare)
 
 function BaseWindow:__init(width, height, titleString, noCloseButton)
   BorderedSquare.__init(self, width, height, 2)
@@ -30,7 +30,7 @@ function BaseWindow:Close(fromCloseButton)
   end
 end
 
-class 'CloseButton'(BaseControl)
+ControlClass('CloseButton', BaseControl)
 
 ButtonMixin:Mixin(CloseButton)
 
