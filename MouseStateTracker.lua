@@ -70,7 +70,7 @@ function MouseStateTracker:SetHooks(startup)
   self:PostHookClassFunction("Commander", "UpdateCursor")  
   self:HookClassFunction("Commander", "SetupHud", function() self:PushState("commander", true, false, true) end)
   
-  self:HookClassFunction("Armory", "OnUse", "ArmoryBuy_Hook")
+  self:PostHookClassFunction("Armory", "OnUse", "ArmoryBuy_Hook")
   self:HookFunction("ArmoryUI_Close", function() self:PopState("buymenu") end)
   
   self:PostHookClassFunction("Marine", "CloseMenu",
@@ -120,7 +120,8 @@ function MouseStateTracker:PlayerDied()
 end
 
 function MouseStateTracker:ArmoryBuy_Hook(objSelf, player, elapsedTime, useAttachPoint)
-  if(not player or player ~= Client.GetLocalPlayer()) then
+
+  if(not player or player ~= Client.GetLocalPlayer() or Shared.GetIsRunningPrediction()) then
     return
   end
   
