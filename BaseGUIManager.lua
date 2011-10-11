@@ -293,29 +293,35 @@ function BaseGUIManager:CompactWindowLayers()
   self.CurrentWindowLayer = self.BaseWindowLayer+#self.WindowList
 end
 
-function BaseGUIManager:CreateFrame(className, ...)
+function BaseGUIManager:InternalCreateFrame(className, ...)
   local frameClass = _G[className]
 
   if(not frameClass) then
-    error(string.format("CreateWindow: There is no window type named %s", className))
+    error(string.format("CreateFrame: There is no frame type named %s", className))
   end
 
-  if(not frameClass.GetGUIManager) then
-    error(string.format("CreateWindow: Window %s is not derived from BaseControl", className))
+  if(not frameClass:isa("BaseControl")) then
+    error(string.format("CreateFrame: frame %s is not derived from BaseControl", className))
   end
-  
-  local sucess, frame = SafeCall(frameClass, ...)  
+
+  local sucess, frame = SafeCall(CreateControl, className)  
+
+  if(not sucess) then
+    return nil
+  end
+
+  sucess = SafeCall(frame.Initialize, frame, ...)
   
   if(not sucess) then
     return nil
   end
-  
+
   return frame
 end
 
 function BaseGUIManager:CreateWindow(className, ...)
 
-  local frame = self:CreateFrame(className, ...)
+  local frame = self:InternalCreateFrame(className, ...)
 
   if(frame) then
     assert(band(frame.Flags, ControlFlags.IsWindow) ~= 0, "CreateWindow: Created Frame is not a window")
@@ -457,7 +463,7 @@ function BaseGUIManager:SendMouseUpClick(button)
 	if(clicked) then
 	  self.ClickedFrames[button] = nil
 
-	  if(clicked.OnClick and clicked.RootFrame) then
+	  if(IsValidControl(clicked) and clicked.OnClick) then
 	    SafeCall(clicked.OnClick, clicked, button, false)
 	  end
 	end
@@ -472,6 +478,16 @@ function BaseGUIManager:DoOnClick(frame, x, y)
     
     if(not success) then
      return false
+    end
+
+    if(not IsValidControl(frame)) then
+ 
+      if(result == nil or result == true) then
+        self.ClickedButton = nil
+       return true
+      end
+      
+      return false
     end
   end
 
@@ -573,7 +589,7 @@ function BaseGUIManager:ClearMouseOver()
   self.CurrentMouseOver = nil
 
   if(current) then
-    if(current.OnLeave and current.RootFrame) then
+    if(IsValidControl(current) and current.OnLeave) then
 	    SafeCall(current.OnLeave, current)
 	  end
 
@@ -590,7 +606,7 @@ function BaseGUIManager:ClearFocus(newFocus)
      
     focus.Focused = false
     
-    if(focus.OnFocusLost) then
+    if(IsValidControl(focus) and focus.OnFocusLost) then
       SafeCall(focus.OnFocusLost, focus, newFocus)
     end
   end
@@ -743,12 +759,17 @@ function BaseGUIManager:DoOnEnter(frame, x, y)
     error("BaseGUIManager:DoOnEnter found CurrentMouseOver still set")
   end
 
+  if(not IsValidControl(frame)) then
+     RawPrint("BaseGUIManager:DoOnEnter Skipping destroyed frame")
+    return false
+  end
+
   local success, result = SafeCall(frame.OnEnter, frame, x, y)
-  
+
   if(not success) then
     return false
   end
-  
+
   --if the frames OnEnter function didn't return anything we treat that as they accepted the Enter event
   if(result == nil or result == true) then
     self.CurrentMouseOver = frame
@@ -766,15 +787,20 @@ function BaseGUIManager:OnMouseMove()
 	if(self.CurrentMouseOver and not self.ActiveDrag) then
 	  local Current = self.CurrentMouseOver
 	  
-	  --a frame is required to have there HitRec in the same positon as the value returned by there GetScreenPosition function
-	  local position = Current:GetScreenPosition()
-	  local hitRec = Current.HitRec
+	  if(IsValidControl(Current)) then
+	    --a frame is required to have there HitRec in the same positon as the value returned by there GetScreenPosition function
+	    local position = Current:GetScreenPosition()
+	    local hitRec = Current.HitRec
+      
+      --use the hit rectangle to get the size of the frame
+	    local right = position.x+(hitRec[3]-hitRec[1]) 
+	    local bottom = position.y+(hitRec[4]-hitRec[2])
+      
+	    if(not Current:IsShown() or x < position.x or y < position.y or x > right or y > bottom) then
+	      self:ClearMouseOver()
+	    end
 
-    --use the hit rectangle to get the size of the frame
-	  local right = position.x+(hitRec[3]-hitRec[1]) 
-	  local bottom = position.y+(hitRec[4]-hitRec[2])
-
-	  if(not Current:IsShown() or x < position.x or y < position.y or x > right or y > bottom) then
+	  else
 	    self:ClearMouseOver()
 	  end
 	end
@@ -784,7 +810,6 @@ function BaseGUIManager:OnMouseMove()
   else
     self:CheckDragStart(x, y)
   end
-  
 
   --fire mouse move after we've done OnLeave but before OnEnter so OnEnter/OnLeave frame code is more sane 
 	self.Callbacks:Fire("MouseMove", x, y)
@@ -818,6 +843,11 @@ function BaseGUIManager:CheckDragStart(x, y)
   end
 
   local draggedFrame = self.DragPreStartFrame
+
+  if not IsValidControl(draggedFrame) then
+    self.DragPreStartFrame = nil
+   return false
+  end
 
   if(draggedFrame.OnDragStart) then
     local sucess, result = SafeCall(draggedFrame.OnDragStart, draggedFrame, self.DragStartClickPos)

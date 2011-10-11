@@ -2,8 +2,8 @@
 
 ControlClass("BaseWindow", BorderedSquare)
 
-function BaseWindow:__init(width, height, titleString, noCloseButton)
-  BorderedSquare.__init(self, width, height, 2)
+function BaseWindow:Initialize(width, height, titleString, noCloseButton)
+  BorderedSquare.Initialize(self, width, height, 2)
 
   self:SetColor(WindowBGColor)
 
@@ -12,7 +12,7 @@ function BaseWindow:__init(width, height, titleString, noCloseButton)
 
   self:SetPoint("Center", 0, 0, "Center")
 
-  local closeButton = CloseButton(self)
+  local closeButton = self:CreateControl("CloseButton", self)
    closeButton:SetPoint("TopRight", -5, 5, "TopRight")
   self:AddChild(closeButton)
   
@@ -47,12 +47,12 @@ CloseButton.XOffsetVec = Vector(CloseButton.XOffset, CloseButton.XOffset, 0)
 local xheight = CloseButton.DefaultHeight-(CloseButton.XOffset*2)
 CloseButton.XHeightVec = Vector(xheight, xheight, 0)
 
-function CloseButton:__init(window)
+function CloseButton:Initialize(window)
   
   local height = self.DefaultHeight
 
-  BaseControl.__init(self, height, height)
-  ButtonMixin.__init(self)
+  BaseControl.Initialize(self, height, height)
+  ButtonMixin.Initialize(self)
   
   //self:SetColor(0.4, 0.4, 0.4, 1)
 

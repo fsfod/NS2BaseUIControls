@@ -20,6 +20,7 @@ UIParent = {
   Flags = 0,
   ChildFlags = 255,
   GetGUIManager = function() return GameGUIManager end,
+  UIParent = true,
 }
 
 GameGUIManager.TopLevelUIParent = UIParent
@@ -63,23 +64,12 @@ function GameGUIManager:DestroySingleInstance(name)
 end
 
 function GameGUIManager:CreateFrame(name, ...)
-  local frameClass = _G[name]
 
-  if(not frameClass) then
-    error(string.format("CreateFrame: There is no frame type named %s", name))
-  end
+  local frame = self:InternalCreateFrame(name, ...)  
 
-  if(not frameClass.GetGUIManager) then
-    error(string.format("CreateFrame: Frame %s is not derived from BaseControl", name))
+  if(frame) then
+    self:AddFrame(frame)
   end
-  
-  local sucess, frame = SafeCall(frameClass, ...)  
-  
-  if(not sucess) then
-    return nil
-  end
-
-  self:AddFrame(frame)
 
   return frame
 end
@@ -90,10 +80,14 @@ function GameGUIManager:GetSingleInstanceControl(name, ...)
     return self.SingleInstance[name]
   end
 
-  local frame = self:CreateFrame(name, ...)
+  local frame = self:InternalCreateFrame(name, ...)
 
-  self.SingleInstance[name] = frame
-  
+  if(frame) then
+    self:AddFrame(frame)
+    
+    self.SingleInstance[name] = frame
+  end
+
   return frame
 end
 

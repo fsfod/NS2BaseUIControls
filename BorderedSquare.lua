@@ -10,7 +10,7 @@ local BackgroundColor = Color(0.588, 0.627, 0.666, 1)
 
 local Red = Color(1,0,0,1)
 
-function BorderedSquare:__init(width, height, lineWidth, skipSetSize)
+function BorderedSquare:Initialize(width, height, lineWidth, skipSetSize)
   
   self.LineWidth = lineWidth or DefaultLineWidth 
   height = height or DefaultSize
@@ -95,9 +95,9 @@ end
 
 ControlClass('BasePage', BorderedSquare)
 
-function BasePage:__init(width, height, pageName, titleString)
+function BasePage:Initialize(width, height, pageName, titleString)
   
-  BorderedSquare.__init(self, width, height, 2)
+  BorderedSquare.Initialize(self, width, height, 2)
 
   self.PageName = pageName
 
@@ -116,14 +116,14 @@ function BasePage:__init(width, height, pageName, titleString)
   self.Title = title
 ///title:GetTextWidth(titleString)+40
 
-  local titlebox = BorderedSquare(200, 24, 2)
+  local titlebox = self:CreateControl("BorderedSquare", 200, 24, 2)
     titlebox:SetPoint("Top", 0, 0, "Bottom")
     titlebox:SetColor(Color(0.1, 0.1, 0.1, 1))
     titlebox:AddGUIItemChild(title)
    self:AddChild(titlebox)
    
   if(GUIMenuManager.WindowedModeActive) then
-   local closeButton = CloseButton(self)
+   local closeButton = self:CreateControl("CloseButton", self)
     closeButton:SetPoint("TopRight", -5, 5, "TopRight")
     self:AddChild(closeButton)
   end

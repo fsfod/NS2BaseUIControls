@@ -2,8 +2,8 @@ ControlClass('TextBox', BorderedSquare)
 
 local Space = string.byte(" ", 1)
 
-function TextBox:__init(width, height, fontsize, fontname)
-  BorderedSquare.__init(self, width, height, 2)
+function TextBox:Initialize(width, height, fontsize, fontname)
+  BorderedSquare.Initialize(self, width, height, 2)
   
   self:AddFlag(ControlFlags.Focusable)
 

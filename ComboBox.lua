@@ -1,12 +1,12 @@
 
 ControlClass('ComboBox', BorderedSquare)
 
-function ComboBox:__init(width, height, itemList, labelCreator)
-  BorderedSquare.__init(self, width, height, 2)
-  
+function ComboBox:Initialize(width, height, itemList, labelCreator)
+  BorderedSquare.Initialize(self, width, height, 2)
+
    self:SetBackgroundColor(Color(0.1, 0.1, 0.1, 0.85))
-  
-  local button = ArrowButton(height, height, "Down")
+
+  local button = self:CreateControl("ArrowButton", height, height, "Down")
     button:SetPoint("TopRight", 0, 0, "TopRight")
     button.OnClicked = {self.ToggleDropDown, self}
     self:AddChild(button)
@@ -147,7 +147,7 @@ function ComboBox:ToggleDropDown(down)
     local dropdown
 
     if(not NormalDropDown) then
-      NormalDropDown = DropDownMenu(self:GetWidth(), self:GetHeight()*7)
+      NormalDropDown =  self:GetGUIManager():CreateWindow("DropDownMenu", self:GetWidth(), self:GetHeight()*7)
       
       local oldUninitialize = NormalDropDown.Uninitialize
       

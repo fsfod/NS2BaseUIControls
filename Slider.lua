@@ -1,8 +1,8 @@
 
 ControlClass('Slider', ScrollBar)
 
-function Slider:__init(width, height, minValue, maxValue)
-  ScrollBar.__init(self, width, height)
+function Slider:Initialize(width, height, minValue, maxValue)
+  ScrollBar.Initialize(self, width, height)
   
   self:SetColor(Color(0.15, 0.15, 0.15, 1))
 

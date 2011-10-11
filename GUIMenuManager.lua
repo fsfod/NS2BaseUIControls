@@ -32,6 +32,7 @@ UIMenuParent = {
   Flags = 0,
   ChildFlags = 255,
   GetGUIManager = function() return GUIMenuManager end,
+  UIParent = true,
 }
 
 GUIMenuManager.TopLevelUIParent = UIMenuParent
@@ -225,9 +226,11 @@ function GUIMenuManager:CreateMenu()
   local menuClass = _G[self.MenuClass]
   assert(menuClass)
 
-  local success, menuOrErrorMsg = pcall(menuClass, Client.GetScreenWidth(), Client.GetScreenHeight())
+  local success, menuOrErrorMsg = pcall(CreateControl, self.MenuClass)
   
   if(success) then
+    menuOrErrorMsg:Initialize( Client.GetScreenWidth(), Client.GetScreenHeight())
+    
     self:SetMainMenu(menuOrErrorMsg)
   else
     Print("Error while Creating Menu:%s", menuOrErrorMsg)

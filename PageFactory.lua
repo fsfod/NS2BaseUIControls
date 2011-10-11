@@ -15,14 +15,25 @@ function PageFactory:_internalCreatePage(name)
    return nil
   end
 
-  local creator = _G[info.ClassName]
-
-  if(not creator) then
-    RawPrint("PageFactory:CreatePage could not get page creator for " .. (name or "nil"))
+  if(not _G[info.ClassName]) then
+    RawPrint("PageFactory:CreatePage page class " .. (name or "nil").." does not exist")
    return nil
   end
 
-  local success,pageOrError = pcall(creator)
+  local success,pageOrError = pcall(CreateControl, info.ClassName)
+
+  if(success) then
+
+    local success2, errorMessage = pcall(pageOrError.Initialize, pageOrError, self)
+
+    if(not success) then
+      //try to clear up any frames that got created during the failed Initialize call
+      pcall(GUI.DestroyItem, pageOrError)
+
+      pageOrError = errorMessage
+      success = success2
+    end
+  end
 
   if(not success) then
     GUIMenuManager:ShowMessage("Error while creating page "..name, pageOrError)

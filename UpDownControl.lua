@@ -2,10 +2,10 @@ ControlClass('UpDownControl', BaseControl)
 
 UpDownControl.ButtonWidth = 18
 
-function UpDownControl:__init(width, height, min, max)
+function UpDownControl:Initialize(width, height, min, max)
   BaseControl.Initialize(self, width, height)
   
-  local numberBox = TextBox(width-((UpDownControl.ButtonWidth*2)+2) , 20)
+  local numberBox = self:CreateControl("TextBox", width-((UpDownControl.ButtonWidth*2)+2), 20)
     numberBox:SetPoint("Center", -1, 0, "Center")
     numberBox.FocusLost = {self.CheckTextBoxValue, self}
   self.NumberBox = numberBox
@@ -17,14 +17,14 @@ function UpDownControl:__init(width, height, min, max)
   self.Value = self.Min
   
   self:UpdateTextBox()
-  
-  local down = ArrowButton(UpDownControl.ButtonWidth, height+1, "Left")
+
+  local down = self:CreateControl("ArrowButton", UpDownControl.ButtonWidth, height+1, "Left")
     down:SetPoint("Left", 0, 1, "Left")
     down.OnClicked = {self.DownClick, self}
   self:AddChild(down)
   self.Down = down
-  
-  local up = ArrowButton(UpDownControl.ButtonWidth, height+1, "Right")
+
+  local up = self:CreateControl("ArrowButton", UpDownControl.ButtonWidth, height+1, "Right")
     up:SetPoint("Right", 0, 1, "Right")
     up.OnClicked = {self.UpClick, self}
   self:AddChild(up)

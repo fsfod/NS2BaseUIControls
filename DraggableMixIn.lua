@@ -1,6 +1,6 @@
 class 'Draggable'
 
-function Draggable:__init(width, height)
+function Draggable:Initialize(width, height)
   self.DragStartPoint = false
   self.DragStartClickedPos = false
   self.DragEnabled = true

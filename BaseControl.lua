@@ -54,11 +54,6 @@ ControlClass('BaseControl')
 
 BaseControl.Scale = 1
 
-function BaseControl:__init(width, height, ...)
-  if(width) then
-    self:Initialize(width, height, ...)
-  end
-end
 
 function BaseControl:Initialize(width, height)
 
@@ -66,6 +61,8 @@ function BaseControl:Initialize(width, height)
   
   if(width) then
     self:CreateRootFrame(width, height)
+  else
+    self.RootFrame = self.RootFrame or self
   end
 
   if(self.OnClick) then
@@ -89,6 +86,27 @@ function BaseControl:Initialize(width, height)
 end
 
 function BaseControl:Uninitialize()
+  
+  local parent = self.Parent
+
+  //call destroy first if we need to because otherwise DestroyItem will override our metatable changes
+  if((not parent or parent.UIParent) and self.RootFrame) then
+    GUI.DestroyItem(self.RootFrame)
+    
+    //we have to call it again because DestroyItem will of reverted our metatable
+    SetControlDestroyed(self)
+    //self.RootFrame = nil
+  end
+
+  //make sure we properdate the destroyed item metatable first before we try to clear any state
+  if(self.ChildControls) then
+    for _,frame in ipairs(self.ChildControls) do
+      //Change the metatable before we try to access any of its varibles so we don't raised destroyed item errors
+      SetControlDestroyed(frame)
+      frame:Uninitialize()
+    end 
+    self.ChildControls = nil
+  end
 
   if(self.Focused) then
     self:GetGUIManager():ClearFocusIfFrame(self)
@@ -97,24 +115,14 @@ function BaseControl:Uninitialize()
   if(self.Entered) then
     self:GetGUIManager():ClearMouseOver()
   end
-  
-  if(self.ChildControls) then
-    for _,frame in ipairs(self.ChildControls) do
-      frame:Uninitialize()
-    end 
-    self.ChildControls = nil
-  end
-  
-  if(self.RootFrame) then
-    GUI.DestroyItem(self.RootFrame)
-    self.RootFrame = nil  
-  end
 end
 
 function BaseControl:CreateRootFrame(width, height)
-  local bg = GUIManager:CreateGraphicItem()
-    bg:SetSize(Vector(width, height, 0))
-    self:SetRootFrame(bg)
+  //local bg = GUIManager:CreateGraphicItem()
+  // bg:SetSize())
+
+  GUIItem.SetSize(self, Vector(width, height, 0))
+  self:SetRootFrame(self)
 
   return self.RootFrame
 end
@@ -137,11 +145,6 @@ local function MakeCreateGUIItem()
   BaseControl.CreateGUIItem = function(self, xOrVec, y)
   
     local item = CreateItem()
-    
-    vec.x = self.Scale
-    vec.y = self.Scale
-  
-    SetScale(item, vec)
     
     AddChild(self.RootFrame, item)
     
@@ -188,9 +191,9 @@ function BaseControl:CreateControl(controlClass, ...)
     error("BaseControl:CreateControl: Control class "..(controlClass or "nil").. "does not exist")
   end
 
-  local control = Class(...)
+  local control = CreateControl(controlClass)
 
-  //control:__init(...)
+  control:Initialize(...)
 
   return control
 end
@@ -266,10 +269,10 @@ function BaseControl:SetTexture(texture, x1, y1, x2, y2)
   local path = texture
 
   if(type(texture) == "table") then
-    self.RootFrame:SetTexture(texture[1])
+    GUIItem.SetTexture(self.RootFrame, texture[1])
     self.RootFrame:SetTexturePixelCoordinates(texture[2], texture[3], texture[4], texture[5])
   else
-    self.RootFrame:SetTexture(texture)
+    GUIItem.SetTexture(self.RootFrame, texture)
     
     if(x1) then
       self.RootFrame:SetTexturePixelCoordinates(x1, y1, x2, y2)
@@ -296,22 +299,22 @@ function BaseControl:SetLabel(str, offset, yOffset)
   label:SetText(str)
   label:SetPosition(Vector(-(label:GetTextWidth(str)+(offset or 6)), yOffset or 0, 0))
 end
-
+/*
 function BaseControl:SetLayer(layer)
   self.RootFrame:SetLayer(layer)
 end
-
+*/
 function BaseControl:SetColor(redOrColour, g, b, a)
   
   if(g) then
     redOrColour = Color(redOrColour, g, b, a)
   end
   
-  self.RootFrame:SetColor(redOrColour)
+  GUIItem.SetColor(self.RootFrame, redOrColour)
 end
 
 function BaseControl:GetPosition()
-  return self.Position or self.RootFrame:GetPosition()
+  return self.Position or GUIItem.GetPosition(self.RootFrame)
 end
 
 function BaseControl:SetPosition(VecOrX, y)
@@ -332,7 +335,7 @@ function BaseControl:SetPosition(VecOrX, y)
     end
   end
   
-  self.RootFrame:SetPosition(self.Position)
+  GUIItem.SetPosition(self.RootFrame, self.Position)
   
   if(self.HitRec and self.Size and self.Parent) then
     self:UpdateHitRec()
@@ -368,7 +371,7 @@ function BaseControl:ScaledSetSize(VecOrX, y, SkipHitRecUpdate)
 
   self.RealSize = self.Size*self.Scale
 
-  self.RootFrame:SetSize(self.RealSize)
+  GUIItem.SetSize(self.RootFrame, self.RealSize)
 
   if(self.SpecialAnchor and not SkipHitRecUpdate) then
     self:SetPoint(unpack(self.SpecialAnchor))
@@ -393,7 +396,7 @@ function BaseControl:SetSize(VecOrX, y, SkipHitRecUpdate)
     end
   end
 
-  self.RootFrame:SetSize(self.Size)
+  GUIItem.SetSize(self.RootFrame, self.Size)
 
   if(self.SpecialAnchor and not SkipHitRecUpdate) then
     self:SetPoint(unpack(self.SpecialAnchor))
@@ -421,11 +424,11 @@ function BaseControl:TryUpdateHitRec()
 end
 
 function BaseControl:GetHeight()
-  
+
   if(self.Size) then
     return self.Size.y
   elseif(self.RootFrame) then
-    return self.RootFrame:GetSize().y
+    return GUIItem.GetSize(self.RootFrame).y
   else
     return 0
   end
@@ -440,7 +443,7 @@ function BaseControl:GetWidth()
   if(self.Size) then
     return self.Size.x
   elseif(self.RootFrame) then
-    return self.RootFrame:GetSize().x
+    return GUIItem.GetSize(self.RootFrame).x
   else
     return 0
   end
@@ -474,9 +477,11 @@ function BaseControl:GetRight()
   return self.HitRec[1]+self.Size.x
 end
 
+
 function BaseControl:GetScreenPosition()
-  return self.RootFrame:GetScreenPosition(Client.GetScreenWidth(), Client.GetScreenHeight())
+  return GUIItem.GetScreenPosition(self.RootFrame, Client.GetScreenWidth(), Client.GetScreenHeight())
 end
+
 
 --should only update HitRec when were parented to something 
 function BaseControl:UpdateHitRec(rec)
@@ -517,9 +522,8 @@ function BaseControl:UpdateHitRec(rec)
 end
 
 function BaseControl:AddGUIItemChild(frame)
-  
-  self.RootFrame:AddChild(frame)
-  
+  GUIItem.AddChild(self.RootFrame, frame)
+
   return frame
 end
 
@@ -566,9 +570,9 @@ end
 
 function BaseControl:RemoveChild(frame)
   local found = table.removevalue(self.ChildControls, frame)
-  
+
   if(found) then
-    self.RootFrame:RemoveChild(frame.RootFrame)
+    GUIItem.RemoveChild(self.RootFrame, frame.RootFrame)
   end
   
   return found
@@ -765,7 +769,7 @@ function ButtonMixin:Mixin(target)
   target.OnClick = self.OnClick
 end
 
-function ButtonMixin:__init()
+function ButtonMixin:Initialize()
   
   if(self.ClickSound == nil) then
     self.ClickSound = "sound/ns2.fev/common/button_click"

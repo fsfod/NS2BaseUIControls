@@ -13,19 +13,13 @@ local FontSize = 16
 
 local Orange = Color(0.8666, 0.3843, 0, 1)
 
-function UIButton:__init(labelText, width, height)
-  if(labelText) then
-    self:Initialize(labelText, width, height)
-  end
-end
-
 function UIButton:Initialize(labelText, width, height)
 
   width = width or 110
   height = height or 36
 
-	BorderedSquare.__init(self, width, height, 2, true)
-	ButtonMixin.__init(self)
+	BorderedSquare.Initialize(self, width, height, 2, true)
+	ButtonMixin.Initialize(self)
 	
 	self:SetBackgroundColor(Color(0.06,0.06,0.06, 0.8))
 	

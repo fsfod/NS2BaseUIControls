@@ -1,7 +1,7 @@
 ControlClass('MessageBox', BaseWindow)
 
-function MessageBox:__init(title, message)
-  BaseWindow.__init(self, 600, 120, "")
+function MessageBox:Initialize(title, message)
+  BaseWindow.Initialize(self, 600, 120, "")
 
   self.DestroyOnClose = true
 
@@ -17,7 +17,7 @@ function MessageBox:__init(title, message)
   
   self.CloseAction = {self.Close, self}
   
-  local okButton = UIButton("OK")
+  local okButton = self:CreateControl("UIButton", "OK")
    okButton:SetPoint("Bottom", 0, -10, "Bottom")
    okButton.ClickAction = self.CloseAction
   self:AddChild(okButton)
@@ -25,7 +25,7 @@ function MessageBox:__init(title, message)
   
   if(false) then
     
-    local cancelButton = UIButton("Cancel")
+    local cancelButton =  self:CreateControl("UIButton", "Cancel")
      cancelButton:SetPoint("Bottom", -100, -10, "Bottom")
      cancelButton.ClickAction = self.CloseAction
      cancelButton:Hide()
@@ -35,7 +35,7 @@ function MessageBox:__init(title, message)
   
   if(false) then
 
-    local textBox = TextBox(150, 20, 19)
+    local textBox = self:CreateControl("TextBox", 150, 20, 19)
       textBox:SetPoint("Right", -30, 0, "Right")
       textBox:Hide()
     self:AddChild(textBox)

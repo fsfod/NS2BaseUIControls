@@ -1,60 +1,39 @@
-class'LVTextItem'
+ControlClass('LVTextItem', BaseControl)
 
 local white = Color(1, 1, 1, 1)
 local black = Color(0, 0, 0, 1)
-LVTextItem.TextOffset = Vector(4,0,0)
+LVTextItem.TextOffset = 4
 LVTextItem.FontSize = 17
 
-function LVTextItem:__init(owner, fontsize)
+function LVTextItem:Initialize(owner, width, fontsize)
+
+  BaseControl.Initialize(self)
+
+  //we have set this here since we were not created by GUIManager function and Text GUIItems need it set
+  self:SetOptionFlag(GUIItem.ManageRender)
+
+  self:SetFontSize(self.FontSize)
+  self:SetTextClipped(true, width-self.TextOffset, self.FontSize)
   
-  if(fontsize) then
-    self.FontSize = fontsize
-  end
-  
-  local font = GUIManager:CreateTextItem()
-   font:SetFontSize(self.FontSize)
-   font:SetColor(white)
-   font:SetPosition(self.TextOffset)
-  self.Text = font
-  
-  self.PositionVector = Vector(0,0,0)
+  self:SetColor(white)
 end
 
 function LVTextItem:SetData(msg)
-  if(self.Hidden) then
-    self.Text:SetIsVisible(true)
-    self.Hidden = nil
-  end
-  
-  self.Text:SetText(msg)
-end
-
-function LVTextItem:OnShow()
-  self.Text:SetIsVisible(true)
-end
-
-function LVTextItem:OnHide()
-  self.Text:SetIsVisible(false)
+  self:Show()
+  self:SetText(msg)
 end
 
 function LVTextItem:SetWidth(width)
 end
 
 function LVTextItem:SetPosition(x, y)
-  local vec = self.PositionVector
-  vec.x = x+self.TextOffset.x
-  vec.y = y+self.TextOffset.y
- 
-  self.Text:SetPosition(vec)
+  BaseControl.SetPosition(self, x+self.TextOffset, y)
 end
 
 function LVTextItem:GetRoot()
-  return self.Text
+  return self
 end
 
-function CreateTextItem()
-  return LVTextItem()
-end
 
 ControlClass('ListView', BaseControl)
 
@@ -80,23 +59,23 @@ function ListView:Initialize(width, height, itemCreator, itemHeight, itemSpacing
   end
   
   BaseControl.Initialize(self, width, height)
+  
+  self:SetColor(Color(0.5,0.5,0.5,0.5))
 
-  local bg = self.RootFrame
-    self:SetColor(Color(0.5,0.5,0.5,0.5))
-
-  local selectBG = GUIManager:CreateGraphicItem()
+  local selectBG = self:CreateGUIItem()
     selectBG:SetIsVisible(false)
     selectBG:SetColor(self.SelectedItemColor)
-    bg:AddChild(selectBG)
+    self:AddGUIItemChild(selectBG)
   self.SelectBG = selectBG
 
-  self.ItemsAnchor = GUIManager:CreateGraphicItem()
+  self.ItemsAnchor = self:CreateControl("BaseControl")
   self.ItemsAnchor:SetColor(Color(0,0,0,0))
-  bg:AddChild(self.ItemsAnchor)
+  self:AddGUIItemChild(self.ItemsAnchor)
+
+  assert(not itemCreator or type(itemCreator) == "string")
+  self.ItemClass = itemCreator or self.ItemClass or "LVTextItem"
   
-  self.CreateItem = itemCreator or self.CreateItem or CreateTextItem
-  
-  local scrollbar = ScrollBar()
+  local scrollbar = self:CreateControl("ScrollBar")
    scrollbar:SetPoint("TopRight", 0, 0, "TopRight")
    scrollbar.ValueChanged = {self.OnScrollChanged, self}
    scrollbar:SetStepSize(1)
@@ -188,8 +167,7 @@ function ListView:OnMaxVisibleChanged(maxVisible)
     elseif(maxVisible < oldVisibleCount) then
     --just hide our extra items
       for i=self.MaxVisibleItems+1,oldVisibleCount do
-        self.Items[i]:OnHide()
-        self.Items[i].Hidden = true
+        self.Items[i]:Hide()
       end
     end
     
@@ -483,8 +461,7 @@ function ListView:RefreshItems()
     if(i <= TotalCount) then
       item:SetData(self.ItemDataList[i+self.ViewStart-1], SelectedIndex == i)
     else
-      item:OnHide()
-      item.Hidden = true
+      item:Hide()
     end
   end
 end
@@ -533,17 +510,16 @@ function ListView:CreateItems(startIndex)
   startIndex = startIndex or 1
 
   for i=startIndex,self.MaxVisibleItems do
-    local item = self.CreateItem(self, width, height)
-   
-     self.ItemsAnchor:AddChild(item.RootFrame or item:GetRoot())
+    local item = self.ItemsAnchor:CreateControl(self.ItemClass, self, width, height)
+
+    //self.CreateItem(self, width, height)
+
+     self.ItemsAnchor:AddChild(item)
      item:SetPosition(x, (height+self.ItemSpacing)*(i-1))
-     
 
      if(item.UpdateHitRec) then
-      //if ItemsAnchor is ever moved from our top left corner like when clipped drawing is added and we do pixel instead of whole line scrolling we will have to change ItemsAnchor to a 
-      // BaseControl if the items are BaseControl based
        item.Parent = self
-       item:UpdateHitRec()
+       item:TryUpdateHitRec()
      end
 
     self.Items[i] = item

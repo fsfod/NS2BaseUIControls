@@ -6,7 +6,7 @@ local DimOrange = Color(0.8666/3, 0.3843/3, 0, 1)
 local grey = Color(0.133, 0.149, 0.1529, 1)
 
 
-function CheckBox:__init(label, checked, labelOnLeft, fontsize)
+function CheckBox:Initialize(label, checked, labelOnLeft, fontsize)
   label = label or "Some text 1111z"
   
   self.FontSize = fontsize or 17
@@ -28,7 +28,7 @@ function CheckBox:__init(label, checked, labelOnLeft, fontsize)
   
   self:SetColor(0, 0, 0, 0)
   
-  local button = CheckButton(height, self.Checked)
+  local button = self:CreateControl("CheckButton", height, self.Checked)
     self:AddChild(button)
   self.Button = button
 end
@@ -86,7 +86,7 @@ ControlClass('CheckButton', BaseControl)
 
 function CheckButton:Initialize(height, checked)
   BaseControl.Initialize(self, height, height)
-  ButtonMixin.__init(self)
+  ButtonMixin.Initialize(self)
 
   local cross = GUIManager:CreateGraphicItem()
     cross:SetSize(Vector(height, height, 0))

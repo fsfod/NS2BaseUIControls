@@ -37,13 +37,17 @@ ExtractGUIItemTables()
 
 local function SetupInstanceMetaTable(className)
   
-  local mt = {__tostring = function() return className end, Class = className}
+  local mt = {
+    __tostring = function() return className end, 
+    Class = className,
+  }
   
   for k,v in pairs(BaseMT) do
     mt[k] = v
   end
 
   InstanceMT[className] = mt
+  InstanceMT.__towatch = function(self) return debug.getfenv(self) end
 end
 
 function CreateControl(name)
@@ -51,6 +55,8 @@ function CreateControl(name)
   local item = GUI.CreateItem()
 
   setmetatable(debug.getfenv(item), _G[name])
+  
+  debug.setmetatable(item, InstanceMT[name])
 
   //setmetatable(debug.getfenv(item), nil)
   //debug.setmetatable(item, ClassMetaTable[name])
@@ -58,7 +64,9 @@ function CreateControl(name)
   return item
 end
 
-function CallMeta(self, ...)
+local function CallMeta(self, ...)
+  
+  assert(false, getmetatable(self).Class)
   
   local item = GUI.CreateItem()
 
@@ -66,7 +74,52 @@ function CallMeta(self, ...)
 
   item:__init(...)
 
+
   return item
+end
+
+local function CopyInBaseFunctions(indexTable, baseName)
+  
+  if(baseName) then
+
+    local baseBaseTbl = ClassBase[baseName]
+    
+    //merge our base table with its base table so a table lookup don't need 2+ __index calls  
+    if(baseBaseTbl) then
+    
+      for funcname,func in pairs(baseBaseTbl) do
+        indexTable[funcname] = func
+      end
+    end
+
+    --copy in our base class table
+    for k,v in pairs(_G[baseName]) do
+      indexTable[k] = v
+    end
+  else
+
+    for funcname,func in pairs(GUIItemTable) do
+      indexTable[funcname] = func
+    end
+  end
+end
+
+local function RecreateClass(className, base)
+
+  Shared.Message("Recreateing class "..className)
+
+  assert(not base or ClassBase[className] == ClassTable[base])
+  
+  local t = _G[className]
+  local isa = t.isa
+  
+  for k,v in pairs(t) do
+    t[k] = nil
+  end
+
+  CopyInBaseFunctions(t, base and ClassTable[base])
+
+  t.isa = isa
 end
 
 function ControlClass(className, base)
@@ -79,6 +132,13 @@ function ControlClass(className, base)
     assert(base, "ControlClass: Base class does not exist")
   end
 
+  //if class already exists treat this as a hot reload just clear and rebuild the index table
+  //TODO propergating the changes to derived class's
+  if(IsALookUp[className]) then
+    RecreateClass(className, base)
+   return
+  end
+
   local indexTable = {}
   local mt = {__call = CallMeta, Class = className, Base = baseName}
 
@@ -88,38 +148,20 @@ function ControlClass(className, base)
 
   ClassTable[indexTable] = className
   _G[className] = indexTable
-  
+ 
   ClassBase[className] = base or false
 
   local isaTable = {}
   isaTable[className] = true
 
   IsALookUp[className] = isaTable
-  
+
+  CopyInBaseFunctions(indexTable, baseName)
 
   if(not base) then
-    for funcname,func in pairs(GUIItemTable) do
-      indexTable[funcname] = func
-    end
-    
     indexTable.isa = function(self, name) return name == className end
    
    return
-  end
-  
-  local baseBaseTbl = ClassBase[base]
-
-  //merge our base table with its base table so a table lookup don't need 2+ __index calls  
-  if(baseBaseTbl) then
-
-    for funcname,func in pairs(baseBaseTbl) do
-      indexTable[funcname] = func
-    end
-  end
-    
-  --copy in our base class table
-  for k,v in pairs(base) do
-    indexTable[k] = v
   end
 
   local baseIsA = IsALookUp[baseName]
@@ -141,7 +183,7 @@ function TestControl:SetPosition(pos)
   GUIItem.SetPosition(self, pos)
 end
 
-local c = TestControl()
+local c = CreateControl("TestControl")
 
 c.test = true
 
@@ -152,3 +194,42 @@ c:AddChild(g)
 
 assert(g.Parent == g:GetParent())
 
+local DestroyedIndex = {
+  SetPosition = function() end,
+  SetSize = function() end,
+  SetIsVisible = function() end,
+  SetColor = function() end,
+
+  GetPosition = function() return Vector(0, 0, 0) end,
+  GetSize = function() return Vector(1, 1, 0) end,
+  GetIsVisible = function() return false end,
+  __Destroyed = true,
+}
+
+local destroyedMT = {
+
+  __index = function(self, key) 
+    local env = debug.getfenv(self)
+    local result = DestroyedIndex[key] or env[key]
+    
+    if(result == nil) then
+      return getmetatable(env)[key]
+    end
+    
+    return result
+  end,
+  
+  __newindex =  function(self, key, value)
+    debug.getfenv(self)[key] = value
+  end,
+
+  __gc = BaseMT.__gc,
+}
+
+function SetControlDestroyed(control) 
+  debug.setmetatable(control, destroyedMT)
+end
+
+function IsValidControl(control)
+  return not control.__Destroyed
+end

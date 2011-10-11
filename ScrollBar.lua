@@ -9,7 +9,7 @@ local ButtonScrollSpace = 0.5
 local BarWidth = 0.7
 
 
-function ScrollBar:__init(width, height)
+function ScrollBar:Initialize(width, height)
   BaseControl.Initialize(self)
 
   self.TraverseChildFirst = true
@@ -23,18 +23,18 @@ function ScrollBar:__init(width, height)
   local bg = self:CreateRootFrame(width, height)
   bg:SetColor(Color(0.1, 0.1, 0.1, 1))
   
-  local Up = ArrowButton(40, 40, (SideScroll and "Left") or "Up")
+  local Up = self:CreateControl("ArrowButton", 40, 40, (SideScroll and "Left") or "Up")
     Up.OnClicked = {self.UpClick, self}
     self:AddChild(Up)
   self.Up = Up
     //:SetPoint("Top", -10, -5)
 
-  local Down = ArrowButton(40, 40, (SideScroll and "Right") or "Down")
+  local Down = self:CreateControl("ArrowButton", 40, 40, (SideScroll and "Right") or "Down")
     self:AddChild(Down)
     Down.OnClicked = {self.DownClick, self}
   self.Down = Down
     
-  local Bar = SliderButton()
+  local Bar = self:CreateControl("SliderButton")
     Bar.SideScroll = self.SideScroll
     self:AddChild(Bar)
   self.Bar = Bar
@@ -203,7 +203,7 @@ end
 
 ControlClass('SliderButton', BaseControl)
 
-function SliderButton:__init()
+function SliderButton:Initialize()
   BaseControl.Initialize(self, 30, 30)
   
   self:SetColor(Color(0.78, 0.3, 0, 1))
@@ -310,7 +310,7 @@ local MouseOverColor = Color(90/255, 90/255, 90/255, 1)
 
 local Green = Color(0, 1, 0, 1)
 
-function ArrowButton:__init(width, height, mode)
+function ArrowButton:Initialize(width, height, mode)
   BaseControl.Initialize(self, width, height)
   //self.RootFrame:SetBlendTechnique(GUIItem.Add)
   self:SetupHitRec()
@@ -325,7 +325,7 @@ function ArrowButton:__init(width, height, mode)
   self:AddGUIItemChild(arrow)
   self.Overlay = arrow
 
-  self:SetSize(Vector(width, height, 0))
+  self:SetSize(width, height)
 
   self.IsDown = false
 end
