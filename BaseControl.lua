@@ -26,6 +26,8 @@ local PointToAnchor = {
   Center = {GUIItem.Middle, GUIItem.Center},
 }
 
+_G.PointToAnchor = PointToAnchor
+
 PointToAnchor.top = PointToAnchor.Top
 PointToAnchor.bottom = PointToAnchor.Bottom
 PointToAnchor.left = PointToAnchor.Left
@@ -50,20 +52,35 @@ ControlFlags = {
   Focusable = 32,
 }
 
+local GUIItem = GUIItem
+local SetPosition = GUIItem.SetPosition
+local SetSize = GUIItem.SetSize
+local GetPosition = GUIItem.SetPosition
+local GetSize = GUIItem.SetSize
+
+function ChangePositionSizeFunctions(setPos, setSize, getPos, getSize)
+  SetPosition = setPos
+  SetSize = setSize
+  GetPosition = getPos
+  GetSize = getSize
+end
+
+
 ControlClass('BaseControl')
-
-BaseControl.Scale = 1
-
 
 function BaseControl:Initialize(width, height)
 
   local flags = 0
-  
+
   if(width) then
-    self:CreateRootFrame(width, height)
-  else
-    self.RootFrame = self.RootFrame or self
+    SetSize(self, Vector(width, height, 0))
+
+    self.Position = Vector()
+    self.Size = Vector(width, height, 0)
+    self.RootFrame = self
   end
+
+  self.RootFrame = self.RootFrame or self
 
   if(self.OnClick) then
     flags = ControlFlags.OnClick
@@ -117,36 +134,19 @@ function BaseControl:Uninitialize()
   end
 end
 
-function BaseControl:CreateRootFrame(width, height)
-  //local bg = GUIManager:CreateGraphicItem()
-  // bg:SetSize())
-
-  GUIItem.SetSize(self, Vector(width, height, 0))
-  self:SetRootFrame(self)
-
-  return self.RootFrame
-end
-
-function BaseControl:SetRootFrame(frame)
-  self.RootFrame = frame
-  self.Size = Vector(frame:GetSize())
-  self.Position = Vector(frame:GetPosition())
-end
-
 local function MakeCreateGUIItem()
 
-  local AddChild = GUIItem.AddChild
   local CreateItem = GUI.CreateItem
-  local SetScale = GUIItem.SetScale
-  local SetPosition = GUIItem.SetPosition
-
   local vec = Vector()
 
   BaseControl.CreateGUIItem = function(self, xOrVec, y)
   
     local item = CreateItem()
+
+    item.SetPosition = SetPosition
+    item.SetSize = SetSize
     
-    AddChild(self.RootFrame, item)
+    self:AddGUIItemChild(item)
     
     if(xOrVec) then
       
@@ -157,7 +157,7 @@ local function MakeCreateGUIItem()
         xOrVec = vec
       end
 
-      SetPosition(item, xOrVec)
+      UIItemSetPosition(item, xOrVec)
     end
     
     return item
@@ -169,19 +169,6 @@ end
 MakeCreateGUIItem()
 
 local tempSize = Vector()
-
-function BaseControl:SetGUIItemSize(itemOrName, x, y)
-  
-  if(type(itemOrName) == "string") then
-    itemOrName = self[itemOrName]
-  end
-  
-  local scale = self.Scale
-  
-  tempSize.x = x*scale
-  
-  itemOrName:SizeSize()
-end
 
 function BaseControl:CreateControl(controlClass, ...)
 
@@ -198,18 +185,21 @@ function BaseControl:CreateControl(controlClass, ...)
   return control
 end
 
+
+
 function BaseControl:CreateFontString(fontSizeOrTemplate, anchorPoint, x, y, clipText)
   local font
 
   if(type(fontSizeOrTemplate) == "number") then
-    
+
     font = GUIManager:CreateTextItem()
     font:SetFontSize(fontSizeOrTemplate)
-
   else
     font = fontSizeOrTemplate:CreateFontString()
     fontSizeOrTemplate = fontSizeOrTemplate.FontSize
   end
+
+  font.FontSize = fontSizeOrTemplate
 
   local point
 
@@ -246,10 +236,33 @@ function BaseControl:GUIManagerChanged(newGUIManager)
   if(self.CachedGUIManager) then
     self.CachedGUIManager = newGUIManager
 
-    for _,frame in ipairs(self.ChildControls) do
-      frame:GUIManagerChanged(newGUIManager)
+    if(self.ChildControls) then
+
+      for _,frame in ipairs(self.ChildControls) do
+       frame:GUIManagerChanged(newGUIManager)
+      end
     end
   end
+end
+
+function BaseControl:SafeGetGUIManager()
+  
+  if(not self.CachedGUIManager) then
+    
+    if(not self.Parent) then
+      return nil
+    end
+    
+    local result = self.Parent:GetGUIManager()
+    
+    if(not result) then
+      return nil
+    end
+
+    self.CachedGUIManager = result
+  end
+  
+  return self.CachedGUIManager
 end
 
 function BaseControl:GetGUIManager()
@@ -280,24 +293,27 @@ function BaseControl:SetTexture(texture, x1, y1, x2, y2)
   end
 end
 
-function BaseControl:SetLabel(str, offset, yOffset)
+function BaseControl:SetLabel(str, offset, yOffset, anchorRight)
   
   local label = self.BC_Label
   
   if(not label) then
-    label = GUIManager:CreateTextItem()
-    label:SetFontSize(17)
-    
-    label:SetTextAlignmentX(GUIItem.Align_Min)
-    label:SetTextAlignmentY(GUIItem.Align_Center)
-    label:SetAnchor(GUIItem.Left, GUIItem.Center)
+    label = self:CreateFontString(18)
+
+    //label:SetTextAlignmentX(GUIItem.Align_Min)
+    //label:SetTextAlignmentY(GUIItem.Align_Center)
     
     self.BC_Label = label
-    self:AddGUIItemChild(label)
+    //self:AddGUIItemChild(label)
   end
-    
+
   label:SetText(str)
-  label:SetPosition(Vector(-(label:GetTextWidth(str)+(offset or 6)), yOffset or 0, 0))
+  
+  if(anchorRight) then
+    label:SetPoint("Right", (offset or 6), yOffset or 0, "Left")
+  else
+    label:SetPoint("Left", -(offset or 6), yOffset or 0, "Right")
+  end
 end
 /*
 function BaseControl:SetLayer(layer)
@@ -314,7 +330,7 @@ function BaseControl:SetColor(redOrColour, g, b, a)
 end
 
 function BaseControl:GetPosition()
-  return self.Position or GUIItem.GetPosition(self.RootFrame)
+  return self.Position or GetPosition(self)
 end
 
 function BaseControl:SetPosition(VecOrX, y)
@@ -334,50 +350,21 @@ function BaseControl:SetPosition(VecOrX, y)
       self.Position.y = VecOrX.y
     end
   end
+
+  SetPosition(self, self.Position)
   
-  GUIItem.SetPosition(self.RootFrame, self.Position)
-  
-  if(self.HitRec and self.Size and self.Parent) then
-    self:UpdateHitRec()
-  end
+  self:TryUpdateHitRec()
 end
 
 function BaseControl:OnResolutionChanged(oldX, oldY, width, height)
-  self:UpdatePosition()
+  self:ParentSizeChanged()
 end
 
-function BaseControl:UpdatePosition()
-  
+function BaseControl:ParentSizeChanged()
+
   if(self.SpecialAnchor) then
-    self:SetPoint(unpack(self.SpecialAnchor))
-  elseif(self.HitRec) then
-    self:UpdateHitRec()
-  end
-end
-
-function BaseControl:ScaledSetSize(VecOrX, y, SkipHitRecUpdate)
-
-  if(y) then
-    self.Size.x = VecOrX
-    self.Size.y = y
+    self:UpdatePointOffset()
   else
-    if(not self.Size) then
-      self.Size = Vector(VecOrX)
-    else
-      self.Size.x = VecOrX.x
-      self.Size.y = VecOrX.y
-    end
-  end
-
-  self.RealSize = self.Size*self.Scale
-
-  GUIItem.SetSize(self.RootFrame, self.RealSize)
-
-  if(self.SpecialAnchor and not SkipHitRecUpdate) then
-    self:SetPoint(unpack(self.SpecialAnchor))
-  end
-  
-  if(not SkipHitRecUpdate) then
     self:TryUpdateHitRec()
   end
 end
@@ -396,42 +383,38 @@ function BaseControl:SetSize(VecOrX, y, SkipHitRecUpdate)
     end
   end
 
-  GUIItem.SetSize(self.RootFrame, self.Size)
+  SetSize(self, self.Size)
 
-  if(self.SpecialAnchor and not SkipHitRecUpdate) then
-    self:SetPoint(unpack(self.SpecialAnchor))
+  if(self.SpecialAnchor) then
+    self:UpdatePointOffset()
   end
-  
+
   if(not SkipHitRecUpdate) then
-    self:TryUpdateHitRec()
+    self:TryUpdateHitRec(true)
   end
+
+  if(self.ChildControls) then
+
+    for _,frame in ipairs(self.ChildControls) do 
+      frame:ParentSizeChanged()
+    end
+  end
+
 end
 
 function BaseControl:TryUpdateHitRec()
   
-  if(self.HitRec and self.Position and self.Parent and not self.SpecialAnchor) then
+  if(self.HitRec and self.Position and self.Parent) then
     self:UpdateHitRec()
-  end
-  
-  --Should really optimize this for only controls that not anchored to Left and Top
-  if(self.ChildControls) then
-    for _,frame in ipairs(self.ChildControls) do      
-      if(frame.HitRec) then
-        frame:UpdateHitRec()
-      end
-    end
   end
 end
 
-function BaseControl:GetHeight()
+function BaseControl:GetSize()
+  return self.Size or GetSize(self)
+end
 
-  if(self.Size) then
-    return self.Size.y
-  elseif(self.RootFrame) then
-    return GUIItem.GetSize(self.RootFrame).y
-  else
-    return 0
-  end
+function BaseControl:GetHeight()
+  return self:GetSize(self).y
 end
 
 function BaseControl:SetHeight(height)
@@ -439,14 +422,7 @@ function BaseControl:SetHeight(height)
 end
 
 function BaseControl:GetWidth()
-  
-  if(self.Size) then
-    return self.Size.x
-  elseif(self.RootFrame) then
-    return GUIItem.GetSize(self.RootFrame).x
-  else
-    return 0
-  end
+  return self:GetSize(self).x
 end
 
 function BaseControl:SetWidth(width)
@@ -477,9 +453,8 @@ function BaseControl:GetRight()
   return self.HitRec[1]+self.Size.x
 end
 
-
 function BaseControl:GetScreenPosition()
-  return GUIItem.GetScreenPosition(self.RootFrame, Client.GetScreenWidth(), Client.GetScreenHeight())
+  return  GUIItem.GetScreenPosition(self, Client.GetScreenWidth(), Client.GetScreenHeight())
 end
 
 
@@ -522,7 +497,10 @@ function BaseControl:UpdateHitRec(rec)
 end
 
 function BaseControl:AddGUIItemChild(frame)
-  GUIItem.AddChild(self.RootFrame, frame)
+
+  table.insert(debug.getfenv(self), frame)
+
+  GUIItem.AddChild(self, frame)
 
   return frame
 end
@@ -533,17 +511,15 @@ function BaseControl:AddChild(control)
     self.ChildControls = {}
   end
   
-  self:AddGUIItemChild(control.RootFrame)
+  GUIItem.AddChild(self, control.RootFrame)
   control.Parent = self
   
   if(control.OnParentSet) then
     control:OnParentSet()
   end
 
-  if(control.HitRec) then
-    control:UpdateHitRec()
-  end
-  
+  control:TryUpdateHitRec()
+
   local flags = bor(control.Flags, control.ChildFlags)
   
   if(flags ~= 0 and flags ~= band(flags, self.ChildFlags)) then
@@ -602,10 +578,8 @@ end
 
 function BaseControl:SetupHitRec()
   self.HitRec = {0, 0, 0, 0}
-  
-  if(self.Parent) then
-    self:UpdateHitRec()
-  end
+
+  self:TryUpdateHitRec()
 end
 
 function BaseControl:SetConfigBinding(...)
@@ -651,43 +625,72 @@ function BaseControl:FireEvent(Action, ...)
   end
 end
 
---the control needs to set its size if it want to pass a reltivePoint
-function BaseControl:SetPoint(point, x, y, reltivePoint)
+function BaseControl:UpdatePointOffset(SkipHitRecUpdate)
   
-  local root = self.RootFrame
+  --the point a controls position is based off is TopLeft in the ns2 gui system
   
-  if(not reltivePoint) then
-    reltivePoint = point
+  local width, height
+  
+  if(self._FontSize) then
+    //FIXME handle custom sized font strings
+    local text = self:GetText()
+
+    if(not text or text == "") then 
+      width = 1
+      height = self:GetTextHeight("g")
+    else
+      width = self:GetTextWidth(text)
+      height = self:GetTextHeight(text)
+    end
+  else
+    local Size = self.Size
+    
+    width = Size.x
+    height = Size.y
   end
- 
-  self.SpecialAnchor = {point, x, y, reltivePoint}
+
+  local anchorInfo = self.SpecialAnchor
+  
+  local relpoint = anchorInfo[4]
+  local x,y = anchorInfo[2], anchorInfo[3]
+  
+  if(relpoint[1] == GUIItem.Right) then
+    x = (-width)+x
+  elseif(relpoint[1] == GUIItem.Middle) then
+    x = x-(width/2)
+  end
+    
+  if(relpoint[2] == GUIItem.Bottom) then
+    y = (-height)+y
+  elseif(relpoint[2] == GUIItem.Center) then
+    y = y-(height/2)
+  end
+
+  self:SetPosition(x, y, SkipHitRecUpdate)
+end
+
+--the control needs to set its size if it want to pass a reltivePoint
+function BaseControl:SetPoint(point, x, y, reltivePoint, SkipHitRecUpdate)
+
+  if(not reltivePoint) then
+    reltivePoint = point 
+  end
 
   if(not x) then
     x,y = 0,0
   end
+ 
+  local point2 = PointToAnchor[point]
+  local reltivePoint2 = PointToAnchor[reltivePoint]
+
+  assert(point2, "Unknowed point "..tostring(point))
+  assert(reltivePoint2, "Unknowed relative point "..tostring(reltivePoint))
   
-  local point = PointToAnchor[point]
-  root:SetAnchor(point[1], point[2])
+  self.SpecialAnchor = {point2, x, y, reltivePoint2}
 
-  --the point a controls position is based off is TopLeft in the ns2 gui system
-  if(reltivePoint) then
-    local relpoint = PointToAnchor[reltivePoint]
-    local Size = self.Size
-    
-    if(relpoint[1] == GUIItem.Right) then
-      x = (-Size.x)+x
-    elseif(relpoint[1] == GUIItem.Middle) then
-      x = x-(Size.x/2)
-    end
-    
-    if(relpoint[2] == GUIItem.Bottom) then
-      y = (-Size.y)+y
-    elseif(relpoint[2] == GUIItem.Center) then
-      y = y-(Size.y/2)
-    end
-  end
-
-  self:SetPosition(x, y)
+  self:SetAnchor(point2[1], point2[2])
+  
+  self:UpdatePointOffset()
 end
 
 function BaseControl:Show()
@@ -857,9 +860,9 @@ function FontTemplate:Apply(font)
   if(self.FontName) then
     font:SetFontName(self.FontName)
   end
-  
+
   if(self.FontSize) then
-    font:SetFontSize(self.FontSize)
+    font:SetFontSize(self.FontSize*UIScale)
   end
   
   if(self.Bold) then

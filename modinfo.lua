@@ -1,4 +1,4 @@
-EngineBuild = 185
+EngineBuild = 187
 ModTableName = "GUIManagerEx"
 MainScript = "GUIManagerEx.lua"
 ValidVM = "client"
@@ -10,13 +10,14 @@ ScriptList = {
   
   "ConfigDataBinder.lua",
   "BaseControl.lua",
+  "BaseControlScaled.lua",
   
   "BaseGUIManager.lua",
   "GUIMenuManager.lua",
+  "GUIMenuManager_Hooks.lua",
   "GameGUIManager.lua",
   "GUIManagerEx.lua",
 
-  //"ScaleMixin.lua",
   "DraggableMixIn.lua",
   "ControlStyles.lua",
   "BorderedSquare.lua",
@@ -32,4 +33,5 @@ ScriptList = {
   "TextBox.lua",
   "CheckBox.lua",
   "UpDownControl.lua",
+  "ColorPicker.lua",
 }

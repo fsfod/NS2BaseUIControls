@@ -10,18 +10,18 @@ local BarWidth = 0.7
 
 
 function ScrollBar:Initialize(width, height)
-  BaseControl.Initialize(self)
-
-  self.TraverseChildFirst = true
-
+  
   width = width or 25
   height = height or 300
+  
+  BaseControl.Initialize(self, width, height)
+
+  self.TraverseChildFirst = true
 
   local SideScroll = width > height
   self.SideScroll = SideScroll
 
-  local bg = self:CreateRootFrame(width, height)
-  bg:SetColor(Color(0.1, 0.1, 0.1, 1))
+  self:SetColor(Color(0.1, 0.1, 0.1, 1))
   
   local Up = self:CreateControl("ArrowButton", 40, 40, (SideScroll and "Left") or "Up")
     Up.OnClicked = {self.UpClick, self}
@@ -73,6 +73,10 @@ end
 function ScrollBar:SetStepSize(amount)
   self.StepAmount = amount
   self.StepSize = amount/self.Range
+end
+
+function ScrollBar:GetValue()
+  return self.Value
 end
 
 function ScrollBar:SetValue(newValue)
@@ -317,12 +321,11 @@ function ArrowButton:Initialize(width, height, mode)
 
   self:SetColor(NormalColor)
 
-  local arrow = GUIManager:CreateGraphicItem()
+  local arrow = self:CreateGUIItem()
     arrow:SetColor(Color(1,1,1, 1))
     arrow:SetBlendTechnique(GUIItem.Add)
     arrow:SetTexture("ui/arrows.dds")
     arrow:SetTexturePixelCoordinates(unpack(ArrowTextures[mode]))
-  self:AddGUIItemChild(arrow)
   self.Overlay = arrow
 
   self:SetSize(width, height)

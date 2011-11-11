@@ -60,15 +60,14 @@ function CloseButton:Initialize(window)
  
   self:SetTexture(self.TexturePath, 0, 0, 64, 64)
   
-   local x = GUIManager:CreateGraphicItem()
+   local x = self:CreateGUIItem()
     x:SetPosition(self.XOffsetVec)
     x:SetSize(self.XHeightVec)
     x:SetTexture(self.TexturePath)
     x:SetTexturePixelCoordinates(64, 0, 63+64, 64)
     x:SetIsVisible(true)
-  self:AddGUIItemChild(x)
-  
-  local x2 = GUIManager:CreateGraphicItem()
+
+  local x2 = self:CreateGUIItem()
     x2:SetPosition(self.XOffsetVec)
     x2:SetSize(self.XHeightVec)
     x2:SetTexture(self.TexturePath)
@@ -76,7 +75,6 @@ function CloseButton:Initialize(window)
     x2:SetBlendTechnique(GUIItem.Add)
     x2:SetIsVisible(false)
   self.Highlight = x2
-  self:AddGUIItemChild(x2)
 end
 
 function CloseButton:OnEnter()

@@ -21,6 +21,8 @@ if(not MouseStateTracker) then
       scoreboard = true,
     },
 
+    DefaultCursor = "ui/Cursor_MenuDefault.dds",
+
     MouseFunctions = {
       ["SetMouseVisible"] = SetMouseVisible,
       ["SetMouseCaptured"] = SetMouseCaptured,
@@ -237,7 +239,7 @@ function MouseStateTracker:SetMainMenuState()
   SetMouseVisible(true)
   SetMouseCaptured(false)
   SetMouseClipped(false)
-  SetCursor("ui/Cursor_MenuDefault.dds")
+  SetCursor(self.DefaultCursor)
 end
 
 function MouseStateTracker:ClearMainMenuState()
@@ -365,7 +367,7 @@ function MouseStateTracker:ApplyStack()
   end
 
   local visible, captured, clipped = false, true, true
-  local cursorImage = "ui/Cursor_MenuDefault.dds"
+  local cursorImage = self.DefaultCursor
 
   for i,state in ipairs(self.StateStack) do
     if(state.Visible ~= nil) then

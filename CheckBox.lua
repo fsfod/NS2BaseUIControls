@@ -3,24 +3,20 @@ ControlClass('CheckBox', BaseControl)
 local Orange = Color(0.8666, 0.3843, 0, 1)
 local DimOrange = Color(0.8666/3, 0.3843/3, 0, 1)
 
-local grey = Color(0.133, 0.149, 0.1529, 1)
-
 
 function CheckBox:Initialize(label, checked, labelOnLeft, fontsize)
   label = label or "Some text 1111z"
   
-  self.FontSize = fontsize or 17
+  self.FontSize = fontsize or 20
   
-  local labeltxt = GUIManager:CreateTextItem()
-   labeltxt:SetFontSize(self.FontSize)
+  local labeltxt = self:CreateFontString(self.FontSize)
    labeltxt:SetText(label)
   
   local width = labeltxt:GetTextWidth(label)
   local height = labeltxt:GetTextHeight(label)+4
   self.Label = labeltxt
 
-  BaseControl.Initialize(self, width, height)
-  self:AddGUIItemChild(labeltxt)
+  BaseControl.Initialize(self, height, height)
   
   self:SetLabelOnLeft(labelOnLeft)
 
@@ -41,13 +37,11 @@ end
 function CheckBox:UpdateLabelPosition()
    
   local label = self.Label 
-  local height = self:GetHeight()
-  local width = label:GetTextWidth(label:GetText())
    
   if(self.LabelOnLeft) then
-    label:SetPosition(Vector(-(width+4), 2, 0))
+    label:SetPoint("Left", -4, 2, "Right")
   else
-    label:SetPosition(Vector(height+3, 2, 0))
+    label:SetPoint("Right", 4, 2, "Left")
   end
 end
 
@@ -88,28 +82,26 @@ function CheckButton:Initialize(height, checked)
   BaseControl.Initialize(self, height, height)
   ButtonMixin.Initialize(self)
 
-  local cross = GUIManager:CreateGraphicItem()
+  local cross = self:CreateGUIItem()
     cross:SetSize(Vector(height, height, 0))
     cross:SetColor(Orange)
     cross:SetTexture("ui/checkbox.dds")
-  self:AddGUIItemChild(cross)
   self.Cross = cross
   
   self:SetCheckedState(checked or false)
   
-  local border = GUIManager:CreateGraphicItem()
+  local border = self:CreateGUIItem()
     border:SetSize(Vector(height, height, 0))
-    border:SetColor(grey)
+    border:SetColor(ControlGrey1)
     border:SetTexture("ui/checkbox.dds")
     border:SetTexturePixelCoordinates(0, 0, 63, 64)
   self.Border = border
-  self:AddGUIItemChild(border)
   
   self:SetColor(Color(0, 0, 0, 0))
 end
 
 function CheckButton:OnLeave()
-  self.Border:SetColor(grey)
+  self.Border:SetColor(ControlGrey1)
 end
 
 function CheckButton:OnEnter()
@@ -123,10 +115,10 @@ function CheckButton:SetCheckedState(checked)
   
   if(checked) then
     cross:SetTexturePixelCoordinates(128, 0, 128+64, 64)
-    cross:SetColor(Color(0.8666/1.5, 0.3843/1.5, 0, 1))
+    cross:SetColor(ControlDarkOrange)
   else
     cross:SetTexturePixelCoordinates(192, 0, 256, 64)
-    cross:SetColor(Color(0.07, 0.07, 0.07, 1))
+    cross:SetColor(PageBgColour)
   end
 end
 

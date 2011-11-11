@@ -12,9 +12,8 @@ function ComboBox:Initialize(width, height, itemList, labelCreator)
     self:AddChild(button)
   self.Button = button
 
-  local itemText = GUIManager:CreateTextItem()
-   itemText:SetFontSize(17)
-   itemText:SetPosition(Vector(4, 3, 0))
+  local itemText = self:CreateFontString(height)
+   itemText:SetPosition(Vector(4.5, 1.5, 0))
     self:AddGUIItemChild(itemText)
   self.ItemText = itemText
   
@@ -145,8 +144,9 @@ function ComboBox:ToggleDropDown(down)
 
   if(not self.DropDownOpen) then
     local dropdown
-
-    if(not NormalDropDown) then
+     
+    //our dropdown could of been left belonging to another GUIManager like GameGUIManager that destroys all its frames so make sure we still have a valid dropdown if its created
+    if(not NormalDropDown or not IsValidControl(NormalDropDown)) then
       NormalDropDown =  self:GetGUIManager():CreateWindow("DropDownMenu", self:GetWidth(), self:GetHeight()*7)
       
       local oldUninitialize = NormalDropDown.Uninitialize
@@ -189,19 +189,22 @@ end
 
 function DropDownMenu:CheckUnparent()
 
-  if(self.Parent) then
-    self:GetGUIManager():RemoveFrame(self)
+  local current = self:SafeGetGUIManager()
+
+  if(current) then
+    current:RemoveFrame(self)
   end
 end
 
 function DropDownMenu:Open(owner, position, list, index)
 
+  local GUIMgr = owner:GetGUIManager()
+
   self:CheckUnparent()
+  GUIMgr:AddFrame(self)
 
   self.Owner = owner
   self.ViewStart = 1
-
-  local GUIMgr = owner:GetGUIManager()
 
   local height = #list*self.ItemDistance
   local x,y = GUIMgr:GetSpaceToScreenEdges(position)
@@ -216,8 +219,7 @@ function DropDownMenu:Open(owner, position, list, index)
 
   if(self.Hidden) then
     self:Show()
-
-    GUIMgr:AddFrame(self)
+    
     GUIMgr:SetFocus(self)
   else
    // self:UnregisterForMouseMove()
@@ -242,21 +244,27 @@ function DropDownMenu:Close(fromClick)
   if(self.Hidden) then
     return
   end
-  
+
   self:UnregisterForMouseMove()
-  
+
   self:Hide()
 
-  self.Owner:DropDownClosed()
-
-  self:CheckUnparent()
-  
+  if(IsValidControl(self.Owner)) then
+    self.Owner:DropDownClosed()
+  end
   self.Owner = nil
+
+  local GUIMgr = self:SafeGetGUIManager()
+
+  //default to parenting to GUIMenuManager so we get any scale updates
+  if(GUIMgr == nil) then    
+    GUIMenuManager:AddWindow(self)
+  end
 end
 
 function DropDownMenu:Update()
   
-  if(not self.Owner:IsShown()) then
+  if(self.Owner and not self.Owner:IsShown()) then
     self:Close()
   end
 end

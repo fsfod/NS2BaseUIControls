@@ -5,7 +5,6 @@ ControlClass('BorderedSquare', BaseControl)
 local DefaultLineWidth = 1
 local DefaultSize = 60
 
-local BorderColour = Color(0.133, 0.149, 0.1529, 1)
 local BackgroundColor = Color(0.588, 0.627, 0.666, 1)
 
 local Red = Color(1,0,0,1)
@@ -19,28 +18,28 @@ function BorderedSquare:Initialize(width, height, lineWidth, skipSetSize)
   BaseControl.Initialize(self, width, height)
 
   local bg = self.RootFrame
-    bg:SetColor(BackgroundColor)
+    bg:SetColor(ControlGrey1)
 
   local top = self:CreateGUIItem()
-    top:SetColor(BorderColour)
+    top:SetColor(ControlGrey1)
   self.Top = top
   
   local bottom = self:CreateGUIItem()
     bottom:SetAnchor(GUIItem.Left, GUIItem.Bottom)
     //the wonky rounding of the coorinates cause this to look wrong
     //bottom:SetPosition(Vector(0,-self.LineWidth, 0))
-    bottom:SetColor(BorderColour)
+    bottom:SetColor(ControlGrey1)
   self.Bottom = bottom
 
   local left = self:CreateGUIItem()
-    left:SetColor(BorderColour)
+    left:SetColor(ControlGrey1)
   self.Left = left
   
   local right = self:CreateGUIItem()
     right:SetAnchor(GUIItem.Right, GUIItem.Top)
     //the wonky rounding of the coorinates cause this to look wrong
     //right:SetPosition(Vector(-self.LineWidth,0, 0))
-    right:SetColor(BorderColour)
+    right:SetColor(ControlGrey1)
   self.Right = right
   
   self.HitRec = {}
@@ -64,7 +63,7 @@ function BorderedSquare:SetBackgroundColor(colour)
 end
 
 function BorderedSquare:SetSize(width, height)
-  BaseControl.ScaledSetSize(self, width, height)
+  BaseControl.SetSize(self, width, height)
   
   local SizeVec = Vector(width, self.LineWidth, 0)
   
@@ -107,13 +106,7 @@ function BasePage:Initialize(width, height, pageName, titleString)
     titleString = pageName
   end
 
-  local title = GUIManager:CreateTextItem()
-    title:SetFontSize(20)
-    title:SetText(titleString)
-    title:SetAnchor(GUIItem.Center, GUIItem.Middle)
-    title:SetTextAlignmentX(GUIItem.Align_Center)
-    title:SetTextAlignmentY(GUIItem.Align_Center)
-  self.Title = title
+
 ///title:GetTextWidth(titleString)+40
 
   local titlebox = self:CreateControl("BorderedSquare", 200, 24, 2)
@@ -121,6 +114,13 @@ function BasePage:Initialize(width, height, pageName, titleString)
     titlebox:SetColor(Color(0.1, 0.1, 0.1, 1))
     titlebox:AddGUIItemChild(title)
    self:AddChild(titlebox)
+   
+  local title = titlebox:CreateFontString(20)
+    title:SetText(titleString)
+    title:SetAnchor(GUIItem.Center, GUIItem.Middle)
+    title:SetTextAlignmentX(GUIItem.Align_Center)
+    title:SetTextAlignmentY(GUIItem.Align_Center)
+  self.Title = title
    
   if(GUIMenuManager.WindowedModeActive) then
    local closeButton = self:CreateControl("CloseButton", self)
@@ -136,7 +136,7 @@ function BasePage:AddBackButton(point, x, y, relPoint)
     return
   end
   
-  local backButton = UIButton("Back to menu")
+  local backButton =  self:CreateControl("UIButton", "Back to menu")
     backButton:SetPoint(point, x, y, relPoint)
     backButton.ClickAction = function() self.Parent:ReturnToMainPage() end
   self:AddChild(backButton)

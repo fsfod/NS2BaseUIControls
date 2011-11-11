@@ -77,6 +77,9 @@ function BaseGUIManager:DestroyAllFrames()
     self.AnchorFrame = nil
   end
 
+  self.ClearAllCallbacksFor("MouseMove")
+  self.ClearAllCallbacksFor("Update")
+
   self:ClearFrameLists()
 end
 
@@ -90,6 +93,8 @@ function BaseGUIManager:CreateAnchorFrame(width, height, layer)
 
   self.AnchorFrame = anchorFrame
 
+  self.AnchorSize = self.AnchorSize/UIScale
+
   if(self.TopLevelUIParent) then
     self.TopLevelUIParent.RootFrame = anchorFrame
     self.TopLevelUIParent.Size = self.AnchorSize
@@ -99,18 +104,33 @@ end
 function BaseGUIManager:OnResolutionChanged(oldX, oldY, width, height)
 
   if(self.AnchorSize) then
-    self.AnchorSize.x = width
-    self.AnchorSize.y = height
+    self.AnchorSize.x = width/UIScale
+    self.AnchorSize.y = height/UIScale
   end
 
   if(self.AnchorFrame) then
-    self.AnchorFrame:SetSize(self.AnchorSize)
+    self.AnchorFrame:SetSize(Vector(width, height, 0))
   end
-  
+ 
   for _,frame in pairs(self.AllFrames) do
-    frame:UpdatePosition()
     frame:OnResolutionChanged(oldX, oldY, width, height)
   end
+end
+
+function BaseGUIManager:UpdateScale()
+
+  local width, height = Client.GetScreenWidth()/UIScale, Client.GetScreenHeight()/UIScale
+
+  self.TopLevelUIParent.Size = Vector(width, height, 0)
+
+  for i=1, #self.AllFrames do
+    local frame = self.AllFrames[i]
+    
+    frame:Rescale()
+    frame:ParentSizeChanged()
+  end
+
+  return
 end
 
 function BaseGUIManager:SendKeyEvent(key, down, IsRepeat, wheelDirection)
@@ -319,6 +339,19 @@ function BaseGUIManager:InternalCreateFrame(className, ...)
   return frame
 end
 
+function BaseGUIManager:CreateControl(className, ...)
+
+  local frame = self:InternalCreateFrame(className, ...)
+
+  if(frame) then
+    assert(band(frame.Flags, ControlFlags.IsWindow) == 0, "CreateControl: Created control is a window")
+
+    self:AddFrame(frame)
+  end
+
+  return frame
+end
+
 function BaseGUIManager:CreateWindow(className, ...)
 
   local frame = self:InternalCreateFrame(className, ...)
@@ -352,11 +385,6 @@ function BaseGUIManager:TryCloseTopMostWindow()
 end
 
 function BaseGUIManager:AddFrame(frame)
-  assert(frame.RootFrame)
-
-	if(not frame.HitRec) then
-		error("frame needs to contain a HitRec")
-	end
 
 	frame.Parent = self.TopLevelUIParent
 
@@ -383,7 +411,7 @@ function BaseGUIManager:AddFrame(frame)
     frame.Position = Vector(0, 0, 0)
   end
 
-	frame:UpdateHitRec()
+	frame:TryUpdateHitRec()
 
   if(frame.OnParentSet) then
     frame:OnParentSet()
@@ -408,6 +436,8 @@ function BaseGUIManager:RemoveFrame(frame, destroyFrame)
   if(self.AnchorFrame) then
     self.AnchorFrame:RemoveChild(frame.RootFrame)
   end
+
+  self.UnregisterAllCallbacks(frame)
 
   if(destroyFrame and frame.Uninitialize) then
     SafeCall(frame.Uninitialize, frame)
@@ -669,7 +699,7 @@ function BaseGUIManager:TraverseFrames(frameList, x, y, filter, callback)
    local childFrame = frameList[i]
    local rec = childFrame.HitRec
     
-    if(not childFrame.Hidden and rec and x > rec[1] and y > rec[2] and x < rec[3] and y < rec[4]) then 
+    if(not childFrame.Hidden and rec and x >= rec[1] and y >= rec[2] and x <= rec[3] and y <= rec[4]) then 
       local result
       local childFlags = band(filter, childFrame.ChildFlags)
 
@@ -780,6 +810,13 @@ function BaseGUIManager:DoOnEnter(frame, x, y)
 
   return false
 end
+
+function BaseGUIManager:GetCursorPos()
+  local x,y = Client.GetCursorPosScreen()
+
+  return x/UIScale, y/UIScale
+end
+
 
 function BaseGUIManager:OnMouseMove()
   local x,y = self:GetCursorPos()
@@ -936,20 +973,18 @@ function BaseGUIManager:DragStopped()
   self.ActiveDrag = nil
 end
 
-function BaseGUIManager:GetCursorPos()
-  return Client.GetCursorPosScreen()
-end
-
 function BaseGUIManager:GetSpaceToScreenEdges(xOrVec, y)
   
   local xResult,yResult
+
+  local size = self.TopLevelUIParent.Size
   
   if(not y) then
-    xResult,yResult = Client.GetScreenWidth()-xOrVec.x,Client.GetScreenHeight()-xOrVec.y
+    xResult,yResult = size.x-xOrVec.x, size.y-xOrVec.y
   else
-    xResult,yResult = Client.GetScreenWidth()-xOrVec,Client.GetScreenHeight()-y
+    xResult,yResult = size.x-xOrVec, size.y-y
   end
-  
+
   assert(xResult >= 0 and yResult >= 0, "GUIManager.GetSpaceLeftToScreenEdges error point is outside screen")
   
   return xResult,yResult

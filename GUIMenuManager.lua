@@ -41,6 +41,8 @@ else
   UIMenuParent = GUIMenuManager.TopLevelUIParent
 end
 
+
+
 function GUIMenuManager:Initialize()
   BaseGUIManager.Initialize(self)
 
@@ -50,12 +52,64 @@ function GUIMenuManager:Initialize()
   
   Event.Hook("ClientConnected", function() self:OnClientConnected() end)
   Event.Hook("ClientDisconnected", function() self:OnClientDisconnected() end)
-  
+
+  UIMenuParent.Size = Vector(Client.GetScreenWidth()/UIScale, Client.GetScreenHeight()/UIScale, 0)
+
   self.MenuClass = Client.GetOptionString("MainMenuClass", "ClassicMenu")
+
+  self:SetHooks()
+end
+
+function GUIMenuManager:UpdateScale()
+
+  local width, height = Client.GetScreenWidth()/UIScale, Client.GetScreenHeight()/UIScale
+
+  UIMenuParent.Size = Vector(width, height, 0)
+
+  if(#self.AllFrames > 1) then
+
+    //skip the mainmenu
+    for i=2,#self.AllFrames do
+      local frame = self.AllFrames[i]
+      
+      frame:Rescale()
+      frame:ParentSizeChanged()
+    end
+  end
+
+  if(self.MainMenu) then
+    
+    self.MainMenu:SetSize(width, height)
+
+    for i,frame in ipairs(self.MainMenu.ChildControls) do
+      frame:Rescale()
+      frame:ParentSizeChanged()
+    end
+  end
+  
+  return
 end
 
 function GUIMenuManager:OnResolutionChanged(oldX, oldY, width, height)
-  BaseGUIManager.OnResolutionChanged(self, oldX, oldY, width, height)
+
+  if(self.AnchorFrame) then
+    self.AnchorFrame:SetSize(Vector(width, height, 0))
+  end
+
+  width, height = width/UIScale, height/UIScale
+
+  UIMenuParent.Size = Vector(width, height, 0)
+
+  if(#self.AllFrames > 1) then
+
+    //skip the mainmenu
+    for i=2,#self.AllFrames do
+      local frame = self.AllFrames[i]
+      
+      frame:Rescale()
+      frame:OnResolutionChanged(oldX, oldY, width, height)
+    end
+  end
 
   if(self.MainMenu) then
     local onResolutionChanged = self.MainMenu.OnResolutionChanged
@@ -65,6 +119,11 @@ function GUIMenuManager:OnResolutionChanged(oldX, oldY, width, height)
     else
       //if the menu doesn't have a on OnResolutionChanged fallback to just adjusting its size
       self.MainMenu:SetSize(width, height)
+    end
+     
+    //FIXME should really handle this better since we scale the size of the menu directly so that it size is increased when we decrease scale
+    for i,frame in ipairs(self.MainMenu.ChildControls) do
+      frame:Rescale()
     end
   end
 end
@@ -220,6 +279,10 @@ function GUIMenuManager:CheckCloseMsgBox()
   end
 end
 
+function GUIMenuManager:GetMenu()
+  return self.MainMenu
+end
+
 function GUIMenuManager:CreateMenu()
   self.CreatedMenu = true
 
@@ -229,9 +292,17 @@ function GUIMenuManager:CreateMenu()
   local success, menuOrErrorMsg = pcall(CreateControl, self.MenuClass)
   
   if(success) then
-    menuOrErrorMsg:Initialize( Client.GetScreenWidth(), Client.GetScreenHeight())
-    
+    //menuOrErrorMsg.SetSize = function(self, size) GUIItem.SetSize(self, size*UIScale) end
+    //menuOrErrorMsg.SetPosition = function(self, position) GUIItem.SetPosition(self, position*UIScale) end
+   
+    self.Callbacks:Fire("PreMenuCreate", menuOrErrorMsg)
+   
+    menuOrErrorMsg:Initialize(Client.GetScreenWidth()/UIScale, Client.GetScreenHeight()/UIScale)
+    //GUIItem.SetSize(menuOrErrorMsg, Vector(Client.GetScreenWidth(), Client.GetScreenHeight(), 0))
+
     self:SetMainMenu(menuOrErrorMsg)
+
+    self.Callbacks:Fire("MenuCreated", menuOrErrorMsg)
   else
     Print("Error while Creating Menu:%s", menuOrErrorMsg)
    return false
@@ -267,6 +338,8 @@ function GUIMenuManager:InternalRecreateMenu()
   self:DestroyAllFrames()
   
   self:CreateAnchorFrame(Client.GetScreenWidth(), Client.GetScreenHeight(), self.MenuLayer)
+
+  UIMenuParent.Size = Vector(Client.GetScreenWidth()/UIScale, Client.GetScreenHeight()/UIScale, 0)
   
   if(self:CreateMenu()) then
     self.AnchorFrame:SetIsVisible(true)
@@ -306,7 +379,17 @@ function GUIMenuManager:InternalHide()
   end
 end
 
+function GUIMenuManager:MenuStartup()
+  self:HookFunction("LeaveMenu", function() self:InternalCloseMenu() end, InstantHookFlag)
+  
+  self.MenuStartupDone = true
+end
+
 function GUIMenuManager:ShowMenu(message)
+  
+  if(not self.MenuStartupDone) then
+    self:MenuStartup()
+  end
   
   if(not self.MainMenu) then
     if(not self.CreatedMenu) then
@@ -318,12 +401,14 @@ function GUIMenuManager:ShowMenu(message)
     end
   end
   
+  MainMenu_Loaded()
+  
   self:Activate()
   
   MouseStateTracker:SetMainMenuState()
   
   if(message) then
-    self:ShowMessage(message)
+    self:ShowMessage("", message)
   end
   
   self:InternalShow()
@@ -331,7 +416,26 @@ function GUIMenuManager:ShowMenu(message)
   GameGUIManager:Deactivate()
 end
 
+
+
 function GUIMenuManager:CloseMenu()
+
+  //our hooks from these functions will call InternalCloseMenu
+  if(self:IsMenuOpen()) then
+    
+    if(Client.GetIsConnected()) then
+      MainMenu_ReturnToGame()
+    else
+      LeaveMenu()
+    end
+    
+  else
+    //normally this call should should effectivly do nothing
+    self:InternalCloseMenu()
+  end
+end
+
+function GUIMenuManager:InternalCloseMenu()
 
   if(self:IsMenuOpen()) then
     self.MainMenu:Hide()
@@ -366,4 +470,9 @@ function GUIMenuManager:RecreatePage(pageName)
   if(self.MainMenu) then
     self.MainMenu:RecreatePage(pageName)
   end
+end
+
+if(not HotReload) then
+  Event.Hook("Console_showmenu", function() GUIMenuManager:ShowMenu() end)
+  Event.Hook("Console_hidemenu", function() GUIMenuManager:CloseMenu() end)
 end

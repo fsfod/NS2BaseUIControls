@@ -12,7 +12,7 @@ local CreateItem = GUI.CreateItem
 
 function ExtractGUIItemTables()
   
-  GUIItemTable = {__init = function() end}
+  GUIItemTable = {}
 
   for name, v in pairs(GUIItem) do
     if(type(v) == "function") then
@@ -31,6 +31,8 @@ function ExtractGUIItemTables()
   BaseMT.__tostring = nil
   
   GUI.DestroyItem(c)
+  
+  _G.GUIItemTable = GUIItemTable
 end
 
 ExtractGUIItemTables()
@@ -38,7 +40,6 @@ ExtractGUIItemTables()
 local function SetupInstanceMetaTable(className)
   
   local mt = {
-    __tostring = function() return className end, 
     Class = className,
   }
   
@@ -46,8 +47,19 @@ local function SetupInstanceMetaTable(className)
     mt[k] = v
   end
 
-  InstanceMT[className] = mt
-  InstanceMT.__towatch = function(self) return debug.getfenv(self) end
+  /*
+  if(true) then
+    mt.__index = function(self, key) 
+      local env = debug.getfenv(self)
+
+      return env[key] or getmetatable(env)[key]
+    end
+  end
+*/
+  mt.__towatch = function(self) return debug.getfenv(self) end
+  mt.__tostring = function() return className end
+
+  InstanceMT[className] = mt  
 end
 
 function CreateControl(name)
@@ -65,17 +77,7 @@ function CreateControl(name)
 end
 
 local function CallMeta(self, ...)
-  
   assert(false, getmetatable(self).Class)
-  
-  local item = GUI.CreateItem()
-
-  setmetatable(debug.getfenv(item), self)
-
-  item:__init(...)
-
-
-  return item
 end
 
 local function CopyInBaseFunctions(indexTable, baseName)
@@ -108,16 +110,17 @@ local function RecreateClass(className, base)
 
   Shared.Message("Recreateing class "..className)
 
-  assert(not base or ClassBase[className] == ClassTable[base])
-  
   local t = _G[className]
+
+  assert(not base or ClassBase[t] == ClassTable[base])
+  
   local isa = t.isa
   
   for k,v in pairs(t) do
     t[k] = nil
   end
 
-  CopyInBaseFunctions(t, base and ClassTable[base])
+  CopyInBaseFunctions(t, base)
 
   t.isa = isa
 end
@@ -135,7 +138,7 @@ function ControlClass(className, base)
   //if class already exists treat this as a hot reload just clear and rebuild the index table
   //TODO propergating the changes to derived class's
   if(IsALookUp[className]) then
-    RecreateClass(className, base)
+    RecreateClass(className, baseName)
    return
   end
 
@@ -195,10 +198,18 @@ c:AddChild(g)
 assert(g.Parent == g:GetParent())
 
 local DestroyedIndex = {
-  SetPosition = function() end,
-  SetSize = function() end,
-  SetIsVisible = function() end,
-  SetColor = function() end,
+  SetPosition = function() 
+    RawPrint("SetPosition called on destroyed control")
+  end,
+  SetSize = function()
+    RawPrint("SetSize called on destroyed control")
+  end,
+  SetIsVisible = function()
+    RawPrint("SetIsVisible called on destroyed control")
+  end,
+  SetColor = function()
+    RawPrint("SetColor called on destroyed control")
+  end,
 
   GetPosition = function() return Vector(0, 0, 0) end,
   GetSize = function() return Vector(1, 1, 0) end,
@@ -231,5 +242,5 @@ function SetControlDestroyed(control)
 end
 
 function IsValidControl(control)
-  return not control.__Destroyed
+  return control and not control.__Destroyed
 end

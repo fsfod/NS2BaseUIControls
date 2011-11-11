@@ -20,6 +20,10 @@ function Slider:ShowAmountText()
   self.AmountText:SetIsVisible(true)
 end
 
+function Slider:SetValueAndTiggerEvent(value)
+  self:InteralSetValue(value, false, false)
+end
+
 function Slider:SetValueFromConfig()
   self:SetValue(self.ConfigBinding:GetValue())
 end

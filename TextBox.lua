@@ -11,12 +11,11 @@ function TextBox:Initialize(width, height, fontsize, fontname)
   
   self:SetBackgroundColor(Color(0.06,0.06,0.06, 0.8))
   
-  local carret = GUIManager:CreateGraphicItem()
+  local carret = self:CreateGUIItem()
    carret:SetIsVisible(false)
    carret:SetSize(Vector(1, height-4, 0))
    carret:SetPosition(Vector(5, 2, 0))
    carret:SetColor(Color(1,0,0, 1))
-   self:AddGUIItemChild(carret)
   self.Carret = carret
   
   self.FontSize = fontsize or 20
@@ -90,8 +89,9 @@ function TextBox:ClearText()
   self:UpdateCarret()
 end
 
-function TextBox:SetText(text)
-  self.Text:SetText(text)
+function TextBox:SetText(value)
+
+  self.Text:SetText((value ~= nil and tostring(value)) or "")
   
   self.CarretPos = self.Text:GetWideText():length()
   
@@ -236,4 +236,20 @@ function TextBox:SendKeyEvent(key, down)
   end
 
   return false
+end
+
+function TextBox:TryParseNumber(oldValue, min, max)
+
+  local sucess, result = pcall(tonumber, self:GetText())
+  
+  if(not sucess or (min and result < min) or (max and result > max)) then
+
+    sucess = false
+    
+    if(oldValue) then
+      self:SetText(tostring(oldValue))
+    end
+  end
+  
+  return sucess and result
 end

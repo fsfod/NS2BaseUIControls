@@ -34,6 +34,9 @@ function GameGUIManager:Initialize()
 
   self:CreateAnchorFrame(Client.GetScreenWidth(), Client.GetScreenHeight())
   
+  local size = Vector(Client.GetScreenWidth()/UIScale, Client.GetScreenHeight()/UIScale, 0)
+  UIParent.Size = size
+  
   Event.Hook("ClientDisconnected", function() self:Reset() end)
 end
 

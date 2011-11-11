@@ -12,7 +12,7 @@ function LVTextItem:Initialize(owner, width, fontsize)
   //we have set this here since we were not created by GUIManager function and Text GUIItems need it set
   self:SetOptionFlag(GUIItem.ManageRender)
 
-  self:SetFontSize(self.FontSize)
+  self:SetFontSize(self.FontSize*UIScale)
   self:SetTextClipped(true, width-self.TextOffset, self.FontSize)
   
   self:SetColor(white)
@@ -30,6 +30,11 @@ function LVTextItem:SetPosition(x, y)
   BaseControl.SetPosition(self, x+self.TextOffset, y)
 end
 
+function LVTextItem:Rescale()
+  self:SetFontSize(self.FontSize*UIFontScale)
+  GUIItem.SetPosition(self, self.Position*UIScale)
+end
+
 function LVTextItem:GetRoot()
   return self
 end
@@ -41,6 +46,12 @@ ListView.DefaultHeight = 120
 ListView.DefaultWidth = 300
 ListView.SelectedItemColor = Color(0, 0, 0.3, 1)
 
+
+function ListView:Rescale()
+  BaseControl.Rescale(self)
+
+  self.ItemsAnchor:Rescale()
+end
 
 function ListView:Initialize(width, height, itemCreator, itemHeight, itemSpacing)
   
@@ -65,11 +76,12 @@ function ListView:Initialize(width, height, itemCreator, itemHeight, itemSpacing
   local selectBG = self:CreateGUIItem()
     selectBG:SetIsVisible(false)
     selectBG:SetColor(self.SelectedItemColor)
-    self:AddGUIItemChild(selectBG)
   self.SelectBG = selectBG
 
   self.ItemsAnchor = self:CreateControl("BaseControl")
   self.ItemsAnchor:SetColor(Color(0,0,0,0))
+  self.ItemsAnchor.Size = Vector(0, 0, 0)
+  self.ItemsAnchor:SetPosition(0, 0, 0)
   self:AddGUIItemChild(self.ItemsAnchor)
 
   assert(not itemCreator or type(itemCreator) == "string")
@@ -336,6 +348,19 @@ function ListView:SetSelectedItem(item)
    
     if(itemEntry == item) then
       self:SetSelectedIndex(self.ViewStart+(i-1))
+     return true
+    end
+  end
+
+  return false
+end
+
+function ListView:SetSelectedListEntry(item)
+
+  for i,itemEntry in ipairs(self.ItemDataList) do
+   
+    if(itemEntry == item) then
+      self:SetSelectedIndex(i)
      return true
     end
   end

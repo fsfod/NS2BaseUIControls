@@ -5,13 +5,9 @@ ButtonMixin:Mixin(UIButton)
 UIButton.InnerHeight = 24/36
 UIButton.InnerWidth = 94/100
 
-UIButton.CenterColor = Color(0.133, 0.149, 0.1529, 1)
-
 UIButton.PressedLabelShift = Vector(0, 2 ,0)
 
 local FontSize = 16
-
-local Orange = Color(0.8666, 0.3843, 0, 1)
 
 function UIButton:Initialize(labelText, width, height)
 
@@ -23,22 +19,20 @@ function UIButton:Initialize(labelText, width, height)
 	
 	self:SetBackgroundColor(Color(0.06,0.06,0.06, 0.8))
 	
-	local center = GUIManager:CreateGraphicItem()
+	local center = self:CreateGUIItem()
 	 center:SetAnchor(GUIItem.Center, GUIItem.Middle)
-	 center:SetColor(self.CenterColor)
+	 center:SetColor(ControlGrey1)
 	 self.CenterSquare = center
-	self:AddGUIItemChild(center)
 	
-  local centerBg = GUIManager:CreateGraphicItem()
+  local centerBg = self:CreateGUIItem()
    centerBg:SetTexture("ui/ButtonBg.dds")
+   centerBg:SetAnchor(GUIItem.Center, GUIItem.Middle)
    //centerBg:SetColor(Color(1, 1, 1, 1))
    centerBg:SetIsVisible(false)	 
 	self.CenterBg = centerBg
-	center:AddChild(centerBg)
-	
-	local label = PageButtonFont:CreateFontString()
+
+	local label = self:CreateFontString(PageButtonFont)
 	 label:SetText(labelText or "some text")  
-	 center:AddChild(label)
 	self.Label = label
 	
   self:SetSize(width, height)
@@ -55,7 +49,11 @@ function UIButton:SetSize(width, height)
 
   self.CenterBg:SetSize(centerSize)
   self.CenterSquare:SetSize(centerSize)
-  self.CenterSquare:SetPosition(Vector(1-(centerWidth/2), -((centerHeight/2)-1), 0))
+ 
+  local centerPos = Vector(1-(centerWidth/2), -((centerHeight/2)-1), 0)
+
+  self.CenterSquare:SetPosition(centerPos)
+  self.CenterBg:SetPosition(centerPos)
 end
 
 
@@ -76,7 +74,7 @@ function UIButton:SetHighlightLock(locked)
   self.HighlightLocked = locked
  
   if(locked) then
-    self.CenterSquare:SetColor(self.CenterColor)
+    self.CenterSquare:SetColor(ControlGrey1)
   else
     self.CenterSquare:SetColor(Color(0.1, 0.1, 0.1, 1))
   end
@@ -96,7 +94,7 @@ end
 
 function UIButton:OnLeave()
   if(not self.HighlightLocked) then
-	  self.CenterSquare:SetColor(self.CenterColor)
+	  self.CenterSquare:SetColor(ControlGrey1)
 	  self.CenterBg:SetIsVisible(false)
 	end
 end
