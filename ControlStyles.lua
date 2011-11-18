@@ -11,7 +11,7 @@ PageButtonFont:SetCenterAlignAndAnchor()
 ControlHighlightColor = Color(0.8666, 0.3843, 0, 1)
 ControlDarkOrange = Color(0.8666/1.5, 0.3843/1.5, 0, 1)
 
-PageBgColour = Color(0.07, 0.07, 0.07, 0.8)
+PageBgColour = Color(0.06, 0.06, 0.06, 0.97)
 
 WindowBGColor = Color(0.03, 0.03, 0.03, 0.95)
 

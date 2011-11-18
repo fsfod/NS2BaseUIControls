@@ -820,9 +820,13 @@ function FontTemplate:SetAnchor(xAnchor, yAnchor)
 end
 
 function FontTemplate:CreateFontString()
-  local result = GUIManager:CreateTextItem()
-   self:Apply(result)
-  return result
+
+  local fontString = GUIManager:CreateTextItem()
+
+  setmetatable(debug.getfenv(fontString), GUIItemTable)
+  self:Apply(fontString)
+
+  return fontString
 end
 
 function FontTemplate:SetBold()

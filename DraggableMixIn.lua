@@ -1,6 +1,6 @@
 class 'Draggable'
 
-function Draggable:Initialize(width, height)
+function Draggable:Initialize()
   self.DragStartPoint = false
   self.DragStartClickedPos = false
   self.DragEnabled = true
@@ -10,15 +10,8 @@ function Draggable:Initialize(width, height)
   self.DragPos = Vector(0,0,0)
 
   if(height and width) then
-    self:CreateRootFrame(width, height)
-    
     self:SetupHitRec()
   end
-end
-
-function Draggable:SetRootFrame(frame)
-  BaseControl.SetRootFrame(self, frame)
-  self.DragRoot = frame
 end
 
 function Draggable:OnClick(button, down)

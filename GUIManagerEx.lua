@@ -12,9 +12,7 @@ end
 
 function GUIManagerEx:OnLoad()
   self:SetHooks()
-  
-  Event.Hook("UpdateClient", function() self:Update() end)
-  
+
   self:HookFileLoadFinished("lua/Skulk_Client.lua", "SetSkulkViewTilt")
   
   
@@ -98,60 +96,10 @@ function GUIManagerEx:DestroyGUIScriptSingle(handle, self, scriptName)
   end
 end
 
-local WheelMessages = nil
-
-local NoUpEvent = {
-  [InputKey.MouseZ] = true,
-  [InputKey.MouseX] = true,
-  [InputKey.MouseY] = true,
-}
-
-
-local KeyDown = {}
-
-function GUIManagerEx.PreProcessKeyEvent(key, down)
-  PROFILE("MouseTracker:SendKeyEvent")
-
-  local IsRepeat = false
-
-  if(not NoUpEvent[key]) then
-    IsRepeat = KeyDown[key] and down
-    KeyDown[key] = down
-  end
-
-  local eventHandled, wheelDirection
-
-  if(key == InputKey.MouseZ and GetWheelMessages) then
-    if(WheelMessages == nil) then
-      WheelMessages = GetWheelMessages() or false
-    end
-
-    if(WheelMessages and #WheelMessages ~= 0) then
-      wheelDirection = WheelMessages[1]
-      table.remove(WheelMessages, 1)
-      
-      for i,dir in ipairs(WheelMessages) do
-        if((dir < 0 and wheelDirection < 0) or (dir > 0 and wheelDirection > 0)) then
-          wheelDirection = wheelDirection+dir
-        end
-      end
-    else
-      //just eat any extra wheel events this frame that the engine sent
-      //even if windows is configured to 1 scroll for 1 wheel click we can still get more than 1 scroll for a single scroll event if the wheel is spinning fast enough
-      eventHandled = true
-    end
-  end
-  
-  return eventHandled, IsRepeat, wheelDirection
-end
-
-local PreProcessKeyEvent = GUIManagerEx.PreProcessKeyEvent
-
-
 function GUIManagerEx.SendKeyEvent(handle, self, key, down)
   PROFILE("MouseTracker:SendKeyEvent")
 
-  local eventHandled, IsRepeat, wheelDirection = PreProcessKeyEvent(key, down)
+  local eventHandled, IsRepeat, wheelDirection = InputKeyHelper:PreProcessKeyEvent(key, down)
 
   eventHandled = eventHandled or GUIMenuManager:SendKeyEvent(key, down, IsRepeat, wheelDirection) or GameGUIManager:SendKeyEvent(key, down, IsRepeat, wheelDirection) 
 
@@ -169,10 +117,6 @@ function GUIManagerEx.SendCharacterEvent(handle, self, ...)
     handle:BlockOrignalCall()
     handle:SetReturn(true)
   end
-end
-
-function GUIManagerEx:Update()
-  WheelMessages = nil
 end
 
 if(HotReload) then

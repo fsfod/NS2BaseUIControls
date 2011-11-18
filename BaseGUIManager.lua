@@ -111,8 +111,9 @@ function BaseGUIManager:OnResolutionChanged(oldX, oldY, width, height)
   if(self.AnchorFrame) then
     self.AnchorFrame:SetSize(Vector(width, height, 0))
   end
- 
+
   for _,frame in pairs(self.AllFrames) do
+    frame:Rescale()
     frame:OnResolutionChanged(oldX, oldY, width, height)
   end
 end
@@ -131,6 +132,32 @@ function BaseGUIManager:UpdateScale()
   end
 
   return
+end
+
+function BaseGUIManager:HandleCtrClipboardKeys(key)
+ 
+  if(not GetClipboardString) then
+    return false
+  end
+  
+  local focus = self.FocusedFrame
+  
+  if(key == InputKey.V and focus.OnPaste) then
+    local text = GetClipboardString()
+
+    if(text) then
+      SafeCall(focus.OnPaste, focus, text)
+    end
+    
+  elseif(key == InputKey.C and focus.CopyToClipboard) then
+    
+    SafeCall(focus.CopyToClipboard, focus)
+   
+  else
+    return false
+  end
+  
+  return true
 end
 
 function BaseGUIManager:SendKeyEvent(key, down, IsRepeat, wheelDirection)
@@ -155,9 +182,18 @@ function BaseGUIManager:SendKeyEvent(key, down, IsRepeat, wheelDirection)
 
   local focus = self.FocusedFrame
 
-  if(focus and focus.SendKeyEvent and focus:SendKeyEvent(key, down, IsRepeat)) then
-    return true
+  if(focus) then
+    if(down and not IsRepeat and InputKeyHelper:IsCtlDown() and self:HandleCtrClipboardKeys(key)) then
+      return true
+    end
+    
+    
+    if(focus.SendKeyEvent and focus:SendKeyEvent(key, down, IsRepeat)) then
+      return true
+    end
   end
+
+  
 
   if(wheelDirection and self:OnMouseWheel(wheelDirection)) then
     return true
@@ -329,6 +365,8 @@ function BaseGUIManager:InternalCreateFrame(className, ...)
   if(not sucess) then
     return nil
   end
+
+  frame.Parent = self.TopLevelUIParent
 
   sucess = SafeCall(frame.Initialize, frame, ...)
   
@@ -729,7 +767,7 @@ function BaseGUIManager:TraverseFrames(frameList, x, y, filter, callback)
         end
         
         --if the callback returned false or the control didn't have the flags, we go on to try the child controls if any of them have the flags
-        if(childFlags ~= 0 and not result and not childFrame.TraverseChildFirst) then
+        if(childFlags ~= 0 and not result and not childFrame.TraverseChildFirst and childFrame.ChildControls) then
           result = self:TraverseFrames(childFrame.ChildControls, x-rec[1], y-rec[2], filter, callback)
         end
         

@@ -13,7 +13,7 @@ function TextBox:Initialize(width, height, fontsize, fontname)
   
   local carret = self:CreateGUIItem()
    carret:SetIsVisible(false)
-   carret:SetSize(Vector(1, height-4, 0))
+   carret:SetSize(Vector(2, height-4, 0))
    carret:SetPosition(Vector(5, 2, 0))
    carret:SetColor(Color(1,0,0, 1))
   self.Carret = carret
@@ -53,6 +53,20 @@ function TextBox:SetFont(fontname)
   self:UpdateCarret()
 end
 
+function TextBox:CopyToClipboard()
+  local text = self:GetText()
+
+  if(text and text ~= "") then
+    SetClipboardString(text)
+  end
+end
+
+function TextBox:OnPaste(pastText)
+  self:InsertText(pastText)
+
+  self:FireEvent(self.TextChanged, self:GetText())
+end
+
 function TextBox:OnFocusGained()
   self.Carret:SetIsVisible(true)
 end
@@ -83,6 +97,10 @@ function TextBox:GetText()
   return self.Text:GetText()
 end
 
+function TextBox:GetWideText()
+  
+end
+  
 function TextBox:ClearText()
   self.Text:SetText("")
   self.CarretPos = 0
@@ -110,8 +128,14 @@ function TextBox:GetTextWidth(endIndex)
 end
 
 function TextBox:SendCharacterEvent(character)
+
+  if(InputKeyHelper:ShouldIgnoreChar(character)) then
+    return false
+  end
+  
   self:InsertChar(character)
   self:FireEvent(self.TextChanged, self:GetText())
+  
  return true
 end
 
@@ -143,6 +167,28 @@ function TextBox:UpdateCarret()
   
   
   self.Carret:SetPosition(Vector(offset+5, 2, 0))
+end
+
+function TextBox:InsertText(insertText)
+  local currentText = self.Text:GetText()
+  local currentTextLength = #currentText
+  
+  if(self.CarretPos == currentTextLength) then
+    currentText = currentText..insertText
+  elseif(self.CarretPos == 0) then
+    currentText = insertText..currentText
+  else
+   local front = currentText:sub(1, self.CarretPos)
+   local back = currentText:sub(self.CarretPos+1, currentTextLength)
+       
+    currentText = front..insertText..back
+  end
+   
+  self.Text:SetText(currentText)
+
+  self.CarretPos = self.CarretPos+#insertText
+  
+  self:UpdateCarret()
 end
 
 function TextBox:InsertChar(char)
@@ -242,7 +288,7 @@ function TextBox:TryParseNumber(oldValue, min, max)
 
   local sucess, result = pcall(tonumber, self:GetText())
   
-  if(not sucess or (min and result < min) or (max and result > max)) then
+  if(not sucess or not result or (min and result < min) or (max and result > max)) then
 
     sucess = false
     

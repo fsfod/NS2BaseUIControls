@@ -44,7 +44,7 @@ local screenHeight = Client.GetScreenHeight()
 
 local ThresholdHeight = 800
 
-if(screenHeight <= 800) then
+if(screenHeight < 800) then
   //clamp to 0.7 because fonts tend to look horrible any lower
   local amount = math.max(0.7, screenHeight/800)
 
@@ -156,11 +156,7 @@ function BaseControl:Rescale()
     if(not frame._FontSize) then
       SetSize(frame, GetSize(frame)*UIScaleMult)
     else
-      GUIItem.SetFontSize(frame, frame._FontSize*UIFontScale)
-
-      if(frame.SpecialAnchor) then
-        frame:SetPoint(unpack(frame.SpecialAnchor))
-      end
+      frame:SetFontSize(frame._FontSize)
     end
   end
 
@@ -220,15 +216,13 @@ function BaseControl:CreateFontString(fontSizeOrTemplate, anchorPoint, x, y, cli
   if(type(fontSizeOrTemplate) == "number") then
     
     font = GUIManager:CreateTextItem()
-    font:SetFontSize(fontSizeOrTemplate*UIFontScale)
+    setmetatable(debug.getfenv(font), GUIItemTable)
+    
+    font:SetFontSize(fontSizeOrTemplate)
   else
     font = fontSizeOrTemplate:CreateFontString()
     fontSizeOrTemplate = fontSizeOrTemplate.FontSize
   end
-
-  setmetatable(debug.getfenv(font), GUIItemTable)
-
-  font._FontSize = fontSizeOrTemplate
 
   local point
 
@@ -285,6 +279,16 @@ function FontTemplate:Apply(font)
   
   if(self.Colour) then
     font:SetColor(self.Colour)
+  end
+end
+
+function GUIItemTable:SetFontSize(fontSize)
+  self._FontSize = fontSize
+  
+  GUIItem.SetFontSize(self, fontSize*UIFontScale)
+  
+  if(self.SpecialAnchor) then
+    self:SetPoint(unpack(self.SpecialAnchor))
   end
 end
 
