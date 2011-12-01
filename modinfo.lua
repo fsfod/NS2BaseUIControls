@@ -1,4 +1,4 @@
-EngineBuild = 187
+EngineBuild = 188
 ModTableName = "GUIManagerEx"
 MainScript = "GUIManagerEx.lua"
 ValidVM = "client"
@@ -29,8 +29,10 @@ ScriptList = {
   "ScrollBar.lua",
   "Slider.lua",
   "ListView.lua",
-  "ComboBox.lua",
+  "TextBoxMixin.lua",
   "TextBox.lua",
+  "DropDownMenu.lua",
+  "ComboBox.lua",
   "CheckBox.lua",
   "UpDownControl.lua",
   "ColorPicker.lua",

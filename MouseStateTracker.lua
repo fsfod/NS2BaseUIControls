@@ -72,10 +72,6 @@ function MouseStateTracker:SetHooks(startup)
   self:PostHookClassFunction("Commander", "UpdateCursor")  
   self:HookClassFunction("Commander", "SetupHud", function() self:PushState("commander", true, false, true) end)
 
-  if(Shared.GetBuildNumber() <= 187) then
-    self:ReplaceClassFunction("Armory", "OnUse", self.FixedArmory_OnUse)
-  end
-
   self:PostHookClassFunction("Armory", "OnUse", "ArmoryBuy_Hook")
 
   self:HookFunction("ArmoryUI_Close", function() self:PopState("buymenu") end)
@@ -124,32 +120,6 @@ end
 
 function MouseStateTracker:PlayerDied()
   self:ClearAllExcept(self.DeathPersist)
-end
-
-
-function MouseStateTracker.FixedArmory_OnUse(self, player, elapsedTime, useAttachPoint, usePoint)
-
-    local isPlayerAlive = player:GetIsAlive()
-    local isLocalPlayer = (Client.GetLocalPlayer() == player)
-    local isMouseVisiiiiiiiiiiiiiiiiiiiiiiible = Client.GetMouseVisible()
-    
-    if self:GetIsBuilt() and self:GetIsActive() and not Shared.GetIsRunningPrediction() then
-      
-        if not isMouseVisiiiiiiiiiiiiiiiiiiiiiiible and (isPlayerAlive and isLocalPlayer) then
-        
-            GetFlashPlayer(kClassFlashIndex):Load(Armory.kBuyMenuFlash)
-            GetFlashPlayer(kClassFlashIndex):SetBackgroundOpacity(0)
-            
-            player.showingBuyMenu = true
-            
-    
-            // Play looping "active" sound while logged in
-            Shared.PlayPrivateSound(player, Armory.kResupplySound, player, 1.0, Vector(0, 0, 0))
-            
-        end
-        
-    end
-    
 end
 
 function MouseStateTracker:ArmoryBuy_Hook(objSelf, player, elapsedTime, useAttachPoint)
