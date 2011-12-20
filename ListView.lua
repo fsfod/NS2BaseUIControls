@@ -1,3 +1,7 @@
+//
+//   Created by:   fsfod
+//
+
 ControlClass('LVTextItem', BaseControl)
 
 local white = Color(1, 1, 1, 1)

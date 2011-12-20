@@ -1,3 +1,6 @@
+//
+//   Created by:   fsfod
+//
 
 local TypeToTypeNum = {
   ["string"] = 1,

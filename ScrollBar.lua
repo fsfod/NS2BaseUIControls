@@ -1,3 +1,6 @@
+//
+//   Created by:   fsfod
+//
 
 //ControlClass('ScrollBar', Draggable)
 

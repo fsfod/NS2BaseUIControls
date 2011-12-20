@@ -1,3 +1,7 @@
+//
+//   Created by:   fsfod
+//
+
 ControlClass('MessageBox', BaseWindow)
 
 function MessageBox:Initialize(title, message)

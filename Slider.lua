@@ -1,3 +1,6 @@
+//
+//   Created by:   fsfod
+//
 
 ControlClass('Slider', ScrollBar)
 

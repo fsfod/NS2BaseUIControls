@@ -1,16 +1,6 @@
-/*
-enum XAnchor = {
-  GUIItem.Top
-  GUIItem.Center
-  GUIItem.Bottom
-}
-
-enum YAnchor = {
-  GUIItem.Left,
-  GUIItem.Middle,
-  GUIItem.Right
-}
-*/
+//
+//   Created by:   fsfod
+//
 
 local PointToAnchor = {
   Top = {GUIItem.Middle, GUIItem.Top},

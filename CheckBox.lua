@@ -1,3 +1,7 @@
+//
+//   Created by:   fsfod
+//
+
 ControlClass('CheckBox', BaseControl)
 
 local Orange = Color(0.8666, 0.3843, 0, 1)

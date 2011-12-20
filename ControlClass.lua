@@ -1,3 +1,7 @@
+//
+//   Created by:   fsfod
+//
+
 local IsALookUp = {}
 local ClassBase = {}
 

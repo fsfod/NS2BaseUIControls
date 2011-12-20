@@ -1,4 +1,6 @@
-
+//
+//   Created by:   fsfod
+//
 
 ControlClass("BaseWindow", BorderedSquare)
 

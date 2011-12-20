@@ -1,3 +1,7 @@
+//
+//   Created by:   fsfod
+//
+
 ControlClass('UpDownControl', BaseControl)
 
 UpDownControl.ButtonWidth = 18

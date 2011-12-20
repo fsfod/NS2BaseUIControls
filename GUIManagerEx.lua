@@ -1,3 +1,6 @@
+//
+//   Created by:   fsfod
+//
 
 if(not GUIManagerEx) then
   GUIManagerEx = {}
