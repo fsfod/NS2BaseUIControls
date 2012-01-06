@@ -163,7 +163,7 @@ function BaseGUIManager:HandleCtrClipboardKeys(key)
   return true
 end
 
-function BaseGUIManager:SendKeyEvent(key, down, IsRepeat, wheelDirection)
+function BaseGUIManager:SendKeyEvent(key, down, IsRepeat)
 
   if(not self:IsActive()) then
     return false
@@ -196,9 +196,7 @@ function BaseGUIManager:SendKeyEvent(key, down, IsRepeat, wheelDirection)
     end
   end
 
-  
-
-  if(wheelDirection and self:OnMouseWheel(wheelDirection)) then
+  if(key == InputKey.MouseZ and self:OnMouseWheel((down and 1) or -1)) then
     return true
   end
 

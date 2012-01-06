@@ -102,16 +102,16 @@ end
 function GUIManagerEx.SendKeyEvent(handle, self, key, down)
   PROFILE("MouseTracker:SendKeyEvent")
 
-  local eventHandled, IsRepeat, wheelDirection = InputKeyHelper:PreProcessKeyEvent(key, down)
+  local eventHandled, IsRepeat = InputKeyHelper:PreProcessKeyEvent(key, down)
 
-  eventHandled = eventHandled or GUIMenuManager:SendKeyEvent(key, down, IsRepeat, wheelDirection) or GameGUIManager:SendKeyEvent(key, down, IsRepeat, wheelDirection) 
+  eventHandled = eventHandled or GUIMenuManager:SendKeyEvent(key, down, IsRepeat) or GameGUIManager:SendKeyEvent(key, down, IsRepeat)
 
   if(eventHandled) then
     handle:BlockOrignalCall()
     handle:SetReturn(true)
   end
   
-  return key, down, IsRepeat, wheelDirection
+  return key, down, IsRepeat
 end
 
 function GUIManagerEx.SendCharacterEvent(handle, self, ...)
