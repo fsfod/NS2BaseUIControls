@@ -3,15 +3,10 @@
 //
 
 local HotReload = false
-local SetMouseVisible, SetMouseCaptured, SetMouseClipped, SetCursor
+local SetMouseVisible, SetMouseClipped, SetCursor
 
 if(not MouseStateTracker) then
-  
-  SetMouseVisible = Client.SetMouseVisible
-  SetMouseCaptured = Client.SetMouseCaptured
-  SetMouseClipped = Client.SetMouseClipped
-  SetCursor = Client.SetCursor
-  
+    
   MouseStateTracker = {
     StateStack = {},
     OwnerToState = {},
@@ -26,13 +21,6 @@ if(not MouseStateTracker) then
     },
 
     DefaultCursor = "ui/Cursor_MenuDefault.dds",
-
-    MouseFunctions = {
-      ["SetMouseVisible"] = SetMouseVisible,
-      ["SetMouseCaptured"] = SetMouseCaptured,
-      ["SetMouseClipped"] = SetMouseClipped,
-      ["SetCursor"] = SetCursor,
-    },
   }
   
   Event.Hook("Console_resetmouse", function() MouseStateTracker:ClearStack() end)
@@ -41,7 +29,6 @@ else
   HotReload = true
   
   SetMouseVisible = MouseStateTracker.MouseFunctions.SetMouseVisible
-  SetMouseCaptured = MouseStateTracker.MouseFunctions.SetMouseCaptured
   SetMouseClipped = MouseStateTracker.MouseFunctions.SetMouseClipped
   SetCursor = MouseStateTracker.MouseFunctions.SetCursor
 end
@@ -53,11 +40,25 @@ ClassHooker:Mixin("MouseStateTracker")
 
 function MouseStateTracker:Init()
   self:SetHooks(true)
-  self:SetMainMenuState()
+  //self:SetMainMenuState()
   
   //Event.Hook("UpdateClient", function()
   //  MouseStateTracker:Update()
   //end)
+end
+
+function MouseStateTracker:OnClientLoadComplete()
+
+  SetMouseVisible = Client.SetMouseVisible
+  SetMouseClipped = Client.SetMouseClipped
+  SetCursor = Client.SetCursor
+
+  self.MouseFunctions = {
+    ["SetMouseVisible"] = SetMouseVisible,
+    ["SetMouseClipped"] = SetMouseClipped,
+    ["SetCursor"] = SetCursor,
+  }
+  
 end
 
 function MouseStateTracker:Update()
@@ -175,9 +176,8 @@ function MouseStateTracker:DisableMouseFunctions()
   local hooklist = {}
 
   hooklist[1] = self:HookLibraryFunction(HookType.Replace, "Client", "SetMouseVisible", function() end)
-  hooklist[2] = self:HookLibraryFunction(HookType.Replace, "Client", "SetMouseCaptured", function() end)
-  hooklist[3] = self:HookLibraryFunction(HookType.Replace, "Client", "SetMouseClipped", function() end)
-  hooklist[4] = self:HookLibraryFunction(HookType.Replace, "Client", "SetCursor", function() end)
+  hooklist[2] = self:HookLibraryFunction(HookType.Replace, "Client", "SetMouseClipped", function() end)
+  hooklist[3] = self:HookLibraryFunction(HookType.Replace, "Client", "SetCursor", function() end)
 
   self.MouseFunctionHooks = hooklist
 end
@@ -211,7 +211,6 @@ function MouseStateTracker:SetMainMenuState()
   self.MainMenuActive = true
 
   SetMouseVisible(true)
-  SetMouseCaptured(false)
   SetMouseClipped(false)
   SetCursor(self.DefaultCursor)
 end
@@ -348,10 +347,6 @@ function MouseStateTracker:ApplyStack()
       visible = state.Visible
     end
     
-    if(state.Captured ~= nil) then
-      captured = state.Captured
-    end
-    
     if(state.Icon ~= nil) then
       cursorImage = state.Icon
     end   
@@ -362,7 +357,6 @@ function MouseStateTracker:ApplyStack()
   end
 
   SetMouseVisible(visible)
-  SetMouseCaptured(captured)
   SetMouseClipped(clipped)
 end
 

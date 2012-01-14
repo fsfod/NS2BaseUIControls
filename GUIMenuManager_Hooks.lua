@@ -16,13 +16,16 @@ function GUIMenuManager:SetHooks()
   //uncomment to disable menu cinematic
   //self:HookLibraryFunction(HookType.Raw, "MenuManager", "SetMenuCinematic")
 
-  self:ReplaceFunction("ShowInGameMenu", function()
+  self:ReplaceFunction("MainMenu_Open", function()
+    
     if not Shared.GetIsRunningPrediction() then
+      OptionsDialogUI_OnInit()
       self:ShowMenu()
     end
+    
   end)
 
-  self:ReplaceFunction("MainMenu_SetAlertMessage", "Hook_SetAlertMessage")
+  //self:ReplaceFunction("MainMenu_SetAlertMessage", "Hook_SetAlertMessage")
   
   if(false) then
     self:PostHookFunction("LeaveMenu", function() self:InternalCloseMenu() end)
@@ -42,9 +45,10 @@ function GUIMenuManager:SetFlashMenuHooks()
     end
   end)
   
-  self:HookFunction("MainMenu_SetAlertMessage", function() MouseStateTracker:ClearStack() end)
+  //self:HookFunction("MainMenu_SetAlertMessage", function() MouseStateTracker:ClearStack() end)
 end
 
+/*
 function GUIMenuManager:Hook_SetAlertMessage(alertMessage)
 
   MouseStateTracker:ClearStack()
@@ -54,6 +58,7 @@ function GUIMenuManager:Hook_SetAlertMessage(alertMessage)
 
   MainMenu_Loaded()
 end
+*/
 
 function GUIMenuManager:DisableFlashMenu()
 

@@ -14,24 +14,34 @@ local FloatDataType = 2
 local BoolDataType = 3
 local NumberDataType = 4
 
-local GetString = Client.GetOptionString
-local GetFloat = Client.GetOptionFloat
-local GetBool = Client.GetOptionBoolean
-local GetNumber = Client.GetOptionInteger
+local GetString, GetFloat, GetBool, GetNumber
 
-local ConfigSetter = {
-  Client.SetOptionString,
-  Client.SetOptionFloat,
-  Client.SetOptionBoolean,
-  Client.SetOptionInteger,
-}
+local ConfigSetter, ConfigGetter
 
-local ConfigGetter = {
-  Client.GetOptionString,
-  Client.GetOptionFloat,
-  Client.GetOptionBoolean,
-  Client.GetOptionInteger,
-}
+ConfigDataBind = {}
+
+function ConfigDataBind.OnClientLoadComplete()
+
+  ConfigGetter = {
+    Client.GetOptionString,
+    Client.GetOptionFloat,
+    Client.GetOptionBoolean,
+    Client.GetOptionInteger,
+  }
+  
+  ConfigSetter = {
+    Client.SetOptionString,
+    Client.SetOptionFloat,
+    Client.SetOptionBoolean,
+    Client.SetOptionInteger,
+  }
+  
+  GetString = Client.GetOptionString
+  GetFloat = Client.GetOptionFloat
+  GetBool = Client.GetOptionBoolean
+  GetNumber = Client.GetOptionInteger
+end
+
 
 local TypeDefaults = {
   "",
@@ -40,7 +50,7 @@ local TypeDefaults = {
   0,
 }
 
-ConfigDataBind = {}
+
 
 local IndexMT = {
   __index = ConfigDataBind

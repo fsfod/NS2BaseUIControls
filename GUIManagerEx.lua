@@ -16,12 +16,12 @@ end
 function GUIManagerEx:OnLoad()
   self:SetHooks()
 
-  self:HookFileLoadFinished("lua/Skulk_Client.lua", "SetSkulkViewTilt")
+  //self:HookFileLoadFinished("lua/Skulk_Client.lua", "SetSkulkViewTilt")
   
   
   if(StartupLoader) then
-    StartupLoader:AddReducedLuaScript("lua/GUIManager.lua")
-    StartupLoader:AddReducedLuaScript("lua/Main.lua")
+    //StartupLoader:AddReducedLuaScript("lua/GUIManager.lua")
+   // StartupLoader:AddReducedLuaScript("lua/Main.lua")
   end
   
   MouseStateTracker:Init()
@@ -30,8 +30,25 @@ function GUIManagerEx:OnLoad()
   GameGUIManager:Initialize()
 end
 
+function GUIManagerEx:OnClientLoadComplete()
+  
+  SetupUIScale()
+  
+  GUIMenuManager:LoadComplete()
+  GameGUIManager:LoadComplete()
+  
+  ConfigDataBind.OnClientLoadComplete()
+  MouseStateTracker:OnClientLoadComplete()
+  ConnectedInfo:OnClientLoadComplete()
+  
+  self:SetSkulkViewTilt()
+end
+
 function GUIManagerEx:SetSkulkViewTilt()
-  OnCommandSkulkViewTilt(Client.GetOptionBoolean("DisableSkulkViewTilt", false) and "false")
+  
+  if(OnCommandSkulkViewTilt) then
+    OnCommandSkulkViewTilt(Client.GetOptionBoolean("DisableSkulkViewTilt", false) and "false")
+  end
 end
 
 local function CheckLoadedAndType(scriptName)

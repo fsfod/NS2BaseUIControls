@@ -43,17 +43,20 @@ Event.Hook("Console_setuiscale", function(scale)
   ChangeUIScale(value)
 end)
 
-local screenHeight = Client.GetScreenHeight()
-
 local ThresholdHeight = 800
 
-if(screenHeight < 800) then
-  //clamp to 0.7 because fonts tend to look horrible any lower
-  local amount = math.max(0.7, screenHeight/800)
 
-  RawPrint("UIScale %f", amount)
+function SetupUIScale()
+  local screenHeight = Client.GetScreenHeight()
 
-  SetUIScale(amount)
+  if(screenHeight < 800) then
+    //clamp to 0.7 because fonts tend to look horrible any lower
+    local amount = math.max(0.7, screenHeight/800)
+  
+    RawPrint("UIScale %f", amount)
+  
+    SetUIScale(amount)
+  end
 end
 
 Event.Hook("ResolutionChanged", function(oldWidth, oldHeight, width, height)

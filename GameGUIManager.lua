@@ -35,13 +35,15 @@ end
 
 function GameGUIManager:Initialize()
   BaseGUIManager.Initialize(self)
+  
+  Event.Hook("ClientDisconnected", function() self:Reset() end)
+end
 
+function GameGUIManager:LoadComplete()
   self:CreateAnchorFrame(Client.GetScreenWidth(), Client.GetScreenHeight())
   
   local size = Vector(Client.GetScreenWidth()/UIScale, Client.GetScreenHeight()/UIScale, 0)
   UIParent.Size = size
-  
-  Event.Hook("ClientDisconnected", function() self:Reset() end)
 end
 
 function GameGUIManager:Reset()

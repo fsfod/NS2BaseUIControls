@@ -50,18 +50,21 @@ end
 function GUIMenuManager:Initialize()
   BaseGUIManager.Initialize(self)
 
-  self:CreateAnchorFrame(Client.GetScreenWidth(), Client.GetScreenHeight(), self.MenuLayer)
-
-  self.CurrentWindowLayer = self.MenuLayer+1
-  
   Event.Hook("ClientConnected", function() self:OnClientConnected() end)
-  Event.Hook("ClientDisconnected", function() self:OnClientDisconnected() end)
-
-  UIMenuParent.Size = Vector(Client.GetScreenWidth()/UIScale, Client.GetScreenHeight()/UIScale, 0)
-
-  self.MenuClass = Client.GetOptionString("MainMenuClass", "ClassicMenu")
+  Event.Hook("ClientDisconnected", function(reason) self:OnClientDisconnected(reason) end)
 
   self:SetHooks()
+end
+
+function GUIMenuManager:LoadComplete()
+
+  self.MenuClass = Client.GetOptionString("MainMenuClass", "ClassicMenu")
+  
+  self:CreateAnchorFrame(Client.GetScreenWidth(), Client.GetScreenHeight(), self.MenuLayer)
+  
+  UIMenuParent.Size = Vector(Client.GetScreenWidth()/UIScale, Client.GetScreenHeight()/UIScale, 0)
+
+  self.CurrentWindowLayer = self.MenuLayer+1
 end
 
 function GUIMenuManager:UpdateScale()
@@ -139,10 +142,15 @@ function GUIMenuManager:OnClientConnected()
   end
 end
 
-function GUIMenuManager:OnClientDisconnected()
+function GUIMenuManager:OnClientDisconnected(reason)
  
   if(self.MainMenu and self.MainMenu.OnClientDisconnected) then
     self.MainMenu:OnClientDisconnected()
+  end
+  
+  if(not StartupLoader.MainVM) then
+    Client.SetOptionInteger("menumod/DisconnectTime",  Shared.GetSystemTime())
+    Client.SetOptionString("menumod/DisconnectReason", reason)
   end
 end
 
@@ -387,6 +395,8 @@ function GUIMenuManager:MenuStartup()
   self:HookFunction("LeaveMenu", function() self:InternalCloseMenu() end, InstantHookFlag)
   
   self.MenuStartupDone = true
+ 
+  //Client.PrecacheLocalSound("sound/ns2.fev/music/main_menu")
 end
 
 function GUIMenuManager:ShowMenu(message)
@@ -404,16 +414,31 @@ function GUIMenuManager:ShowMenu(message)
       self.MainMenu:Show()
     end
   end
-  
+
   MainMenu_Loaded()
-  
+
   self:Activate()
-  
+
   MouseStateTracker:SetMainMenuState()
   
-  if(message) then
-    self:ShowMessage("", message)
+  local DisconnectTime = Client.GetOptionInteger("menumod/DisconnectTime", 0)
+  
+  DisconnectTime = (Shared.GetSystemTime()-DisconnectTime) 
+  
+  local reason = Client.GetOptionString("menumod/DisconnectReason", "")
+  
+  if(DisconnectTime > 0 and DisconnectTime < 30 and reason ~= "") then
+    self:ShowMessage("Disconnected from server", reason)
+    
+    Client.SetOptionInteger("menumod/DisconnectTime", 0)
+  else
+    
+    if(message) then
+      self:ShowMessage("", message)
+    end
   end
+  
+
   
   self:InternalShow()
   
