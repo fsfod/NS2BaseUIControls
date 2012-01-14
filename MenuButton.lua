@@ -54,7 +54,7 @@ function UIButton:SetSize(width, height)
   self.CenterBg:SetSize(centerSize)
   self.CenterSquare:SetSize(centerSize)
  
-  local centerPos = Vector(1-(centerWidth/2), -((centerHeight/2)-1), 0)
+  local centerPos = Vector(1-(centerWidth/2), -((centerHeight/2)), 0)
 
   self.CenterSquare:SetPosition(centerPos)
   self.CenterBg:SetPosition(centerPos)

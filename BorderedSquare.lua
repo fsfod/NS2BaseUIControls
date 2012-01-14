@@ -29,7 +29,7 @@ function BorderedSquare:Initialize(width, height, lineWidth, skipSetSize)
   local bottom = self:CreateGUIItem()
     bottom:SetAnchor(GUIItem.Left, GUIItem.Bottom)
     //the wonky rounding of the coorinates cause this to look wrong
-    //bottom:SetPosition(Vector(0,-self.LineWidth, 0))
+    bottom:SetPosition(Vector(0,-self.LineWidth, 0))
     bottom:SetColor(ControlGrey1)
   self.Bottom = bottom
 
@@ -40,7 +40,7 @@ function BorderedSquare:Initialize(width, height, lineWidth, skipSetSize)
   local right = self:CreateGUIItem()
     right:SetAnchor(GUIItem.Right, GUIItem.Top)
     //the wonky rounding of the coorinates cause this to look wrong
-    //right:SetPosition(Vector(-self.LineWidth,0, 0))
+    //right:SetPosition(Vector(0,-1,0))
     right:SetColor(ControlGrey1)
   self.Right = right
   
@@ -71,13 +71,19 @@ function BorderedSquare:SetSize(width, height)
   
   self.Top:SetSize(SizeVec)
   SizeVec.x = width+(self.LineWidth*0.5)
+  SizeVec.y = self.LineWidth+0.5
   self.Bottom:SetSize(SizeVec)
   
   SizeVec.x = self.LineWidth
   SizeVec.y = height
   self.Left:SetSize(SizeVec)
   
-  SizeVec.y = height+(self.LineWidth*0.5)
+  if(self.LineWidth == 2) then
+    SizeVec.y = height
+  else
+    SizeVec.y = height+(self.LineWidth*0.5)
+  end
+  
   self.Right:SetSize(SizeVec)
   
   //self.Bottom:SetPosition(Vector(0,-(self.LineWidth*0.9), 0))
@@ -112,7 +118,7 @@ function BasePage:Initialize(width, height, pageName, titleString)
 ///title:GetTextWidth(titleString)+40
 
   local titlebox = self:CreateControl("BorderedSquare", 200, 24, 2)
-    titlebox:SetPoint("Top", 0, 0, "Bottom")
+    titlebox:SetPoint("Top", 0, 2, "Bottom")
     titlebox:SetColor(Color(0.1, 0.1, 0.1, 1))
     titlebox:AddGUIItemChild(title)
    self:AddChild(titlebox)

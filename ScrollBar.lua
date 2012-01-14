@@ -303,10 +303,10 @@ function SliderButton:OnDragStop()
 end
 
 local ArrowTextures = {
-  Up = {0,0, 14, 15},
-  Down = {14,0, 29, 15},
-  Left = {29,0, 45,15},
-  Right = {45,0, 29,15},
+  Up = {96,0, 128, 32},
+  Down = {64,0, 96, 32},
+  Left = {0,0, 32, 32},
+  Right = {32,0, 64,32},
 }
 
 ControlClass('ArrowButton', BaseControl)
@@ -324,9 +324,11 @@ function ArrowButton:Initialize(width, height, mode)
 
   self:SetColor(NormalColor)
 
+  self.Mode = mode
+
   local arrow = self:CreateGUIItem()
-    arrow:SetColor(Color(1,1,1, 1))
-    arrow:SetBlendTechnique(GUIItem.Add)
+    //arrow:SetColor(Color(1,1,1, 1))
+    //arrow:SetBlendTechnique(GUIItem.Add)
     arrow:SetTexture("ui/arrows.dds")
     arrow:SetTexturePixelCoordinates(unpack(ArrowTextures[mode]))
   self.Overlay = arrow
@@ -349,6 +351,8 @@ end
 function ArrowButton:OnLeave()
   self.MouseOver = false
   self:SetColor(NormalColor)
+
+  //self.Overlay:SetColor(Color(1, 1, 1, 1))
 end
 
 function ArrowButton:OnClick(button, down)
@@ -361,11 +365,14 @@ function ArrowButton:OnClick(button, down)
         self.OnClicked[1](self.OnClicked[2], true)
       end 
 
-      self.Overlay:SetColor(Color(0, 1, 1, 1))
+      local x1, _, x2, _ = unpack(ArrowTextures[self.Mode])
+  
+      self.Overlay:SetTexturePixelCoordinates(x1, 32, x2, 64)
     else
       self.IsDown = false
       
-      self.Overlay:SetColor(Color(1, 1, 1, 1))
+      self.Overlay:SetTexturePixelCoordinates(unpack(ArrowTextures[self.Mode]))
+      //self.Overlay:SetColor(Color(1, 1, 1, 1))
 
       if(self.MouseOver) then
         self:SetColor(MouseOverColor)

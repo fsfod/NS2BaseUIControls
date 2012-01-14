@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="128"
+   height="64"
+   id="svg2985"
+   version="1.1"
+   inkscape:version="0.48.2 r9819"
+   sodipodi:docname="arrows.svg"
+   inkscape:export-filename="I:\Natural Selection 2\ModLoader\Mods\BaseUIControls\ui\arrows.png"
+   inkscape:export-xdpi="90"
+   inkscape:export-ydpi="90">
+  <defs
+     id="defs2987">
+    <filter
+       id="filter6025"
+       inkscape:label="Fancy blur"
+       inkscape:menu="Blurs"
+       inkscape:menu-tooltip="Smooth colorized contour which allows desaturation and hue rotation"
+       color-interpolation-filters="sRGB">
+      <feGaussianBlur
+         id="feGaussianBlur6027"
+         stdDeviation="5"
+         result="result1" />
+      <feComposite
+         id="feComposite6029"
+         in2="result1"
+         operator="arithmetic"
+         k2="2"
+         in="result1" />
+    </filter>
+    <filter
+       id="filter6031"
+       inkscape:label="Fancy blur"
+       inkscape:menu="Blurs"
+       inkscape:menu-tooltip="Smooth colorized contour which allows desaturation and hue rotation"
+       color-interpolation-filters="sRGB">
+      <feGaussianBlur
+         id="feGaussianBlur6033"
+         stdDeviation="5"
+         result="result1" />
+      <feComposite
+         id="feComposite6035"
+         in2="result1"
+         operator="arithmetic"
+         k2="2"
+         in="result1" />
+    </filter>
+    <filter
+       id="filter6037"
+       inkscape:label="Fancy blur"
+       inkscape:menu="Blurs"
+       inkscape:menu-tooltip="Smooth colorized contour which allows desaturation and hue rotation"
+       color-interpolation-filters="sRGB">
+      <feGaussianBlur
+         id="feGaussianBlur6039"
+         stdDeviation="5"
+         result="result1" />
+      <feComposite
+         id="feComposite6041"
+         in2="result1"
+         operator="arithmetic"
+         k2="2"
+         in="result1" />
+    </filter>
+    <filter
+       id="filter6043"
+       inkscape:label="Fancy blur"
+       inkscape:menu="Blurs"
+       inkscape:menu-tooltip="Smooth colorized contour which allows desaturation and hue rotation"
+       color-interpolation-filters="sRGB">
+      <feGaussianBlur
+         id="feGaussianBlur6045"
+         stdDeviation="5"
+         result="result1" />
+      <feComposite
+         id="feComposite6047"
+         in2="result1"
+         operator="arithmetic"
+         k2="2"
+         in="result1" />
+    </filter>
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="11"
+     inkscape:cx="43.226164"
+     inkscape:cy="24.566419"
+     inkscape:current-layer="layer1"
+     showgrid="true"
+     inkscape:document-units="px"
+     inkscape:grid-bbox="true"
+     inkscape:window-width="1680"
+     inkscape:window-height="998"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1">
+    <inkscape:grid
+       type="xygrid"
+       id="grid4492"
+       empspacing="32"
+       visible="true"
+       enabled="true"
+       snapvisiblegridlinesonly="true"
+       empcolor="#0000ff"
+       empopacity="0.69803922" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata2990">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     id="layer1"
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer">
+    <path
+       style="fill:#dc6200;fill-opacity:1;stroke:none"
+       d="M 28,2 28,30 4,16 z"
+       id="path4494"
+       inkscape:connector-curvature="0" />
+    <path
+       style="fill:#dc6200;fill-opacity:1;stroke:none"
+       d="M 36,2 36,30 60,16 z"
+       id="path4494-1"
+       inkscape:connector-curvature="0" />
+    <path
+       style="fill:#dc6200;fill-opacity:1;stroke:none"
+       d="M 94,4 66,4 80,28 z"
+       id="path4494-1-7"
+       inkscape:connector-curvature="0" />
+    <path
+       style="fill:#dc6200;fill-opacity:1;stroke:none"
+       d="M 126,28 98,28 112,4 z"
+       id="path4494-1-7-4"
+       inkscape:connector-curvature="0"
+       inkscape:export-filename="I:\Natural Selection 2\ModLoader\Mods\BaseUIControls\ui\arrows.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <path
+       style="fill:#dc6200;fill-opacity:1;stroke:none;filter:url(#filter6025)"
+       d="M 28,66 28,94 4,80 z"
+       id="path4494-0"
+       inkscape:connector-curvature="0"
+       transform="matrix(1.0833333,0,0,0.92857144,-2.3333333,-26.285715)" />
+    <path
+       style="fill:#dc6200;fill-opacity:1;stroke:none;filter:url(#filter6031)"
+       d="M 36,66 36,94 60,80 z"
+       id="path4494-1-9"
+       inkscape:connector-curvature="0"
+       transform="matrix(1.125,0,0,0.96428572,-4.499997,-28.642858)" />
+    <path
+       style="fill:#dc6200;fill-opacity:1;stroke:none;filter:url(#filter6037)"
+       d="M 94,68 66,68 80,92 z"
+       id="path4494-1-7-48"
+       inkscape:connector-curvature="0"
+       transform="matrix(1,0,0,1.25,0,-49.000002)" />
+    <path
+       style="fill:#dc6200;fill-opacity:1;stroke:none;filter:url(#filter6043)"
+       d="M 126,92 98,92 112,68 z"
+       id="path4494-1-7-4-8"
+       inkscape:connector-curvature="0"
+       inkscape:export-filename="I:\Natural Selection 2\ModLoader\Mods\BaseUIControls\ui\arrows.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90"
+       transform="matrix(0.96428571,0,0,1.0416667,4.5,-35.833337)" />
+  </g>
+</svg>

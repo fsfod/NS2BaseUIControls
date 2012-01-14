@@ -50,6 +50,16 @@ function ComboBox.GetItemLabel(item)
   
 end
 
+function ComboBox:SetItemList(list)
+  assert(list == nil or type(list) == "table")
+
+  self.SelectedIndex = nil
+  self.ItemText:SetText("")
+  
+  self.ItemList = list or {}
+  self.LabelCache = nil
+end
+
 function ComboBox:DropDownClosed()
   self.DropDownOpen = false
 end
@@ -162,6 +172,14 @@ function ComboBox:ToggleDropDown(down)
     end
 
     local pos = self:GetScreenPosition()
+    
+    if(not self.LabelCache) then
+      self.LabelCache = {}
+      
+      for i,data in ipairs(self.ItemList) do
+        self.LabelCache[i] = self.GetItemLabel(data, i)
+      end
+    end
     
     NormalDropDown:Open(self, Vector(pos.x, pos.y+self:GetHeight()+3, 0), self.LabelCache, self.SelectedIndex)      
     

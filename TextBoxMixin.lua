@@ -45,11 +45,11 @@ function TextBoxMixin:Initialize(fontsize, fontname)
     text:SetFontName(fontname)
    end
   
-  self.CarretOffset = self.TextOffset-Vector(0, 2, 0)
+  self.CarretOffset = self.TextOffset+Vector(0, 3, 0)
   
   local carret = self:CreateGUIItem()
    carret:SetIsVisible(false)
-   carret:SetSize(Vector(2, self.FontSize+2, 0))
+   carret:SetSize(Vector(2, self.FontSize-2, 0))
    carret:SetPosition(self.CarretOffset)
    carret:SetColor(Color(1,0,0, 1))
   self.Carret = carret
