@@ -82,8 +82,11 @@ function ScrollBar:GetValue()
   return self.Value
 end
 
-function ScrollBar:SetValue(newValue)
-  self:InteralSetValue(newValue, false, true)
+function ScrollBar:SetValue(newValue, triggerChangeEvent)
+  assert(type(newValue) == "number")
+  assert(triggerChangeEvent == nil or type(triggerChangeEvent) == "boolean")
+  
+  self:InteralSetValue(newValue, false, not triggerChangeEvent)
 end
 
 function ScrollBar:OnSliderMoved(newValue)
@@ -122,14 +125,14 @@ function ScrollBar:DownClick(down)
   end
 end
 
-function ScrollBar:InteralSetValue(value, fromSlider, fromInput)
+function ScrollBar:InteralSetValue(value, fromSlider, noValueChangedEvent)
   self.Value = Clamp(value, self.MinValue, self.MaxValue)
   
   if(not fromSlider) then
     self.Bar:SetValuePosition((self.Value-self.MinValue)/self.Range)
   end
 
-  if(not fromInput) then
+  if(not noValueChangedEvent) then
     self:FireEvent(self.ValueChanged, self.Value, fromSlider)
   end
 end
@@ -329,7 +332,7 @@ function ArrowButton:Initialize(width, height, mode)
   local arrow = self:CreateGUIItem()
     //arrow:SetColor(Color(1,1,1, 1))
     //arrow:SetBlendTechnique(GUIItem.Add)
-    arrow:SetTexture("ui/arrows.dds")
+    arrow:SetTexture("ui/ButtonArrows.dds")
     arrow:SetTexturePixelCoordinates(unpack(ArrowTextures[mode]))
   self.Overlay = arrow
 

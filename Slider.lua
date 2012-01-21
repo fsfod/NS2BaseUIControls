@@ -48,7 +48,7 @@ function Slider:BarDragEnded()
 end
 
 
-function Slider:InteralSetValue(value, fromSlider, fromInput)
+function Slider:InteralSetValue(value, fromSlider, noValueChangedEvent)
 
   if(self.ClampFraction) then
     if(math.floor(value) == self.Value) then
@@ -71,11 +71,11 @@ function Slider:InteralSetValue(value, fromSlider, fromInput)
   end
 
   if(not self.NoValueChangedWhileDraging or not fromSlider) then
-    if(not fromInput and self.ConfigBinding and fromSlider) then
-     self.ConfigBinding:SetValue(self.Value)
+    if(self.ConfigBinding) then
+      self.ConfigBinding:SetValue(self.Value)
     end
 
-    if(not fromInput) then
+    if(not noValueChangedEvent) then
       self:FireEvent(self.ValueChanged, self.Value, fromSlider)
     end
   end

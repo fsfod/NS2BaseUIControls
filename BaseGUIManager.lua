@@ -26,7 +26,7 @@ function BaseGUIManager:Initialize()
   
   self.DummyWindowList = {true}
 
-  self.ClickFlags = bor(bor(ControlFlags.OnClick, ControlFlags.Draggable), ControlFlags.IsWindow)
+  self.ClickFlags = bor(bor(bor(ControlFlags.OnClick, ControlFlags.Draggable), ControlFlags.IsWindow), ControlFlags.Focusable)
   
   self.BaseWindowLayer = 2
   self.CurrentWindowLayer = 2
@@ -562,6 +562,8 @@ function BaseGUIManager:DoOnClick(frame, x, y)
 
   if(band(frame.Flags, ControlFlags.Focusable) ~= 0) then
     self:SetFocus(frame)
+
+    result = true
   end
 
   local dragStart = false

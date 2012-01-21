@@ -56,7 +56,9 @@ function GUIMenuManager:Initialize()
   self:SetHooks()
 end
 
-function GUIMenuManager:LoadComplete()
+function GUIMenuManager:LoadComplete(disconnectMsg)
+
+  self.DisconnectMessage = disconnectMsg
 
   self.MenuClass = Client.GetOptionString("MainMenuClass", "ClassicMenu")
   
@@ -147,11 +149,13 @@ function GUIMenuManager:OnClientDisconnected(reason)
   if(self.MainMenu and self.MainMenu.OnClientDisconnected) then
     self.MainMenu:OnClientDisconnected()
   end
-  
-  if(not StartupLoader.MainVM) then
+
+/*
+  if(not StartupLoader.IsMainVM) then
     Client.SetOptionInteger("menumod/DisconnectTime",  Shared.GetSystemTime())
     Client.SetOptionString("menumod/DisconnectReason", reason)
   end
+*/
 end
 
 function GUIMenuManager:DoLayerFix()
@@ -263,7 +267,6 @@ function GUIMenuManager:IsMenuOpen()
 end
 
 GUIMenuManager.IsActive = GUIMenuManager.IsMenuOpen
-
 
 function GUIMenuManager:ShowMessage(title, message, ...)  
 
@@ -420,26 +423,20 @@ function GUIMenuManager:ShowMenu(message)
   self:Activate()
 
   MouseStateTracker:SetMainMenuState()
-  
-  local DisconnectTime = Client.GetOptionInteger("menumod/DisconnectTime", 0)
-  
-  DisconnectTime = (Shared.GetSystemTime()-DisconnectTime) 
-  
-  local reason = Client.GetOptionString("menumod/DisconnectReason", "")
-  
-  if(DisconnectTime > 0 and DisconnectTime < 30 and reason ~= "") then
-    self:ShowMessage("Disconnected from server", reason)
+
+
+  if(self.DisconnectMessage) then
     
-    Client.SetOptionInteger("menumod/DisconnectTime", 0)
+    self:ShowMessage("Disconnected From Server", self.DisconnectMessage)
+    self.DisconnectMessage = nil
+    
   else
     
     if(message) then
       self:ShowMessage("", message)
     end
   end
-  
 
-  
   self:InternalShow()
   
   GameGUIManager:Deactivate()

@@ -39,7 +39,7 @@ ClassHooker:Mixin("MouseStateTracker")
 
 
 function MouseStateTracker:Init()
-  self:SetHooks(true)
+  self:SetHooks()
   //self:SetMainMenuState()
   
   //Event.Hook("UpdateClient", function()
@@ -58,7 +58,12 @@ function MouseStateTracker:OnClientLoadComplete()
     ["SetMouseClipped"] = SetMouseClipped,
     ["SetCursor"] = SetCursor,
   }
+
+  self:DisableMouseFunctions()
   
+  if(not StartupLoader.IsMainVM) then
+    self:ClearMainMenuState()
+  end
 end
 
 function MouseStateTracker:Update()
@@ -113,10 +118,6 @@ function MouseStateTracker:SetHooks(startup)
   PlayerEvents:HookIsCommander(self, "CommaderStateChanged")
   PlayerEvents:HookPlayerDied(self, "PlayerDied")
   PlayerEvents:HookTeamChanged(self, "TeamChanged")
-  
-  if(startup or self.MouseFunctionHooks) then
-    self:DisableMouseFunctions() 
-  end
 end
 
 function MouseStateTracker:TeamChanged(old, new)
@@ -289,7 +290,6 @@ function MouseStateTracker:PushState(ownerName, mouseVisble, mouseCaptured, mous
     Owner = ownerName,
    
     Visible = mouseVisble,
-    Captured = mouseCaptured,
     Clipped = mouseClipped,
     Icon = cursorIcon,
   }
@@ -339,12 +339,16 @@ function MouseStateTracker:ApplyStack()
     return
   end
 
-  local visible, captured, clipped = false, true, true
+  local visible, clipped = false, true
   local cursorImage = self.DefaultCursor
 
   for i,state in ipairs(self.StateStack) do
     if(state.Visible ~= nil) then
       visible = state.Visible
+    end
+    
+    if(state.Clipped ~= nil) then
+      clipped = state.Clipped
     end
     
     if(state.Icon ~= nil) then

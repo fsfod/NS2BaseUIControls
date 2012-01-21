@@ -62,10 +62,6 @@ function TextBoxMixin:Initialize(fontsize, fontname)
   self.SpaceSize = w2-w1 
 end
 
-function TextBoxMixin:OnClick()
-  self:SetFocus()
-end
-
 function TextBoxMixin:SetFont(fontname)
   self.Text:SetFontName(fontname)
   

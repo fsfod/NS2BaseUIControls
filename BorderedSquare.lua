@@ -106,6 +106,8 @@ function BasePage:Initialize(width, height, pageName, titleString)
   
   BorderedSquare.Initialize(self, width, height, 2)
 
+  self.TraverseChildFirst = true
+
   self.PageName = pageName
 
   self:SetColor(PageBgColour)

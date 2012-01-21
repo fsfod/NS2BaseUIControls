@@ -30,11 +30,11 @@ function GUIManagerEx:OnLoad()
   GameGUIManager:Initialize()
 end
 
-function GUIManagerEx:OnClientLoadComplete()
+function GUIManagerEx:OnClientLoadComplete(disconnectMsg)
   
   SetupUIScale()
   
-  GUIMenuManager:LoadComplete()
+  GUIMenuManager:LoadComplete(disconnectMsg)
   GameGUIManager:LoadComplete()
   
   ConfigDataBind.OnClientLoadComplete()
@@ -125,6 +125,10 @@ function GUIManagerEx.SendKeyEvent(handle, self, key, down)
 
   if(eventHandled) then
     handle:BlockOrignalCall()
+    handle:SetReturn(true)
+  end
+  
+  if((key ~= InputKey.MouseX and key ~= InputKey.MouseY) and not KeybindMapper and GUIMenuManager:IsMenuOpen()) then
     handle:SetReturn(true)
   end
   
