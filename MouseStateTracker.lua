@@ -38,8 +38,13 @@ MouseStateTracker.Debug = false
 ClassHooker:Mixin("MouseStateTracker")
 
 
+
 function MouseStateTracker:Init()
   self:SetHooks()
+  
+  LoadTracker:HookFileLoadFinished("lua/GUIScoreboard.lua", function() 
+     self:InjectHook({"scoreboard", "GUIScoreboard", "_SetMouseVisible"})
+  end)
   //self:SetMainMenuState()
   
   //Event.Hook("UpdateClient", function()
@@ -63,6 +68,7 @@ function MouseStateTracker:OnClientLoadComplete()
   
   if(not StartupLoader.IsMainVM) then
     self:ClearMainMenuState()
+    self:InjectHooks()
   end
 end
 
@@ -76,35 +82,68 @@ function MouseStateTracker:PrintDebug(...)
   end
 end
 
+local hookTargets = {
+  {"buymenu", "Player", "CloseMenu", Pop = true},
+
+  {"buymenu", "Armory", "OnUse"},
+
+  {"buymenu", "Marine", "OnDestroy", Pop = true},
+  {"buymenu", "Marine", "CloseMenu", Pop = true},
+
+  {"buymenu", "Alien", "Buy"},
+  {"buymenu", "Alien", "CloseMenu", Pop = true},
+  
+  {"buymenu", "PrototypeLab", "OnUse"},
+}
+
+local hookMT = {
+  __index = function(self, key)
+    return rawget(self, key) or _G[key]
+  end,
+  
+  __newindex = function(self, key, value)
+    _G[key] = value
+  end,
+}
+
+function MouseStateTracker:InjectHooks()
+
+  for i,entry in ipairs(hookTargets) do 
+    self:InjectHook(entry)
+  end
+
+end
+
+function MouseStateTracker:InjectHook(hook)
+  
+    local object = _G[hook[2]]
+    local func = object and object[hook[3]]
+    
+    if(func) then
+      
+      local setIsVisible = function(isVisible, texture, clipped)
+        self:SetIsVisibleHook(hook[1], isVisible, texture, clipped)
+      end
+      
+      
+      if(debug.getfenv(func) ~= _G) then
+        
+        debug.getfenv(func).MouseTracker_SetIsVisible = setIsVisible
+
+      else
+        
+        debug.setfenv(func, setmetatable({MouseTracker_SetIsVisible = setIsVisible}, hookMT))
+        
+      end
+      
+    end
+  
+end
+
 function MouseStateTracker:SetHooks(startup) 
-  self:ReplaceClassFunction("Alien", "_UpdateMenuMouseState", "UpdateBuyMenuState")
 
   self:PostHookClassFunction("Commander", "UpdateCursor")  
-  self:HookClassFunction("Commander", "SetupHud", function() self:PushState("commander", true, false, true) end)
-
-  self:PostHookClassFunction("Armory", "OnUse", "ArmoryBuy_Hook")
-
-  self:HookFunction("ArmoryUI_Close", function() self:PopState("buymenu") end)
-  
-  self:PostHookClassFunction("Marine", "CloseMenu",
-    function(entitySelf)
-      if entitySelf == Client.GetLocalPlayer()  then
-        self:TryPopState("buymenu")
-      end
-  end)
-  
-   ClassHooker:SetClassCreatedIn("GUIScoreboard")
-  
-  self:PostHookClassFunction("GUIScoreboard", "_SetMouseVisible", function(scoreSelf)
-    if(scoreSelf.mouseVisible) then
-      if(not self.OwnerToState["scoreboard"]) then
-        self:PushState("scoreboard", true, false, false)
-      end
-    else
-      self:TryPopState("scoreboard")
-    end
-  end)
-  
+  self:HookClassFunction("Commander", "SetupHud", function() self:PushState("commander", true, true) end)
   
   //self:HookLibraryFunction(HookType.Post, "Client", "SetPitch", function() 
   //  self:PrintDebug("Client.SetPitch")
@@ -128,17 +167,6 @@ function MouseStateTracker:PlayerDied()
   self:ClearAllExcept(self.DeathPersist)
 end
 
-function MouseStateTracker:ArmoryBuy_Hook(objSelf, player, elapsedTime, useAttachPoint)
-
-  if(not player or player ~= Client.GetLocalPlayer() or Shared.GetIsRunningPrediction()) then
-    return
-  end
-  
-  if(player.showingBuyMenu and not self.OwnerToState["buymenu"]) then
-    self:PushState("buymenu", true, false, false)
-  end
-end
-
 function MouseStateTracker:CommaderStateChanged(isCommander)
   if(not isCommander) then
     self:TryPopState("commander")
@@ -158,18 +186,6 @@ function MouseStateTracker:UpdateCursor(commEntity)
       commstate.Icon = Cursor
       self:ApplyStack()
     end
-  end
-end
-
-function MouseStateTracker:UpdateBuyMenuState(alienSelf)
-  if(alienSelf ~= Client.GetLocalPlayer()) then
-    return
-  end
-  
-  if(alienSelf:GetBuyMenuIsDisplaying()) then
-    self:PushState("buymenu", true, false, false)
-  else
-    self:PopState("buymenu")
   end
 end
 
@@ -269,7 +285,17 @@ function MouseStateTracker:ClearStack()
   end
 end
 
-function MouseStateTracker:PushState(ownerName, mouseVisble, mouseCaptured, mouseClipped, cursorIcon)
+function MouseStateTracker:SetIsVisibleHook(ownerName, isVisible, texture, clipped)
+
+  if(not isVisible) then
+    self:TryPopState(ownerName)
+  else
+    self:PushState(ownerName, isVisible, clipped, texture)
+  end
+
+end
+
+function MouseStateTracker:PushState(ownerName, mouseVisble, mouseClipped, cursorIcon)
   assert(ownerName)
   self:PrintDebug("PushMouseState "..(ownerName or "nil"))
   
@@ -303,6 +329,10 @@ function MouseStateTracker:PushState(ownerName, mouseVisble, mouseCaptured, mous
   if(not self.MainMenuActive) then
     self:ApplyStack()
   end
+end
+
+function MouseStateTracker:IsStateActive(stateName)
+  return self.OwnerToState[stateName]
 end
 
 function MouseStateTracker:TryPopState(ownerName)

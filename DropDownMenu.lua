@@ -11,6 +11,8 @@ function DropDownMenu:Initialize(width, height)
   
   self.ItemSelected = {self.EntryPicked, self}
   self.Hidden = true
+  
+  self:SetColor(0, 0, 0, 1)
   //self:Hide()
 end
 

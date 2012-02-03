@@ -36,7 +36,6 @@ end
 function GameGUIManager:Initialize()
   BaseGUIManager.Initialize(self)
   
-  Event.Hook("ClientDisconnected", function() self:Reset() end)
 end
 
 function GameGUIManager:LoadComplete()

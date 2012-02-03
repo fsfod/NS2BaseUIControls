@@ -51,10 +51,10 @@ function GUIManagerEx:SetSkulkViewTilt()
   end
 end
 
-local function CheckLoadedAndType(scriptName)
+local function CheckLoadedAndType(scriptName, noloadLua)
  local frameClass = _G[scriptName]
 
-  if(not frameClass) then
+  if(not frameClass and not noloadLua) then
     Script.Load("lua/" .. scriptName .. ".lua")
     frameClass = _G[scriptName]
   end
@@ -108,7 +108,7 @@ end
 
 function GUIManagerEx:DestroyGUIScriptSingle(handle, self, scriptName)
 
-  if(CheckLoadedAndType(scriptName)) then
+  if(CheckLoadedAndType(scriptName, true)) then
     GameGUIManager:DestroySingleInstance(scriptName)
 
     handle:BlockOrignalCall()
