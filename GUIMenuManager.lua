@@ -61,10 +61,6 @@ function GUIMenuManager:LoadComplete(disconnectMsg)
   self.DisconnectMessage = disconnectMsg
 
   self.MenuClass = Client.GetOptionString("MainMenuClass", "ClassicMenu")
-  
-  self:CreateAnchorFrame(Client.GetScreenWidth(), Client.GetScreenHeight(), self.MenuLayer)
-  
-  UIMenuParent.Size = Vector(Client.GetScreenWidth()/UIScale, Client.GetScreenHeight()/UIScale, 0)
 
   self.CurrentWindowLayer = self.MenuLayer+1
 end
@@ -398,6 +394,10 @@ function GUIMenuManager:MenuStartup()
   self:HookFunction("LeaveMenu", function() self:InternalCloseMenu() end, InstantHookFlag)
   
   self.MenuStartupDone = true
+ 
+  self:CreateAnchorFrame(Client.GetScreenWidth(), Client.GetScreenHeight(), self.MenuLayer)
+  
+  UIMenuParent.Size = Vector(Client.GetScreenWidth()/UIScale, Client.GetScreenHeight()/UIScale, 0)
  
   //Client.PrecacheLocalSound("sound/ns2.fev/music/main_menu")
 end

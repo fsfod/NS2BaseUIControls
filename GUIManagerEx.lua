@@ -40,15 +40,7 @@ function GUIManagerEx:OnClientLoadComplete(disconnectMsg)
   ConfigDataBind.OnClientLoadComplete()
   MouseStateTracker:OnClientLoadComplete()
   ConnectedInfo:OnClientLoadComplete()
-  
-  self:SetSkulkViewTilt()
-end
 
-function GUIManagerEx:SetSkulkViewTilt()
-  
-  if(OnCommandSkulkViewTilt) then
-    OnCommandSkulkViewTilt(Client.GetOptionBoolean("DisableSkulkViewTilt", false) and "false")
-  end
 end
 
 local function CheckLoadedAndType(scriptName, noloadLua)

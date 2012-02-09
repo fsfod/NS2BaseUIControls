@@ -28,6 +28,7 @@ function LVTextItem:SetData(msg)
 end
 
 function LVTextItem:SetWidth(width)
+  self:SetTextClipped(true, width-self.TextOffset, self.FontSize)
 end
 
 function LVTextItem:SetPosition(x, y)
@@ -217,6 +218,7 @@ function ListView:SetItemHeight(height, adjustFrameHeight)
   end
 end
 
+
 function ListView:SetSize(width, height)
   BaseControl.SetSize(self, width, height)
   self.ScrollBar:SetSize(self.ScrollBarWidth, height)
@@ -224,7 +226,17 @@ function ListView:SetSize(width, height)
   self.SelectBG:SetSize(Vector(width, self.ItemHeight, 0))
   
   self.ItemWidth = width-15
+  
+  local itemsCreated = self.Items and #self.Items > 1
+  
   self:OnMaxVisibleChanged(math.floor(height/self.ItemDistance))
+  
+  if(itemsCreated) then
+
+    for i=1,self.MaxVisibleItems do
+      self.Items[i]:SetWidth(self.ItemWidth)
+    end
+  end
 end
 
 ListView.SetSize2 = ListView.SetSize
@@ -242,7 +254,13 @@ function ListView:GetItemAtCoords(x, y)
   
   local ItemDistance = self.ItemHeight+self.ItemSpacing
   
-  local index = ((y-(y%ItemDistance))/ItemDistance)+1
+  local yOffset = (y%ItemDistance)
+  
+  if(yOffset > self.ItemHeight and self.IgnoreItemSpacingHitRec) then
+    return nil
+  end
+  
+  local index = ((y-yOffset)/ItemDistance)+1
 
   if(index <= #self.Items and index <= #self.ItemDataList and index <= self.MaxVisibleItems) then
     return index
