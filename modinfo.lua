@@ -1,7 +1,7 @@
 EngineBuild = 188
 ModTableName = "GUIManagerEx"
 MainScript = "GUIManagerEx.lua"
-ValidVM = "client"
+ValidVM = "main_client"
 MountSource = true
 
 ScriptList = {

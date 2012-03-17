@@ -60,7 +60,7 @@ local function SetupInstanceMetaTable(className)
     end
   end
 */
-  mt.__towatch = function(self) return debug.getfenv(self) end
+  mt.__towatch = function(self) return className, debug.getfenv(self) end
   mt.__tostring = function() return className end
 
   InstanceMT[className] = mt  
@@ -138,6 +138,8 @@ function ControlClass(className, base)
     
     assert(base, "ControlClass: Base class does not exist")
   end
+  
+  //class(className)(base)
 
   //if class already exists treat this as a hot reload just clear and rebuild the index table
   //TODO propergating the changes to derived class's
@@ -241,10 +243,22 @@ local destroyedMT = {
   __gc = BaseMT.__gc,
 }
 
-function SetControlDestroyed(control) 
-  debug.setmetatable(control, destroyedMT)
+local DestroyItem = GUI.DestroyItem
+
+function DestroyControl(control)
+  DestroyItem(control)
+  //debug.setmetatable(control, destroyedMT)
+  //debug.setfenv(control, env)
 end
 
 function IsValidControl(control)
-  return control and not control.__Destroyed
+  assert(type(control) == "userdata")
+
+  local sucess, result = pcall(function() return not control.__Destroyed end)
+
+  if(not sucess and not result.find(result, "Attempt to access an object that no longer exists")) then
+   RawPrint(result)
+  end
+  
+  return sucess and result
 end

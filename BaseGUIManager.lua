@@ -466,7 +466,7 @@ function BaseGUIManager:RemoveFrame(frame, destroyFrame)
 
   local removed = table.removevalue(self.AllFrames, frame)
 
-  if(band(frame.Flags, ControlFlags.IsWindow)) then
+  if(band(frame.Flags, ControlFlags.IsWindow) ~= 0) then
     table.removevalue(self.WindowList, frame)
   else
     table.removevalue(self.NonWindowList, frame)

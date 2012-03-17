@@ -98,7 +98,7 @@ end
 
 function DropDownMenu:Update()
   
-  if(self.Owner and not self.Owner:IsShown()) then
+  if(self.Owner and (not IsValidControl(self.Owner) or not self.Owner:IsShown())) then
     self:Close()
   end
 end

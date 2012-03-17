@@ -92,28 +92,9 @@ function BaseControl:Initialize(width, height)
   end
 end
 
-function BaseControl:Uninitialize()
+function BaseControl:Uninitialize(fromParent)
   
   local parent = self.Parent
-
-  //call destroy first if we need to because otherwise DestroyItem will override our metatable changes
-  if((not parent or parent.UIParent) and self.RootFrame) then
-    GUI.DestroyItem(self.RootFrame)
-    
-    //we have to call it again because DestroyItem will of reverted our metatable
-    SetControlDestroyed(self)
-    //self.RootFrame = nil
-  end
-
-  //make sure we properdate the destroyed item metatable first before we try to clear any state
-  if(self.ChildControls) then
-    for _,frame in ipairs(self.ChildControls) do
-      //Change the metatable before we try to access any of its varibles so we don't raised destroyed item errors
-      SetControlDestroyed(frame)
-      frame:Uninitialize()
-    end 
-    self.ChildControls = nil
-  end
 
   if(self.Focused) then
     self:GetGUIManager():ClearFocusIfFrame(self)
@@ -121,6 +102,18 @@ function BaseControl:Uninitialize()
 
   if(self.Entered) then
     self:GetGUIManager():ClearMouseOver()
+  end
+
+  if(self.ChildControls) then
+    for _,frame in ipairs(self.ChildControls) do
+      frame:Uninitialize(true)
+    end 
+    self.ChildControls = nil
+  end
+
+
+  if(not fromParent) then
+    DestroyControl(self)
   end
 end
 
