@@ -86,6 +86,10 @@ function UpDownControl:SetValue(value, fromInput)
 
   if(fromInput) then
     self:FireEvent(self.ValueChanged, self.Value)
+    
+    if(self.ConfigBinding) then
+      self.ConfigBinding:SetValue(self.Value)
+    end
   end
 end
 
