@@ -147,3 +147,7 @@ function GameGUIManager:Update()
 
   self.DoneMouseMove = false
 end
+
+if(HotReload) then
+  GameGUIManager:LuaReloaded()
+end

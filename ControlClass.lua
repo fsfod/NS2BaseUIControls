@@ -1,7 +1,6 @@
 //
 //   Created by:   fsfod
 //
-
 local IsALookUp = {}
 local ClassBase = {}
 
@@ -9,6 +8,11 @@ local ClassMetaTable = {}
 local InstanceMT = {}
 local ClassTable = {}
 
+if(not ControlClassTables) then
+  ControlClassTables = {IsALookUp, ClassBase, ClassMetaTable, InstanceMT, ClassTable}
+else
+  IsALookUp, ClassBase, ClassMetaTable, InstanceMT, ClassTable = unpack(ControlClassTables)
+end
 
 local GUIItemTable, BaseMT
 
@@ -184,24 +188,6 @@ function ControlClass(className, base)
   indexTable.isa = function(self, name) return isaTable[name] ~= nil end
 end
 
-ControlClass("TestControl")
-
-function TestControl:SetPosition(pos)
-  assert(pos)
-
-  GUIItem.SetPosition(self, pos)
-end
-
-local c = CreateControl("TestControl")
-
-c.test = true
-
-local g = GUI.CreateItem()
-g.Parent = c
-
-c:AddChild(g)
-
-assert(g.Parent == g:GetParent())
 
 local DestroyedIndex = {
   SetPosition = function() 

@@ -50,9 +50,6 @@ end
 function GUIMenuManager:Initialize()
   BaseGUIManager.Initialize(self)
 
-  Event.Hook("ClientConnected", function() self:OnClientConnected() end)
-  Event.Hook("ClientDisconnected", function(reason) self:OnClientDisconnected(reason) end)
-
   self:SetHooks()
 end
 
@@ -131,27 +128,6 @@ function GUIMenuManager:OnResolutionChanged(oldX, oldY, width, height)
       frame:Rescale()
     end
   end
-end
-
-function GUIMenuManager:OnClientConnected()
- 
-  if(self.MainMenu and self.MainMenu.OnClientConnected) then
-    self.MainMenu:OnClientConnected()
-  end
-end
-
-function GUIMenuManager:OnClientDisconnected(reason)
- 
-  if(self.MainMenu and self.MainMenu.OnClientDisconnected) then
-    self.MainMenu:OnClientDisconnected()
-  end
-
-/*
-  if(not StartupLoader.IsMainVM) then
-    Client.SetOptionInteger("menumod/DisconnectTime",  Shared.GetSystemTime())
-    Client.SetOptionString("menumod/DisconnectReason", reason)
-  end
-*/
 end
 
 function GUIMenuManager:DoLayerFix()
@@ -498,7 +474,9 @@ function GUIMenuManager:RecreatePage(pageName)
   end
 end
 
-if(not HotReload) then
+if(HotReload) then
+  GUIMenuManager:LuaReloaded()
+  
   Event.Hook("Console_showmenu", function() GUIMenuManager:ShowMenu() end)
   Event.Hook("Console_hidemenu", function() GUIMenuManager:CloseMenu() end)
 end

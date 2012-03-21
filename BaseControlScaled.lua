@@ -6,14 +6,20 @@ local GUIItem = GUIItem
 local SetPosition = GUIItem.SetPosition
 local SetSize = GUIItem.SetSize
 
-local UIScale = 1
-local UIScaleMult = 1
-_G.UIScale = 1
+local UIScale, UIScaleMult = 1,1
 
-UIFontScale = 1
+if(not _G.UIScale) then
+  _G.UIScale = 1
+  UIFontScale = 1
+  _G.UIScaleMult = 1
+else
+  UIScale = _G.UIScale
+  UIScaleMult = _G.UIScaleMult
+end
 
 local function SetUIScale(newScale)
   UIScaleMult = newScale/UIScale
+  _G.UIScaleMult = UIScaleMult
   UIScale = newScale
   _G.UIScale = newScale
   

@@ -32,6 +32,11 @@ function BaseGUIManager:Initialize()
   self.CurrentWindowLayer = 2
 end
 
+function BaseGUIManager:LuaReloaded()
+  Event.Hook("UpdateClient", function() self:Update() end)
+  Event.Hook("ResolutionChanged", function(...) self:OnResolutionChanged(...) end)
+end
+
 function BaseGUIManager:ClearFrameLists()
   self.WindowList = {}
   self.NonWindowList = {}
@@ -824,6 +829,7 @@ function BaseGUIManager:OnMouseWheel(direction)
   return ret
 end
 
+
 function BaseGUIManager:DoOnEnter(frame, x, y)
 
   if(self.CurrentMouseOver) then
@@ -857,7 +863,6 @@ function BaseGUIManager:GetCursorPos()
 
   return x/UIScale, y/UIScale
 end
-
 
 function BaseGUIManager:OnMouseMove()
   local x,y = self:GetCursorPos()

@@ -42,6 +42,9 @@ function ConfigDataBind.OnClientLoadComplete()
   GetNumber = Client.GetOptionInteger
 end
 
+if(StartupLoader.ReloadInprogress) then
+  ConfigDataBind.OnClientLoadComplete()
+end
 
 local TypeDefaults = {
   "",
