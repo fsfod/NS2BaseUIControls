@@ -1,8 +1,9 @@
 //
 //   Created by:   fsfod
 //
-
-PageFactory = {}
+if(not PageFactory) then
+  PageFactory = {}
+end
 
 function PageFactory:__init()
   self.Pages = {}
