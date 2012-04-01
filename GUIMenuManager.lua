@@ -311,6 +311,11 @@ function GUIMenuManager:SwitchMainMenu(newMenu)
 end
 
 function GUIMenuManager:RecreateMenu()
+  
+  if(not self.CreatedMenu) then
+    return
+  end
+  
   //don't instantly recreate it since it could of been called by a buttons on click
   self.AsyncRecreate = true
 end
@@ -367,7 +372,6 @@ function GUIMenuManager:InternalHide()
 end
 
 function GUIMenuManager:MenuStartup()
-  self:HookFunction("LeaveMenu", function() self:InternalCloseMenu() end, InstantHookFlag)
   
   self.MenuStartupDone = true
  

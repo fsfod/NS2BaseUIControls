@@ -15,25 +15,27 @@ function GUIMenuManager:SetHooks()
 
   //uncomment to disable menu cinematic
   //self:HookLibraryFunction(HookType.Raw, "MenuManager", "SetMenuCinematic")
-
   self:ReplaceFunction("MainMenu_Open", function()
-    
-    if not Shared.GetIsRunningPrediction() then
-      OptionsDialogUI_OnInit()
-      self:ShowMenu()
-    end
-    
+    OptionsDialogUI_OnInit()
+    MainMenu_OnOpenMenu()
+  end)
+  
+
+  self:HookFunction("MainMenu_OnOpenMenu", function()
+    self:ShowMenu()
   end)
 
   //self:ReplaceFunction("MainMenu_SetAlertMessage", "Hook_SetAlertMessage")
 
+  //self:HookFunction("LeaveMenu", function()     
+  //end, InstantHookFlag)
 
   self:ReplaceFunction("LeaveMenu", function() 
+    self:InternalCloseMenu()
 
     MenuManager.SetMenu(nil)
     MenuManager.SetMenuCinematic(nil)
     MenuMenu_PlayMusic(nil)
-
   end)
   
   //so we can can call this in CloseMenu and not worry about an infinite loop from LeaveMenu being called by the real MainMenu_ReturnToGame
@@ -91,7 +93,9 @@ function GUIMenuManager:SwitchToFlash()
 end
 
 
-if(not HotReload) then
-  Event.Hook("Console_flashmenu", function() GUIMenuManager:SwitchToFlash() end)
-  Event.Hook("Console_newmenu", function() GUIMenuManager:DisableFlashMenu() end)
+if(HotReload) then
+  GUIMenuManager:SetHooks()
 end
+
+Event.Hook("Console_flashmenu", function() GUIMenuManager:SwitchToFlash() end)
+Event.Hook("Console_newmenu", function() GUIMenuManager:DisableFlashMenu() end)

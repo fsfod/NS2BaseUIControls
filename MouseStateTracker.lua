@@ -70,6 +70,9 @@ function MouseStateTracker:OnClientLoadComplete()
     self:ClearMainMenuState()
     self:InjectHooks()
   end
+  
+  MouseTracker_SetIsVisible = function()
+  end
 end
 
 function MouseStateTracker:Update()
@@ -83,6 +86,7 @@ function MouseStateTracker:PrintDebug(...)
 end
 
 local hookTargets = {
+  {"buymenu", "Player", "OpenMenu"},
   {"buymenu", "Player", "CloseMenu", Pop = true},
 
   {"buymenu", "Armory", "OnUse"},

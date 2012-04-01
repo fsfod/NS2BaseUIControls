@@ -57,7 +57,8 @@ end
 function GUIManagerEx:SetHooks()
   ClassHooker:SetClassCreatedIn("GUIManager", "lua/GUIManager.lua")
 
-  self:RawHookClassFunction("GUIManager", "SendKeyEvent", self.SendKeyEvent):SetPassHandle(true)
+  self:RawHookFunction("MouseTracker_SendKeyEvent", self.SendKeyEvent):SetPassHandle(true)
+  
   self:HookClassFunction("GUIManager", "SendCharacterEvent", self.SendCharacterEvent):SetPassHandle(true)
 
   self:HookClassFunction("GUIManager", "CreateGUIScript"):SetPassHandle(true)
@@ -108,7 +109,7 @@ function GUIManagerEx:DestroyGUIScriptSingle(handle, self, scriptName)
   end
 end
 
-function GUIManagerEx.SendKeyEvent(handle, self, key, down)
+function GUIManagerEx.SendKeyEvent(handle, key, down)
   PROFILE("MouseTracker:SendKeyEvent")
 
   local eventHandled, IsRepeat = InputKeyHelper:PreProcessKeyEvent(key, down)
@@ -134,6 +135,7 @@ function GUIManagerEx.SendCharacterEvent(handle, self, ...)
     handle:SetReturn(true)
   end
 end
+
 
 if(HotReload) then
   GUIManagerEx:SetHooks()
