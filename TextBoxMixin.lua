@@ -285,7 +285,7 @@ function TextBoxMixin:SendKeyEvent(key, down)
         self.CarretPos = self.CarretPos+1
       end
       self:UpdateCarret()
-    elseif(key == InputKey.Return and not self.IgnoreReturn) then
+    elseif((key == InputKey.Return or key == InputKey.NumPadEnter)and not self.IgnoreReturn) then
       if(self.Focused) then
         self:GetGUIManager():ClearFocus()
       end
