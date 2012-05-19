@@ -787,9 +787,24 @@ function ButtonMixin:OnClick(button, down)
 end
 
 
-class 'FontTemplate'
+if(not FontTemplate) then
+  FontTemplate = {}
+  
+  local instance_mt = {__index = FontTemplate}
+  
+  local mt = {
+    __call = function(self, ...)
+      local font = setmetatable({}, instance_mt)
+      font:Initialize(...)
+      
+     return font
+    end
+  }
+  
+  setmetatable(FontTemplate, mt)
+end
 
-function FontTemplate:__init(...)
+function FontTemplate:Initialize(...)
   if(type(select(1, ...)) == "string") then
     self.FontName, self.FontSize = ...
   else

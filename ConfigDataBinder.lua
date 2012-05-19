@@ -62,7 +62,7 @@ local IndexMT = {
 setmetatable(ConfigDataBind, {
   __call = function(self, ...)
     local tbl = setmetatable({}, IndexMT)
-      tbl:__init(...)
+      tbl:Initialize(...)
     return tbl
   end
 })
@@ -106,7 +106,7 @@ function ConfigDataBind:MulitValueInit(bindingList, converter)
   self.SetValue = self.MultiSetValue
 end
 
-function ConfigDataBind:__init(binding, ...)
+function ConfigDataBind:Initialize(binding, ...)
     
   if(type(binding) == "function") then
     self:InitFunction(binding, ...)

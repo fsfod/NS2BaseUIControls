@@ -188,6 +188,12 @@ function MouseStateTracker:UpdateCursor(commEntity)
     
     if(Cursor ~= commstate.Icon) then
       commstate.Icon = Cursor
+      commstate.HotspotX = self.LastHotspotX
+      commstate.HotspotY = self.LastHotspotY
+
+      self.LastHotspotX = nil
+      self.LastHotspotY = nil
+      
       self:ApplyStack()
     end
   end
@@ -198,7 +204,10 @@ function MouseStateTracker:DisableMouseFunctions()
 
   hooklist[1] = self:HookLibraryFunction(HookType.Replace, "Client", "SetMouseVisible", function() end)
   hooklist[2] = self:HookLibraryFunction(HookType.Replace, "Client", "SetMouseClipped", function() end)
-  hooklist[3] = self:HookLibraryFunction(HookType.Replace, "Client", "SetCursor", function() end)
+  hooklist[3] = self:HookLibraryFunction(HookType.Replace, "Client", "SetCursor", function(image, hotspotX, hotspotY)
+    self.LastHotspotX = hotspotX
+    self.LastHotspotY = hotspotY
+  end)
 
   self.MouseFunctionHooks = hooklist
 end
@@ -233,7 +242,7 @@ function MouseStateTracker:SetMainMenuState()
 
   SetMouseVisible(true)
   SetMouseClipped(false)
-  SetCursor(self.DefaultCursor)
+  SetCursor(self.DefaultCursor, 0, 0)
 end
 
 function MouseStateTracker:ClearMainMenuState()
@@ -299,7 +308,7 @@ function MouseStateTracker:SetIsVisibleHook(ownerName, isVisible, texture, clipp
 
 end
 
-function MouseStateTracker:PushState(ownerName, mouseVisble, mouseClipped, cursorIcon)
+function MouseStateTracker:PushState(ownerName, mouseVisble, mouseClipped, cursorIcon, hotspotX, hotspotY)
   assert(ownerName)
   self:PrintDebug("PushMouseState "..(ownerName or "nil"))
   
@@ -322,6 +331,8 @@ function MouseStateTracker:PushState(ownerName, mouseVisble, mouseClipped, curso
     Visible = mouseVisble,
     Clipped = mouseClipped,
     Icon = cursorIcon,
+    HotspotX = hotspotX, 
+    HotspotY = hotspotY,
   }
 
   self.StackTop = self.StackTop+1
@@ -365,6 +376,12 @@ function MouseStateTracker:PopState(ownerName)
   self.StackTop = self.StackTop-1
 end
 
+local defaultCursor = {
+  Icon = "ui/Cursor_MenuDefault.dds",
+  HotspotX = 0,
+  HotspotY = 0,
+}
+
 function MouseStateTracker:ApplyStack()
   
   self:PrintDebug("ApplyStack %i", #self.StateStack)
@@ -374,7 +391,7 @@ function MouseStateTracker:ApplyStack()
   end
 
   local visible, clipped = false, true
-  local cursorImage = self.DefaultCursor
+  local cursorImage = defaultCursor
 
   for i,state in ipairs(self.StateStack) do
     if(state.Visible ~= nil) then
@@ -386,12 +403,13 @@ function MouseStateTracker:ApplyStack()
     end
     
     if(state.Icon ~= nil) then
-      cursorImage = state.Icon
+      cursorImage = state
     end   
   end
 
   if(visible) then
-    SetCursor(cursorImage)
+    
+    SetCursor(cursorImage.Icon, cursorImage.HotspotX or 0, cursorImage.HotspotY or 0)
   end
 
   SetMouseVisible(visible)

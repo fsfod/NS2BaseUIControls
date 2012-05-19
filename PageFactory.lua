@@ -5,8 +5,21 @@ if(not PageFactory) then
   PageFactory = {}
 end
 
-function PageFactory:__init()
+function PageFactory:Initialize()
   self.Pages = {}
+end
+
+function PageFactory:GetActivePages()
+
+  local list = {}
+
+  for name,page in pairs(self.Pages) do
+    if(page:IsShown()) then
+      list[#list+1] = name
+    end
+  end
+  
+  return list
 end
 
 function PageFactory:_internalCreatePage(name)
@@ -22,6 +35,8 @@ function PageFactory:_internalCreatePage(name)
     RawPrint("PageFactory:CreatePage page class " .. (name or "nil").." does not exist")
    return nil
   end
+
+  GUIMenuManager.Callbacks:Fire("PrePageCreated", name)
 
   local success,pageOrError = pcall(CreateControl, info.ClassName)
 
@@ -42,6 +57,8 @@ function PageFactory:_internalCreatePage(name)
     GUIMenuManager:ShowMessage("Error while creating page "..name, pageOrError)
    return nil
   end
+   
+  GUIMenuManager.Callbacks:Fire("PageCreated", name, pageOrError)
    
   return pageOrError
 end
@@ -108,4 +125,5 @@ function PageFactory:Mixin(target)
   end
   
   target.RecreatePage = self.RecreatePage
+  target.GetActivePages= self.GetActivePages
 end
