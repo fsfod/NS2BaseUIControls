@@ -42,60 +42,8 @@ function GUIMenuManager:SetHooks()
   //self:ReplaceFunction("MainMenu_ReturnToGame", function() end)
 end
 
-function GUIMenuManager:SetFlashMenuHooks()
-
-  self:HookLibraryFunction(HookType.Normal, "MenuManager", "SetMenu", function(menu)
-    if(menu) then
-      MouseStateTracker:SetMainMenuState()
-    else
-      MouseStateTracker:ClearMainMenuState()
-    end
-  end)
-  
-  //self:HookFunction("MainMenu_SetAlertMessage", function() MouseStateTracker:ClearStack() end)
-end
-
-/*
-function GUIMenuManager:Hook_SetAlertMessage(alertMessage)
-
-  MouseStateTracker:ClearStack()
-
-  self:ShowMenu()
-  self:ShowMessage("Disconnected from server", alertMessage)
-
-  MainMenu_Loaded()
-end
-*/
-
-function GUIMenuManager:DisableFlashMenu()
-
-  MenuManager.SetMenu(nil)
-
-  self.FlashMenu = false
-
-  self:RemoveAllHooks()
-  self:SetHooks()
-
-  self:ShowMenu()
-end
-
-function GUIMenuManager:SwitchToFlash()
-  self.FlashMenu = true
-
-  self:RemoveAllHooks()
-  self:SetFlashMenuHooks()
-
-  self:Deactivate()
-
-  self:InternalHide()
-
-  MenuManager.SetMenu(kMainMenuFlash)
-end
 
 
 if(HotReload) then
   GUIMenuManager:SetHooks()
 end
-
-Event.Hook("Console_flashmenu", function() GUIMenuManager:SwitchToFlash() end)
-Event.Hook("Console_newmenu", function() GUIMenuManager:DisableFlashMenu() end)
