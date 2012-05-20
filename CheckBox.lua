@@ -8,23 +8,23 @@ local Orange = Color(0.8666, 0.3843, 0, 1)
 local DimOrange = Color(0.8666/3, 0.3843/3, 0, 1)
 
 
-function CheckBox:Initialize(label, checked, labelOnLeft, fontsize)
-  label = label or "Some text 1111z"
+function CheckBox:Initialize(options)
+  local label = options.Label or "Some text 1111z"
   
-  self.FontSize = fontsize or 20
-  
+  self.FontSize = options.FontSize or 20
+
   local labeltxt = self:CreateFontString(self.FontSize)
    labeltxt:SetText(label)
-  
+
   local width = labeltxt:GetTextWidth(label)
   local height = labeltxt:GetTextHeight(label)+4
   self.Label = labeltxt
 
   BaseControl.Initialize(self, height, height)
   
-  self:SetLabelOnLeft(labelOnLeft)
+  self:SetLabelOnLeft(options.LabelOnLeft)
 
-  self.Checked = checked or false
+  self.Checked = options.Checked or false
   
   self:SetColor(0, 0, 0, 0)
   
