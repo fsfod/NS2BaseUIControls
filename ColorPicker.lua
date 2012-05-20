@@ -64,7 +64,14 @@ function ColorPickerPopup:Initialize(width, height)
 
   local barWidth = width-(self.BarOffset+50)
 
-  local red = self:CreateControl("Slider", barWidth, 20, 0, 255)
+  local barOptions = {
+    Width = barWidth, 
+    Height = 20, 
+    MinValue = 0, 
+    MaxValue = 255,
+  }
+
+  local red = self:CreateControl("Slider", barOptions)
     red:SetLabel("Red")
     red:SetPosition(self.BarOffset, 20)
     red.ValueChanged = function(value)
@@ -73,7 +80,7 @@ function ColorPickerPopup:Initialize(width, height)
   self:AddChild(red)
   self.RedBar = red
   
-  local green = self:CreateControl("Slider", barWidth, 20, 0, 255)
+  local green = self:CreateControl("Slider", barOptions)
     green:SetLabel("Green")
     green:SetPosition(self.BarOffset, 50)
     green.ValueChanged = function(value)
@@ -82,7 +89,7 @@ function ColorPickerPopup:Initialize(width, height)
   self:AddChild(green)
   self.GreenBar = green
   
-  local blue = self:CreateControl("Slider", barWidth, 20, 0, 255)
+  local blue = self:CreateControl("Slider", barOptions)
     blue:SetLabel("Blue")
     blue:SetPosition(self.BarOffset, 80)
     blue.ValueChanged = function(value)
