@@ -9,6 +9,7 @@ ScriptList = {
   "MouseStateTracker.lua",
   
   "ConfigDataBinder.lua",
+  "TableDrivenCreation.lua",
   "BaseControl.lua",
   "BaseControlScaled.lua",
   

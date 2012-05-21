@@ -4,10 +4,12 @@
 
 ControlClass('ComboBox', BorderedSquare)
 
-function ComboBox:Initialize(width, height, itemList, labelCreator)
-  BorderedSquare.Initialize(self, width, height, 2)
+function ComboBox:Initialize(options)
+  BorderedSquare.Initialize(self, options.Width, options.Height, 2)
 
-   self:SetBackgroundColor(Color(0.1, 0.1, 0.1, 0.85))
+  local height = options.Height
+
+  self:SetBackgroundColor(Color(0.1, 0.1, 0.1, 0.85))
 
   local button = self:CreateControl("ArrowButton", height, height, "Down")
     button:SetPoint("TopRight", 0, 0, "TopRight")
@@ -22,11 +24,15 @@ function ComboBox:Initialize(width, height, itemList, labelCreator)
   
   self.DropDownOpen = false
   
-  self.ItemList = itemList or {"test1", "test2", "test3", "test4", "test5"}
+  if(options.ItemList) then
+    self.ItemList = ResolveToTable(options.ItemList, self)
+  else
+    self.ItemList = {"test1", "test2", "test3", "test4", "test5"}
+  end
   
   self.LabelCache = {}
-  
-  self.GetItemLabel = labelCreator or self.GetItemLabel
+
+  self.GetItemLabel = options.LabelCreator or self.GetItemLabel
   
   for i,data in ipairs(self.ItemList) do
     self.LabelCache[i] = self.GetItemLabel(data, i)
