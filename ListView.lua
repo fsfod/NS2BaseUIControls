@@ -49,6 +49,7 @@ ControlClass('ListView', BaseControl)
 
 ListView.DefaultHeight = 120
 ListView.DefaultWidth = 300
+ListView.DefaultItemHeight = 16
 ListView.SelectedItemColor = Color(0, 0, 0.3, 1)
 
 
@@ -58,19 +59,28 @@ function ListView:Rescale()
   self.ItemsAnchor:Rescale()
 end
 
-function ListView:Initialize(width, height, itemCreator, itemHeight, itemSpacing)
-  
-  height = height or ListView.DefaultHeight
-  width = width or ListView.DefaultWidth
-  
-  self.ItemSpacing = itemSpacing or self.ItemSpacing or 1
-  self.ItemHeight = itemHeight or self.ItemHeight or 16  
+function ListView:Initialize(options)
+
+  self.ItemSpacing = options.ItemSpacing or self.ItemSpacing or 1
+  self.ItemHeight = options.ItemHeight or self.DefaultItemHeight 
   self.ItemDistance = self.ItemHeight + self.ItemSpacing
+
+  if(options.MaxVisibleItems) then
+    assert(not options.Height, "can't specify both the height and MaxVisibleItems for a listview")
+    height = (options.MaxVisibleItems*self.ItemDistance)+1
+  else
+    height = options.Height or ListView.DefaultHeight
+  end
+  
+  width = options.Width or ListView.DefaultWidth
+  
   self.ScrollBarWidth = 20
   
   self.TraverseChildFirst = true
   
-  if(self.ItemsSelectable == nil) then
+  if(options.ItemsSelectable ~= nil) then
+    self.ItemsSelectable = options.ItemsSelectable
+  else
     self.ItemsSelectable = true
   end
   
@@ -80,7 +90,7 @@ function ListView:Initialize(width, height, itemCreator, itemHeight, itemSpacing
 
   local selectBG = self:CreateGUIItem()
     selectBG:SetIsVisible(false)
-    selectBG:SetColor(self.SelectedItemColor)
+    selectBG:SetColor(options.SelectedItemColor or self.SelectedItemColor)
   self.SelectBG = selectBG
 
   self.ItemsAnchor = self:CreateControl("BaseControl")
@@ -89,8 +99,11 @@ function ListView:Initialize(width, height, itemCreator, itemHeight, itemSpacing
   self.ItemsAnchor:SetPosition(0, 0, 0)
   self:AddGUIItemChild(self.ItemsAnchor)
 
-  assert(not itemCreator or type(itemCreator) == "string")
-  self.ItemClass = itemCreator or self.ItemClass or "LVTextItem"
+  assert(not options.ItemCreator or type(options.ItemCreator) == "string")
+  //TODO decide how we treat a ItemCreator entry and ItemClass entry diffently
+  self.ItemClass = options.ItemCreator or options.ItemClass or self.ItemClass or "LVTextItem"
+  
+  self.ScrollBarWidth = options.ScrollBarWidth or self.ScrollBarWidth
   
   local scrollbar = self:CreateControl("ScrollBar")
    scrollbar:SetPoint("TopRight", 0, 0, "TopRight")
@@ -110,7 +123,11 @@ function ListView:Initialize(width, height, itemCreator, itemHeight, itemSpacing
   self:CreateItems()
   self.AnchorPosition = Vector(0,0,0)
 
-  self.ItemDataList = {}
+  if(options.ItemDataList) then
+    self:SetDataList(ResolveToTable)
+  else
+    self.ItemDataList = {}
+  end  
 end
 
 function ListView:Uninitialize()

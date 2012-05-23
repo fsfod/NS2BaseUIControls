@@ -5,7 +5,7 @@
 ControlClass('DropDownMenu', ListView)
 
 function DropDownMenu:Initialize(width, height)
-  ListView.Initialize(self, width, height, nil, 16, 4)
+  ListView.Initialize(self, {Width = width, Height = height, ItemHeight = 16, ItemSpacing = 4})
   
   self:AddFlag(ControlFlags.IsWindow)
   
