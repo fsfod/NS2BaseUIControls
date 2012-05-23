@@ -123,6 +123,8 @@ function ListView:Initialize(options)
   self:CreateItems()
   self.AnchorPosition = Vector(0,0,0)
 
+  self.AutoScroll = options.AutoScroll
+
   if(options.ItemDataList) then
     self:SetDataList(ResolveToTable)
   else
