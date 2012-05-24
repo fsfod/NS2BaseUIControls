@@ -92,6 +92,15 @@ function BaseControl:Initialize(width, height)
   end
 end
 
+//self is really the static table of the control
+function BaseControl:SetDefaultOptions(options)
+  self.DefaultOptions = options
+  
+  for k,v in pairs(options) do
+    self[k] = v
+  end
+end
+
 function BaseControl:Uninitialize(fromParent)
   
   local parent = self.Parent

@@ -4,14 +4,21 @@
 
 ControlClass('Slider', ScrollBar)
 
+Slider:SetDefaultOptions{
+  Height = 20,
+  Width = 100,
+  
+  MinValue = 0,
+  MaxValue = 1,
+  StepSize = 1,
+}
+
 function Slider:Initialize(options)
   ScrollBar.Initialize(self, options.Width, options.Height)
   
   self:SetColor(Color(0.15, 0.15, 0.15, 1))
 
-  if(options.MaxValue) then
-    self:SetMinMax(options.MinValue or 0, options.MaxValue)
-  end
+  self:SetMinMax(options.MinValue or self.MinValue, options.MaxValue or self.MaxValue)
   
   if(options.StepSize) then
     self:SetStepSize(options.StepSize)

@@ -47,11 +47,19 @@ end
 
 ControlClass('ListView', BaseControl)
 
-ListView.DefaultHeight = 120
-ListView.DefaultWidth = 300
-ListView.DefaultItemHeight = 16
-ListView.SelectedItemColor = Color(0, 0, 0.3, 1)
-
+//defaults
+ListView:SetDefaultOptions{
+  Height = 120,
+  Width = 300,
+  ItemHeight = 16,
+  ItemSpacing = 1,
+  ItemClass = "LVTextItem",
+  SelectedItemColor = Color(0, 0, 0.3, 1),
+  ScrollBarWidth = 20,
+  ItemsSelectable = true,
+  AutoScroll = false,
+  ScrollHiddenUntilNeeded = true,
+}
 
 function ListView:Rescale()
   BaseControl.Rescale(self)
@@ -61,30 +69,25 @@ end
 
 function ListView:Initialize(options)
 
-  self.ItemSpacing = options.ItemSpacing or self.ItemSpacing or 1
-  self.ItemHeight = options.ItemHeight or self.DefaultItemHeight 
+  assert(type(options) == "table", "ListView:Initialize expected a table as the first arg")
+ 
+  //if a option value is nil our indexer will read the default from our static table
+  self.ItemSpacing = options.ItemSpacing
+  self.ItemHeight = options.ItemHeight
   self.ItemDistance = self.ItemHeight + self.ItemSpacing
 
   if(options.MaxVisibleItems) then
     assert(not options.Height, "can't specify both the height and MaxVisibleItems for a listview")
-    height = (options.MaxVisibleItems*self.ItemDistance)+1
+    self.Height = (options.MaxVisibleItems*self.ItemDistance)+1
   else
-    height = options.Height or ListView.DefaultHeight
+    self.Height = options.Height
   end
-  
-  width = options.Width or ListView.DefaultWidth
-  
-  self.ScrollBarWidth = 20
-  
+
+  self.Width = options.Width
+
   self.TraverseChildFirst = true
-  
-  if(options.ItemsSelectable ~= nil) then
-    self.ItemsSelectable = options.ItemsSelectable
-  else
-    self.ItemsSelectable = true
-  end
-  
-  BaseControl.Initialize(self, width, height)
+
+  BaseControl.Initialize(self, self.Width, self.Height)
   
   self:SetColor(Color(0.5,0.5,0.5,0.5))
 
@@ -101,9 +104,11 @@ function ListView:Initialize(options)
 
   assert(not options.ItemCreator or type(options.ItemCreator) == "string")
   //TODO decide how we treat a ItemCreator entry and ItemClass entry diffently
-  self.ItemClass = options.ItemCreator or options.ItemClass or self.ItemClass or "LVTextItem"
+  self.ItemClass = options.ItemCreator or options.ItemClass or self.ItemClass
   
-  self.ScrollBarWidth = options.ScrollBarWidth or self.ScrollBarWidth
+  self.ScrollBarWidth = options.ScrollBarWidth
+  self.ScrollHiddenUntilNeeded = options.ScrollHiddenUntilNeeded
+  self.AutoScroll = options.AutoScroll
   
   local scrollbar = self:CreateControl("ScrollBar")
    scrollbar:SetPoint("TopRight", 0, 0, "TopRight")
@@ -114,19 +119,15 @@ function ListView:Initialize(options)
   self.ScrollBar = scrollbar
   self:AddChild(scrollbar)
 
-  self.ScrollHiddenUntilNeeded = true
-
   self.Items = {}
   
-  self:SetSize(width, height)
+  self:SetSize(self.Width, self.Height)
 
   self:CreateItems()
   self.AnchorPosition = Vector(0,0,0)
 
-  self.AutoScroll = options.AutoScroll
-
   if(options.ItemDataList) then
-    self:SetDataList(ResolveToTable)
+    self:SetDataList(ResolveToTable(options.ItemDataList))
   else
     self.ItemDataList = {}
   end  
@@ -150,10 +151,11 @@ function ListView:ClampViewStart()
     self.ViewStart = 1
    return oldValue ~= self.ViewStart
   end
-  
+
   local extra = #self.ItemDataList-self.MaxVisibleItems
   
   if(extra < 0) then
+    //reset to the start the view to the start of the list if list size is less than MaxVisibleItems
     self.ViewStart = 1
   elseif(self.ViewStart > extra+1) then
     self.ViewStart = extra+1

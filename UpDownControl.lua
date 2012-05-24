@@ -6,8 +6,21 @@ ControlClass('UpDownControl', BaseControl)
 
 UpDownControl.ButtonWidth = 18
 
+UpDownControl:SetDefaultOptions{
+  Height = 20,
+  Width = 90,
+  
+  MinValue = 0,
+  MaxValue = 1,
+  StepSize = 1,
+  ClampFraction = false,
+}
+
 function UpDownControl:Initialize(options)
-  BaseControl.Initialize(self, options.Width, options.Height)
+  
+  local width = options.Width or self.Width
+  
+  BaseControl.Initialize(self, width, options.Height or self.Height)
   
   local numberBox = self:CreateControl("TextBox", width-((UpDownControl.ButtonWidth*2)+2), 20)
     numberBox:SetPoint("Center", -1, 0, "Center")
@@ -17,9 +30,9 @@ function UpDownControl:Initialize(options)
     
   self.ClampFraction = options.ClampFraction
     
-  self.MinValue = options.MinValue or 0
-  self.MaxValue = options.MaxValue or 1
-  self.StepSize = options.StepSize or 1
+  self.MinValue = options.MinValue
+  self.MaxValue = options.MaxValue
+  self.StepSize = options.StepSize
   self.Value = self.Min
   
   self:UpdateTextBox()

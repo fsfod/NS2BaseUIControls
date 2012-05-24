@@ -4,10 +4,24 @@
 
 ControlClass('ComboBox', BorderedSquare)
 
-function ComboBox:Initialize(options)
-  BorderedSquare.Initialize(self, options.Width, options.Height, 2)
+ComboBox:SetDefaultOptions{
+  Height = 20,
+  Width = 80,
+  ItemList = {"test1", "test2", "test3", "test4", "test5"},
 
-  local height = options.Height
+  LabelCreator = function(item)
+    if(type(item) == "string") then
+      return item
+    else
+      return tostring(item)
+    end
+  end,
+}
+
+function ComboBox:Initialize(options)
+  local height = options.Height or self.Height
+  
+  BorderedSquare.Initialize(self, options.Width, height, 2)
 
   self:SetBackgroundColor(Color(0.1, 0.1, 0.1, 0.85))
 
@@ -26,18 +40,15 @@ function ComboBox:Initialize(options)
   
   if(options.ItemList) then
     self.ItemList = ResolveToTable(options.ItemList, self)
-  else
-    self.ItemList = {"test1", "test2", "test3", "test4", "test5"}
   end
   
   self.LabelCache = {}
 
-  self.GetItemLabel = options.LabelCreator or self.GetItemLabel
+  self.LabelCreator = options.LabelCreator
   
   for i,data in ipairs(self.ItemList) do
-    self.LabelCache[i] = self.GetItemLabel(data, i)
+    self.LabelCache[i] = self.LabelCreator(data, i)
   end
-  
   
   self:SetSelectedItem(1)
 end
@@ -46,15 +57,7 @@ function ComboBox:SetLabel(str, offset, yOffset)
   BaseControl.SetLabel(self, str, offset, yOffset or 2)
 end
 
-function ComboBox.GetItemLabel(item)
-  
-  if(type(item) == "string") then
-    return item
-  else
-    return tostring(item)
-  end
-  
-end
+
 
 function ComboBox:SetItemList(list)
   assert(list == nil or type(list) == "table")
@@ -146,7 +149,7 @@ function ComboBox:SetSelectedItem(index, fromDropDown)
     local item = self.ItemList[self.SelectedIndex]
 
     if(item) then
-      self.ItemText:SetText(self.GetItemLabel(item))
+      self.ItemText:SetText(self.LabelCreator(item))
     end
   else
     self.ItemText:SetText("")
@@ -183,7 +186,7 @@ function ComboBox:ToggleDropDown(down)
       self.LabelCache = {}
       
       for i,data in ipairs(self.ItemList) do
-        self.LabelCache[i] = self.GetItemLabel(data, i)
+        self.LabelCache[i] = self.LabelCreator(data, i)
       end
     end
     

@@ -7,11 +7,17 @@ ControlClass('CheckBox', BaseControl)
 local Orange = Color(0.8666, 0.3843, 0, 1)
 local DimOrange = Color(0.8666/3, 0.3843/3, 0, 1)
 
+CheckBox:SetDefaultOptions{
+  FontSize = 20,
+  Label = "Placeholder Label",
+  LabelOnLeft = false,
+  Checked = false,
+}
 
 function CheckBox:Initialize(options)
-  local label = options.Label or "Some text 1111z"
+  local label = options.Label or self.Label
   
-  self.FontSize = options.FontSize or 20
+  self.FontSize = options.FontSize
 
   local labeltxt = self:CreateFontString(self.FontSize)
    labeltxt:SetText(label)
@@ -24,7 +30,7 @@ function CheckBox:Initialize(options)
   
   self:SetLabelOnLeft(options.LabelOnLeft)
 
-  self.Checked = options.Checked or false
+  self.Checked = options.Checked
   
   self:SetColor(0, 0, 0, 0)
   
