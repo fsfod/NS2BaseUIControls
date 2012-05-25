@@ -25,8 +25,8 @@ function ComboBox:Initialize(options)
 
   self:SetBackgroundColor(Color(0.1, 0.1, 0.1, 0.85))
 
-  local button = self:CreateControl("ArrowButton", height, height, "Down")
-    button:SetPoint("TopRight", 0, 0, "TopRight")
+  local button = self:CreateControl("ArrowButton", height-4, height-4, "Down")
+    button:SetPoint("TopRight", 0, 2, "TopRight")
     button.OnClicked = {self.ToggleDropDown, self}
     self:AddChild(button)
   self.Button = button
