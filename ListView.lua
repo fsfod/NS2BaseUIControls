@@ -252,15 +252,13 @@ function ListView:GetItemAtCoords(x, y)
     return nil
   end
   
-  local ItemDistance = self.ItemHeight+self.ItemSpacing
+  local yOffset = (y%self.ItemDistance)
   
-  local yOffset = (y%ItemDistance)
-  
-  if(yOffset > self.ItemHeight and self.IgnoreItemSpacingHitRec) then
+  if(yOffset > self.ItemHeight and not self.TreatItemSpacingAsHit) then
     return nil
   end
   
-  local index = ((y-yOffset)/ItemDistance)+1
+  local index = ((y-yOffset)/self.ItemDistance)+1
 
   if(index <= #self.Items and index <= #self.ItemDataList and index <= self.MaxVisibleItems) then
     return index
