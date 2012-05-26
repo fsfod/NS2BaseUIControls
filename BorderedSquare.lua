@@ -7,9 +7,10 @@ ControlClass('BorderedSquare', BaseControl)
 local DefaultLineWidth = 1
 local DefaultSize = 60
 
-local BackgroundColor = Color(0.588, 0.627, 0.666, 1)
-
 local Red = Color(1,0,0,1)
+
+BorderedSquare.BackgroundColor = Color(0.06,0.06,0.06, 0.8)//Color(0.588, 0.627, 0.666, 1)
+BorderedSquare.Color = ControlGrey1
 
 function BorderedSquare:Initialize(width, height, lineWidth, skipSetSize)
   
@@ -18,9 +19,7 @@ function BorderedSquare:Initialize(width, height, lineWidth, skipSetSize)
   width = width or DefaultSize
 
   BaseControl.Initialize(self, width, height)
-
-  local bg = self.RootFrame
-    bg:SetColor(ControlGrey1)
+  BaseControl.SetColor(self, self.BackgroundColor)
 
   local top = self:CreateGUIItem()
     top:SetColor(ControlGrey1)
@@ -61,7 +60,7 @@ function BorderedSquare:SetBorderColour(colour)
 end
 
 function BorderedSquare:SetBackgroundColor(colour)
-  self.RootFrame:SetColor(colour)
+  BaseControl.SetColor(self, colour)
 end
 
 function BorderedSquare:SetSize(width, height)

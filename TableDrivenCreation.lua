@@ -7,9 +7,9 @@ if(not _G.EventOption) then
   
 end
 
-local function ResolveToEventReciver(value, object)
+function ResolveToEventReceiver(value, object)
   
-  if(type(value) == "function") then
+  if(not value or type(value) == "function") then
     return value
   end
   
@@ -41,7 +41,7 @@ local function ResolveToEventReciver(value, object)
     return {value, object.Parent}
   end
   
-  return value
+  error("NYI or invalid event receiver")
 end
 
 local function ResolveNameToFunction(name, object)
