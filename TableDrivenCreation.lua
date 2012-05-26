@@ -1,4 +1,49 @@
 
+local EventOption, Optional
+
+if(not _G.EventOption) then
+  EventOption = {}
+  _G.EventOption = EventOption
+  
+end
+
+local function ResolveToEventReciver(value, object)
+  
+  if(type(value) == "function") then
+    return value
+  end
+  
+  if(type(value) == "table") then
+    if(#value == 2) then
+      
+      return value
+    end
+    
+    error("only a table with 2 values is supported for a event atm")
+  end
+  
+  local name = value
+
+//TODO Decide if it even makes sense to have this option
+/* 
+  value = object[name]
+
+  if(value) then
+    //treated as a self call function
+    return {value, object}
+  end 
+*/
+
+  value = object.Parent[name]
+
+  if(value) then
+    //treated as a self call function
+    return {value, object.Parent}
+  end
+  
+  return value
+end
+
 local function ResolveNameToFunction(name, object)
   
   assert(name)
@@ -96,4 +141,74 @@ function ResolveToTable(value, object)
   end
   
   return GetTableFromFunction(value, name)
+end
+
+function CreatControlFromTable(parentFrame, options)
+
+  local control = parentFrame:CreateControlFromTable(options)
+
+  CreatChildControlsFromTable(control, options)
+    
+  return control
+end
+
+function CreatChildControlsFromTable(parentFrame, options)
+
+    //this frame has no child controls to create so just return
+  if(not options.ChildControls) then
+    return
+  end
+  
+  //TODO check if unnamed controls are created before named ones
+  for name,subControlOptions in pairs(options.ChildControls) do
+    
+    local subControl = CreatControlFromTable(parentFrame, subControlOptions)
+    
+    if(type(name) == "string") then
+      parentFrame[name] = subControl
+    end  
+  end
+end
+
+function ApplySharedControlOptions(frame, options)
+
+  if(not frame.InitFromTable and options.Width) then
+    frame:SetSize(options.Width, options.Height)
+  end
+
+  local position = options.Position
+
+  if(position) then
+   
+    if(type(position) == "table") then
+      frame:SetPoint(unpack(position))
+    else
+      assert(type(position) == "userdata")
+       
+      frame:SetPosition(position)
+    end
+  end
+  
+  local label = options.Label
+
+  //TODO unify setlabel of checkbox
+  if(label and not frame:isa("CheckBox")) then
+    if(type(label) == "string") then
+      frame:SetLabel(label)
+    else
+      frame:SetLabel(unpack(label))
+    end
+  end
+  
+  local color = options.Color
+
+  if(color) then
+    frame:SetColor(color)
+  end
+  
+  local databind = options.ConfigDatabind
+  
+  if(databind) then
+    frame:SetConfigBinding(databind.ConfigPath, databind.DefaultValue, databind.ValueType, databind.ValueConverter)
+  end
 end

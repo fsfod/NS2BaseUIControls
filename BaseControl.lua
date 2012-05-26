@@ -47,6 +47,7 @@ local SetPosition = GUIItem.SetPosition
 local SetSize = GUIItem.SetSize
 local GetPosition = GUIItem.SetPosition
 local GetSize = GUIItem.SetSize
+local AddChild = GUIItem.AddChild
 
 function ChangePositionSizeFunctions(setPos, setSize, getPos, getSize)
   SetPosition = setPos
@@ -173,6 +174,31 @@ function BaseControl:CreateControl(controlClass, ...)
   local control = CreateControl(controlClass)
 
   control:Initialize(...)
+
+  return control
+end
+
+local CreatChildControlsFromTable = _G.CreatChildControlsFromTable
+local ApplySharedControlOptions = _G.ApplySharedControlOptions
+
+function BaseControl:CreateControlFromTable(optionTable, ...)
+
+  local Class = _G[optionTable.Type]
+
+  if(not Class) then
+    error("BaseControl:CreateControl: Control class "..(optionTable.Type or "nil").. "does not exist")
+  end
+
+  local control = CreateControl(optionTable.Type)
+  AddChild(self, control)
+
+  control:InitFromTable(optionTable, ...)
+
+  ApplySharedControlOptions(control, optionTable)
+
+  self:AddChild(control)
+
+  CreatChildControlsFromTable(self, optionTable)
 
   return control
 end

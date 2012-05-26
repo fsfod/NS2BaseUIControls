@@ -383,6 +383,48 @@ function BaseGUIManager:InternalCreateFrame(className, ...)
   return frame
 end
 
+
+
+function BaseGUIManager:CreateWindowFromTable(className, optionTable, ...)
+
+  local frameClass = _G[className]
+
+  if(not frameClass) then
+    error(string.format("CreateFrame: There is no frame type named %s", className))
+  end
+
+  if(not frameClass:isa("BaseControl")) then
+    error(string.format("CreateFrame: frame %s is not derived from BaseControl", className))
+  end
+
+  local sucess, frame = SafeCall(CreateControl, className)  
+
+  if(not sucess) then
+    return nil
+  end
+
+  frame.Parent = self.TopLevelUIParent
+
+  sucess = SafeCall(frame.InitFromTable, frame, optionTable, ...)
+  
+  if(not sucess) then
+    return nil
+  end
+  
+  if(not SafeCall(ApplySharedControlOptions, frame, optionTable) or 
+     not SafeCall(CreatChildControlsFromTable, frame, optionTable)) then
+     
+    pcall(GUI.DestroyItem, frame)
+   return nil
+  end
+    
+  self:AddFrame(frame)
+
+  return frame
+end
+
+
+
 function BaseGUIManager:CreateControl(className, ...)
 
   local frame = self:InternalCreateFrame(className, ...)
