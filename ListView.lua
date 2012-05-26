@@ -9,12 +9,14 @@ local black = Color(0, 0, 0, 1)
 LVTextItem.TextOffset = 4
 LVTextItem.FontSize = 17
 
-function LVTextItem:Initialize(owner, width, fontsize)
+function LVTextItem:Initialize(owner, width, height, fontsize)
 
   BaseControl.Initialize(self)
 
   //we have set this here since we were not created by GUIManager function and Text GUIItems need it set
   self:SetOptionFlag(GUIItem.ManageRender)
+
+  self.FontSize = fontsize
 
   self:SetFontSize(self.FontSize*UIScale)
   self:SetTextClipped(true, width-self.TextOffset, self.FontSize)
@@ -59,6 +61,7 @@ ListView:SetDefaultOptions{
   ItemsSelectable = true,
   AutoScroll = false,
   ScrollHiddenUntilNeeded = true,
+  TreatItemSpacingAsHit = false,
 }
 
 function ListView:Rescale()
@@ -67,7 +70,7 @@ function ListView:Rescale()
   self.ItemsAnchor:Rescale()
 end
 
-function ListView:Initialize(options)
+function ListView:InitFromTable(options)
 
   assert(type(options) == "table", "ListView:Initialize expected a table as the first arg")
  
@@ -75,6 +78,8 @@ function ListView:Initialize(options)
   self.ItemSpacing = options.ItemSpacing
   self.ItemHeight = options.ItemHeight
   self.ItemDistance = self.ItemHeight + self.ItemSpacing
+
+  self.FontSize = options.FontSize or self.ItemHeight-2
 
   if(options.MaxVisibleItems) then
     assert(not options.Height, "can't specify both the height and MaxVisibleItems for a listview")
@@ -576,7 +581,7 @@ function ListView:CreateItems(startIndex)
   startIndex = startIndex or 1
 
   for i=startIndex,self.MaxVisibleItems do
-    local item = self.ItemsAnchor:CreateControl(self.ItemClass, self, width, height)
+    local item = self.ItemsAnchor:CreateControl(self.ItemClass, self, width, height, self.FontSize)
 
     //self.CreateItem(self, width, height)
 

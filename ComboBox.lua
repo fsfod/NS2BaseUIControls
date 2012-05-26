@@ -31,7 +31,9 @@ function ComboBox:Initialize(options)
     self:AddChild(button)
   self.Button = button
 
-  local itemText = self:CreateFontString(height)
+  self.FontSize = height-2
+
+  local itemText = self:CreateFontString(self.FontSize)
    itemText:SetPosition(Vector(4.5, 1.5, 0))
     self:AddGUIItemChild(itemText)
   self.ItemText = itemText

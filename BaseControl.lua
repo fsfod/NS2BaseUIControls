@@ -316,7 +316,7 @@ function BaseControl:SetLabel(str, offset, yOffset, anchorRight)
   local label = self.BC_Label
   
   if(not label) then
-    label = self:CreateFontString(18)
+    label = self:CreateFontString(self.FontSize or 18)
 
     //label:SetTextAlignmentX(GUIItem.Align_Min)
     //label:SetTextAlignmentY(GUIItem.Align_Center)
