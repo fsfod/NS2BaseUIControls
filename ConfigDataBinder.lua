@@ -62,10 +62,25 @@ local IndexMT = {
 setmetatable(ConfigDataBind, {
   __call = function(self, ...)
     local tbl = setmetatable({}, IndexMT)
-      tbl:Initialize(...)
+      
+      local arg1 = ...
+      
+      if(type(arg1) == "table" and arg1.DefaultValue ~= nil) then
+        tbl:InitFromTable(...)
+      else
+        tbl:Initialize(...)
+      end
     return tbl
   end
 })
+
+function ConfigDataBind_CreateFromTable(bindingTable)
+  
+  local tbl = setmetatable({}, IndexMT)
+   tbl:InitFromTable(bindingTable)
+   
+  return tbl
+end
 
 function ConfigDataBind:InitFunction(getter, setter)
   self.GetValue = function() return getter() end
@@ -106,6 +121,27 @@ function ConfigDataBind:MulitValueInit(bindingList, converter)
   self.SetValue = self.MultiSetValue
 end
 
+function ConfigDataBind:InitFromTable(options)
+  
+  if(options.ConfigPath) then
+    self.Path = options.ConfigPath
+  else
+    if(#options > 0) then
+      self:MulitValueInit(options)
+    else
+      assert(options.ValueGetter)
+      self:InitFunction(options.ValueGetter, options.ValueSetter)
+    end
+    
+  end
+  
+  self.ValueConverter = options.ValueConverter
+  
+  self:DeduceType(options.DefaultValue, options.ValueType)
+  
+  self.DelaySave = options.DelaySave
+end
+
 function ConfigDataBind:Initialize(binding, ...)
     
   if(type(binding) == "function") then
@@ -131,6 +167,14 @@ function ConfigDataBind:Initialize(binding, ...)
 
     typeName = typeName or type(default)
   end
+
+  self:DeduceType(default, typeName)
+end
+
+function ConfigDataBind:DeduceType(default, typeName)
+  
+  typeName = typeName or type(default)
+  
 
   if(typeName == nil) then
     error(string.format("ConfigDataBind: unable to deduce type for %s because no default or typename were provided", self.Path))

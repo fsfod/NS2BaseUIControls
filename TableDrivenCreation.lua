@@ -209,6 +209,6 @@ function ApplySharedControlOptions(frame, options)
   local databind = options.ConfigDatabind
   
   if(databind) then
-    frame:SetConfigBinding(databind.ConfigPath, databind.DefaultValue, databind.ValueType, databind.ValueConverter)
+    frame:SetConfigBinding(databind)
   end
 end
