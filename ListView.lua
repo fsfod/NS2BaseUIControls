@@ -70,6 +70,12 @@ function ListView:Rescale()
   self.ItemsAnchor:Rescale()
 end
 
+function ListView:Initialize(options)
+  assert(options and type(options) == "table")
+  
+  ListView.InitFromTable(self, options)
+end
+
 function ListView:InitFromTable(options)
 
   assert(type(options) == "table", "ListView:Initialize expected a table as the first arg")

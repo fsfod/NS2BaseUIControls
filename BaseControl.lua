@@ -190,12 +190,13 @@ function BaseControl:CreateControlFromTable(optionTable, ...)
   end
 
   local control = CreateControl(optionTable.Type)
-  AddChild(self, control)
-
+  //set parent before calling InitFromTable so that option values that refrance this control work
+  control.Parent = self
   control:InitFromTable(optionTable, ...)
-
+  
   ApplySharedControlOptions(control, optionTable)
-
+  //just clear it again so we don't trigger an assert in AddChild
+  control.Parent = nil
   self:AddChild(control)
 
   CreatChildControlsFromTable(self, optionTable)

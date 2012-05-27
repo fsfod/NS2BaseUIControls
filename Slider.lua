@@ -13,6 +13,12 @@ Slider:SetDefaultOptions{
   StepSize = 1,
 }
 
+function Slider:InitFromTable(options)
+  Slider.Initialize(self, options)
+  
+  self.ValueChanged = ResolveToEventReceiver(options.ValueChanged, self)
+end
+
 function Slider:Initialize(options)
   ScrollBar.Initialize(self, options.Width, options.Height)
   

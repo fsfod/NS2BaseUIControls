@@ -14,7 +14,7 @@ CheckBox:SetDefaultOptions{
   Checked = false,
 }
 
-function CheckBox:Initialize(options)
+function CheckBox:InitFromTable(options)
   local label = options.Label or self.Label
   
   self.FontSize = options.FontSize
