@@ -906,10 +906,11 @@ function BaseGUIManager:GetCursorPos()
   return x/UIScale, y/UIScale
 end
 
-function BaseGUIManager:OnMouseMove()
+function BaseGUIManager:CheckEnteredControl()
+  
   local x,y = self:GetCursorPos()
-	
-	if(self.CurrentMouseOver and not self.ActiveDrag) then
+  
+  if(self.CurrentMouseOver and not self.ActiveDrag) then
 	  local Current = self.CurrentMouseOver
 	  
 	  if(IsValidControl(Current)) then
@@ -929,15 +930,24 @@ function BaseGUIManager:OnMouseMove()
 	    self:ClearMouseOver()
 	  end
 	end
+end
 
-  if(self.ActiveDrag) then
-    self:DragMouseMove(x, y)
-  else
-    self:CheckDragStart(x, y)
-  end
+function BaseGUIManager:OnMouseMove(enteredRefresh)
+  local x,y = self:GetCursorPos()
+	
+	self:CheckEnteredControl()
 
-  --fire mouse move after we've done OnLeave but before OnEnter so OnEnter/OnLeave frame code is more sane 
-	self.Callbacks:Fire("MouseMove", x, y)
+  //enteredRefresh mode is used for things like after a drag has just ended we need to trigger leave and entered events since there disabled during dragging 
+  if(not enteredRefresh) then
+    if(self.ActiveDrag) then
+      self:DragMouseMove(x, y)
+    else
+      self:CheckDragStart(x, y)
+    end
+    
+    --fire mouse move after we've done OnLeave but before OnEnter so OnEnter/OnLeave frame code is more sane 
+	  self.Callbacks:Fire("MouseMove", x, y)
+	end
 
 	if(not self.CurrentMouseOver and not self.ActiveDrag) then
 	  local foundValidRoot = self:TraverseWindows(x, y, ControlFlags.OnEnter, self.DoOnEnter)
@@ -1032,6 +1042,9 @@ function BaseGUIManager:DragStop(isCancel)
     end
 
     activeDrag.DragActive = false
+    
+    self.ActiveDrag = nil
+    self:OnMouseMove(true)
   end
 
   self.DragPreStartFrame = nil
