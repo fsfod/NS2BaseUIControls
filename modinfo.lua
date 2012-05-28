@@ -29,6 +29,7 @@ ScriptList = {
   
   "ScrollBar.lua",
   "Slider.lua",
+  "TabHeader.lua",
   "ListView.lua",
   "TextBoxMixin.lua",
   "TextBox.lua",
