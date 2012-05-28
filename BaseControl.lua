@@ -536,6 +536,8 @@ end
 
 function BaseControl:AddChild(control)
 
+  assert(control.Parent ~= self)
+
   if(not self.ChildControls) then
     self.ChildControls = {}
   end
@@ -643,11 +645,20 @@ function BaseControl:FireEvent(Action, ...)
     return SafeCallResultsOnly(Action[1], /*unpack(Action, 2)*/Action[2], ...)
   else
     if(type(Action) == "string") then
-      if(not _G[Action]) then
+      local gFunc = _G[Action]
+      
+      if(not gFunc) then
         RawPrint("BaseControl:FireEvent Could not find global function named ".. Action)
        return
       end
-      Action = _G[Action]
+      
+      if(type(gFunc) ~= "function") then
+        RawPrint("BaseControl:FireEvent global object %s was not a function", Action)
+       return
+      end
+      
+      
+      Action = gFunc
     end
 
     return SafeCallResultsOnly(Action, ...)
