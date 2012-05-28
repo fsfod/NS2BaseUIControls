@@ -15,6 +15,11 @@ CheckBox:SetDefaultOptions{
 }
 
 function CheckBox:InitFromTable(options)
+  CheckBox.Initialize(self, options)
+  self.CheckChanged = ResolveToEventReceiver(options.CheckChanged, self)
+end
+
+function CheckBox:Initialize(options)
   local label = options.Label or self.Label
   
   self.FontSize = options.FontSize

@@ -70,13 +70,14 @@ function ListView:Rescale()
   self.ItemsAnchor:Rescale()
 end
 
-function ListView:Initialize(options)
-  assert(options and type(options) == "table")
+function ListView:InitFromTable(options)  
+  ListView.Initialize(self, options)
   
-  ListView.InitFromTable(self, options)
+  self.ItemSelected = ResolveToEventReceiver(options.ItemSelected, self)
+  self.ItemDblClicked = ResolveToEventReceiver(options.ItemDblClicked, self)
 end
 
-function ListView:InitFromTable(options)
+function ListView:Initialize(options)
 
   assert(type(options) == "table", "ListView:Initialize expected a table as the first arg")
  

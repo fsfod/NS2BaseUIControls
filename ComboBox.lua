@@ -18,6 +18,13 @@ ComboBox:SetDefaultOptions{
   end,
 }
 
+
+function ComboBox:InitFromTable(options)
+  ComboBox.Initialize(self, options)
+
+  self.ItemPicked = ResolveToEventReceiver(options.ItemPicked, self)
+end
+
 function ComboBox:Initialize(options)
   local height = options.Height or self.Height
   
@@ -58,8 +65,6 @@ end
 function ComboBox:SetLabel(str, offset, yOffset)
   BaseControl.SetLabel(self, str, offset, yOffset or 2)
 end
-
-
 
 function ComboBox:SetItemList(list)
   assert(list == nil or type(list) == "table")

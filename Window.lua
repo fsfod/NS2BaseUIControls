@@ -23,6 +23,12 @@ function BaseWindow:Initialize(width, height, titleString, noCloseButton)
   end
 end
 
+function BaseWindow:InitFromTable(options)
+  self:Initialize(options.Width, options.Height, options.Title or "", not options.HasCloseButton)
+  
+  
+end
+
 function BaseWindow:Close(fromCloseButton)
 
   if(self.DestroyOnClose) then

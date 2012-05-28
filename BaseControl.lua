@@ -204,7 +204,17 @@ function BaseControl:CreateControlFromTable(optionTable, ...)
   return control
 end
 
-
+function BaseControl:CreatChildControlsFromTable(controlList)
+  
+  for key,entry in pairs(controlList) do
+    local control = self:CreateControlFromTable(entry)
+    
+    if(type(key) ~= "number") then
+      control.Name = key
+      self[key] = control 
+    end
+  end
+end
 
 function BaseControl:CreateFontString(fontSizeOrTemplate, anchorPoint, x, y, clipText)
   local font

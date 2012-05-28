@@ -166,6 +166,7 @@ function CreatChildControlsFromTable(parentFrame, options)
     
     if(type(name) == "string") then
       parentFrame[name] = subControl
+      subControl.Name = name
     end  
   end
 end

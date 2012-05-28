@@ -101,6 +101,14 @@ end
 
 ControlClass('BasePage', BorderedSquare)
 
+function BasePage:SetupFromTable(options)
+  BasePage.Initialize(self, options.Width, options.Height, options.PageName, options.Title)
+  
+  ApplySharedControlOptions(self, options)
+  
+  CreatChildControlsFromTable(self, options)
+end
+
 function BasePage:Initialize(width, height, pageName, titleString)
   
   BorderedSquare.Initialize(self, width, height, 2)
