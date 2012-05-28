@@ -874,13 +874,19 @@ end
 
 function BaseGUIManager:DoOnEnter(frame, x, y)
 
-  if(self.CurrentMouseOver) then
-    error("BaseGUIManager:DoOnEnter found CurrentMouseOver still set")
+  if(self.CurrentMouseOver and self.CurrentMouseOver ~= frame) then
+    self:ClearMouseOver()
+    //error("BaseGUIManager:DoOnEnter found CurrentMouseOver still set")
   end
 
   if(not IsValidControl(frame)) then
      RawPrint("BaseGUIManager:DoOnEnter Skipping destroyed frame")
     return false
+  end
+  
+  //don't trigger OnEnter mroe than once while were still inside it
+  if(self.CurrentMouseOver == frame) then
+    return true
   end
 
   local success, result = SafeCall(frame.OnEnter, frame, x, y)
@@ -949,12 +955,21 @@ function BaseGUIManager:OnMouseMove(enteredRefresh)
 	  self.Callbacks:Fire("MouseMove", x, y)
 	end
 
-	if(not self.CurrentMouseOver and not self.ActiveDrag) then
-	  local foundValidRoot = self:TraverseWindows(x, y, ControlFlags.OnEnter, self.DoOnEnter)
+	if(not self.ActiveDrag) then
+
+	  local foundValidRoot, enteredFrame = self:TraverseWindows(x, y, ControlFlags.OnEnter, self.DoOnEnter)
 	  
 	  if(not foundValidRoot) then
-	    self:TraverseFrames(self:GetFrameList(), x, y, ControlFlags.OnEnter, self.DoOnEnter)
+	    foundValidRoot = self:TraverseFrames(self:GetFrameList(), x, y, ControlFlags.OnEnter, self.DoOnEnter)
+	  else
+	    //always try to clear if we found nothing because CheckEnteredControl only check if the mouse is still within the current
+	    //Entered control bounds but not if another window is now on top of it
+	    if(not enteredFrame) then
+	      self:ClearMouseOver()
+	    end
 	  end
+	  
+
 	end
 end
 
