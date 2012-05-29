@@ -62,6 +62,7 @@ ListView:SetDefaultOptions{
   AutoScroll = false,
   ScrollHiddenUntilNeeded = true,
   TreatItemSpacingAsHit = false,
+  DelayCreateItems = false,
 }
 
 function ListView:Rescale()
@@ -122,6 +123,10 @@ function ListView:Initialize(options)
   self.ScrollHiddenUntilNeeded = options.ScrollHiddenUntilNeeded
   self.AutoScroll = options.AutoScroll
   
+  self.ItemsSelectable = options.ItemsSelectable
+  self.TreatItemSpacingAsHit = options.TreatItemSpacingAsHit
+    
+  
   local scrollbar = self:CreateControl("ScrollBar")
    scrollbar:SetPoint("TopRight", 0, 0, "TopRight")
    scrollbar.ValueChanged = {self.OnScrollChanged, self}
@@ -135,7 +140,14 @@ function ListView:Initialize(options)
   
   self:SetSize(self.Width, self.Height)
 
-  self:CreateItems()
+
+  if(not options.DelayCreateItems) then
+    self:CreateItems()
+    self.ItemsCreated = true
+  else
+    self.ItemsCreated = false
+  end
+  
   self.AnchorPosition = Vector(0,0,0)
 
   if(options.ItemDataList) then
@@ -211,6 +223,10 @@ function ListView:OnMaxVisibleChanged(maxVisible)
   local oldVisibleCount = self.MaxVisibleItems
   self.MaxVisibleItems = maxVisible
    
+  if(not self.ItemsCreated) then
+    return
+  end
+   
   if(oldVisibleCount) then
     if(oldVisibleCount < maxVisible and #self.Items < maxVisible) then
       self:CreateItems(#self.Items+1)
@@ -259,12 +275,10 @@ function ListView:SetSize(width, height)
   self.SelectBG:SetSize(Vector(width, self.ItemHeight, 0))
   
   self.ItemWidth = width-15
-  
-  local itemsCreated = self.Items and #self.Items > 1
-  
+
   self:OnMaxVisibleChanged(math.floor(height/self.ItemDistance))
   
-  if(itemsCreated) then
+  if(self.ItemsCreated) then
 
     for i=1,self.MaxVisibleItems do
       self.Items[i]:SetWidth(self.ItemWidth)
@@ -495,6 +509,11 @@ end
 
 function ListView:SetDataList(list)
   assert(list)
+  
+  if(not self.ItemsCreated) then
+    self:CreateItems()
+    self.ItemsCreated = true
+  end
   
   self.ItemDataList = list
   
