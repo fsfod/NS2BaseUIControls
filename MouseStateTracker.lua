@@ -235,6 +235,13 @@ function MouseStateTracker:GetStateIndex(ownerName)
   return nil
 end
 
+function MouseStateTracker:ControlSetCursor(control, path, hotX, HotY)
+  assert(self.MainMenuActive)
+  assert(control)
+
+  SetCursor(path, hotX, HotY)
+end
+
 function MouseStateTracker:SetMainMenuState()
   self:PrintDebug("SetMainMenuState")
   

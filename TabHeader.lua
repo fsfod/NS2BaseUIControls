@@ -6,10 +6,20 @@
 ControlClass("TabHeader", BorderedSquare)
 
 TabHeader:SetDefaultOptions{
-  DividerWidth = 2,
-  DefaultTabWidth = 20,
+  ResizerWidth = 16,
+  TabSpacing = 2,
+  MinTabWidth = 50,
+  DefaultTabWidth = 80,
   Height = 20,
   DraggableTabs = true,
+}
+
+TabHeader.TabOptionFields = {
+  Clicked = EventOption,
+  Ascending = false,
+  MinWidth = OptionalValue,
+  Label = OptionalValue,
+  Width = OptionalValue,
 }
 
 function TabHeader:InitFromTable(options)
@@ -20,37 +30,57 @@ function TabHeader:InitFromTable(options)
 
   self.FontSize = options.FontSize or self.Height-2
 
+  self.TabPressed = ResolveToEventReceiver(options.TabPressed, self)
+  self.TabsSwapped = ResolveToEventReceiver(options.TabsSwapped, self)
+  self.TabResized = ResolveToEventReceiver(options.TabResized, self)
+
   self.Tabs = {}
+  self.Dividers = {}
   
   local offset = 0
   
   for i,info in ipairs(options.TabList) do
-    local tab = self:CreateTab(info)
-    tab:SetPosition(offset, 0)
-
-    offset = offset+tab:GetWidth()+self.DividerWidth
+    self:CreateTab(info)
   end
+  
+  self:CreateDividers(#options.TabList)
+  
+  self:UpdateTabPositions()
 end
 
-function TabHeader:GetColumnOffsets()
-  
-  local offsets = {}
+function TabHeader:CreateDividers(count)
 
-  for i,tab in ipairs(self.Tabs) do
-    offsets[tab.NameTag or i] = tab:GetLeft()
+  if(#self.Dividers > count) then
+    //TODO clear up the extras
+    return
   end
-  
-  return offsets
+
+  for index=#self.Dividers+1,count do
+    
+    local divider = self:CreateControl("TabDivider", self, index)
+    
+    self.Dividers[index] = divider
+    self:AddChild(divider)
+  end
 end
 
 function TabHeader:CreateTab(tabInfo)
   
   local index = #self.Tabs+1
   
-  local tab = self:CreateControl("TabHeaderButton", self, index, tabInfo.Label or "somelabel", tabInfo.Width or self.DefaultTabWidth)
+  local width =  tabInfo.Width or self.DefaultTabWidth
+  
+  local tab = self:CreateControl("TabHeaderButton", self, index, tabInfo.Label or "somelabel", width)
   self:AddChild(tab)
   
-  tab.Clicked = tabInfo.Clicked
+  for k,v in pairs(self.TabOptionFields) do
+    tab[k] = tabInfo[k]
+  end
+
+  if(width < self.MinTabWidth and not tabInfo.MinWidth) then
+    tab.MinWidth = width
+  end
+
   tab.NameTag = tabInfo.NameTag or tabInfo.Label
   
   self.Tabs[index] = tab  
@@ -66,13 +96,56 @@ end
 function TabHeader:UpdateTabPositions()
   
   local offset = 0
+  local dividerCenter = self.ResizerWidth/2
+  
+  local dividers = self.Dividers
   
   for i,tab in ipairs(self.Tabs) do
     tab:SetPosition(offset, 0)
     tab.TabIndex = i
     
-    offset = offset+tab:GetWidth()+self.DividerWidth
+    local baseOffset = offset+tab:GetWidth()
+    
+    if(dividers[i]) then
+      dividers[i]:SetPosition(baseOffset-dividerCenter, 0)
+    end
+    
+    offset = baseOffset+self.TabSpacing
   end
+end
+
+function TabHeader:GetTabWidth(index)
+  
+  local tab = self.Tabs[index]
+  assert(tab)
+  
+  return tab:GetWidth()
+end
+
+function TabHeader:GetColumnWidths(widths)
+  
+  widths = widths or {}
+
+  for i,tab in ipairs(self.Tabs) do
+    widths[tab.NameTag or i] = tab:GetWidth()
+  end
+  
+  return widths
+end
+
+function TabHeader:GetColumnOffsets(offsets)
+  
+  offsets = offsets or {}
+
+  for i,tab in ipairs(self.Tabs) do
+    offsets[tab.NameTag or i] = tab:GetLeft()
+  end
+  
+  return offsets
+end
+
+function TabHeader:GetTabCount()
+  return #self.Tabs
 end
 
 function TabHeader:OnTabPressed(tab)
@@ -139,6 +212,90 @@ end
 function TabHeader:SetDragButton(button)
   
 end
+
+function TabHeader:ResizerMoved(resizer, offset)
+  local Tabs = self.Tabs
+  local index = resizer.TabIndex
+    
+  Tabs[index]:SetWidth(resizer.LeftWidth+offset)
+    
+  if(index < #Tabs) then
+    Tabs[index+1]:SetWidth(resizer.RightWidth-offset)
+  end
+
+  self:UpdateTabPositions()
+  
+  self:FireEvent(self.TabResized, Tabs[index], index)
+end
+
+ControlClass("TabDivider", BaseControl)
+
+function TabDivider:Initialize(parent, tabIndex)
+  BaseControl.Initialize(self, parent.ResizerWidth, parent.Height)
+  
+  self:SetColor(Color(0,0,0,0))
+  
+  self:SetLayer(1)
+  
+  self.TabIndex = tabIndex
+  self:SetDraggable()
+  
+  self:SetupHitRec()
+end
+
+function TabDivider:OnDragStart()
+  
+  self.DragStartOffset = self:GetPosition().x
+ 
+  self.StartPosition = self.Position.x
+  
+  self.LeftWidth = self.Parent:GetTabWidth(self.TabIndex)
+  self.LeftTab = self.Parent.Tabs[self.TabIndex]
+  
+  if(self.TabIndex < self.Parent:GetTabCount() ) then
+    self.RightTab = self.Parent.Tabs[self.TabIndex+1]
+    self.RightWidth = self.RightTab:GetWidth()
+  end
+end
+
+function TabDivider:OnDragMove(pos)
+
+  local min = (-self.LeftWidth)+(self.LeftTab.MinWidth or self.Parent.MinTabWidth)
+  
+  local max = 0
+
+
+  if(self.RightTab) then
+    max = self.RightWidth-(self.RightTab.MinWidth or self.Parent.MinTabWidth)
+  else
+    max = self.Parent:GetWidth()-(self.StartPosition+(self.Parent.ResizerWidth/2))
+  end
+
+  local offset = Clamp(pos.x, min, max)
+
+  if(offset ~= self.CurrentPosition) then
+    self.CurrentPosition = offset
+    
+    self:SetPosition(self.StartPosition+offset, 0, true)
+   
+    self.Parent:ResizerMoved(self, offset)
+  end
+end
+
+function TabDivider:OnDragStop()
+  
+  //self:SetPosition(self.StartPosition, 0,  true)
+end
+
+
+function TabDivider:OnEnter()
+  self:GetGUIManager():SetCursor(self, "ui/resize.png", 64, 32)
+end
+
+function TabDivider:OnLeave()
+  self:GetGUIManager():SetCursor(self, "ui/Cursor_MenuDefault.dds", 0,0)
+end
+
 
 ControlClass("TabHeaderButton", BaseControl)
 

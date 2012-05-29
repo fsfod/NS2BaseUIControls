@@ -147,6 +147,10 @@ function GUIMenuManager:GetFrameList()
   end
 end
 
+function GUIMenuManager:SetCursor(control, path, hotX, HotY)
+  MouseStateTracker:ControlSetCursor(control, path, hotX, HotY)
+end
+
 function GUIMenuManager:SetMainMenu(menuFrame)
   
   if(self.MainMenu) then
