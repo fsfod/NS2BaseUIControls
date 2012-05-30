@@ -575,6 +575,16 @@ function BaseControl:NotifyChildFlags(flags)
   end
 end
 
+function BaseControl:DestoryChild(frame)
+  local found = table.removevalue(self.ChildControls, frame)
+
+  assert(found)
+
+  GUIItem.RemoveChild(self.RootFrame, frame.RootFrame)
+  
+  frame:Uninitialize()
+end
+
 function BaseControl:RemoveChild(frame)
   local found = table.removevalue(self.ChildControls, frame)
 
@@ -584,6 +594,27 @@ function BaseControl:RemoveChild(frame)
   
   return found
 end
+
+function BaseControl:RemoveGUIItemChild(frame)
+  local found = false
+  
+  local instanceTable = debug.getfenv(self)
+  
+  for i,v in ipairs(instanceTable) do
+    if(v == frame) then
+      table.remove(instanceTable, i)
+      found = true
+     break
+    end
+  end
+
+  if(found) then
+    GUIItem.RemoveChild(self.RootFrame, frame.RootFrame)
+  end
+  
+  return found
+end
+
 
 local IsWindowFlag = ControlFlags.IsWindow
 

@@ -87,7 +87,7 @@ function ListView:Initialize(options)
   self.ItemHeight = options.ItemHeight
   self.ItemDistance = self.ItemHeight + self.ItemSpacing
 
-  self.FontSize = options.FontSize or self.ItemHeight-2
+  self.FontSize = options.FontSize or self.ItemHeight
 
   if(options.MaxVisibleItems) then
     assert(not options.Height, "can't specify both the height and MaxVisibleItems for a listview")
@@ -109,11 +109,7 @@ function ListView:Initialize(options)
     selectBG:SetColor(options.SelectedItemColor or self.SelectedItemColor)
   self.SelectBG = selectBG
 
-  self.ItemsAnchor = self:CreateControl("BaseControl")
-  self.ItemsAnchor:SetColor(Color(0,0,0,0))
-  self.ItemsAnchor.Size = Vector(0, 0, 0)
-  self.ItemsAnchor:SetPosition(0, 0, 0)
-  self:AddGUIItemChild(self.ItemsAnchor)
+  self:CreateItemsAnchor()
 
   assert(not options.ItemCreator or type(options.ItemCreator) == "string")
   //TODO decide how we treat a ItemCreator entry and ItemClass entry diffently
@@ -159,6 +155,38 @@ end
 
 function ListView:Uninitialize()
   BaseControl.Uninitialize(self)
+end
+
+function ListView:CreateItemsAnchor()
+
+  assert(not self.ItemsAnchor)
+
+  local anchor = self:CreateControl("BaseControl")
+    anchor:SetColor(Color(0,0,0,0))
+    anchor.Size = Vector(0, 0, 0)
+    anchor:SetPosition(0, 0, 0)
+    self:AddGUIItemChild(anchor)
+  self.ItemsAnchor = anchor
+end
+
+function ListView:EnableStencilDrawClipper()
+
+  if(self.BackgroundStencil) then
+    return
+  end
+
+  local backgroundStencil = self:CreateGUIItem()
+    backgroundStencil:SetIsStencil(true)
+    backgroundStencil:SetInheritsParentStencilSettings(false)
+    backgroundStencil:SetClearsStencilBuffer(true)
+    backgroundStencil:SetSize(self.Size)
+   self:AddGUIItemChild(self.backgroundStencil)
+  self.BackgroundStencil = backgroundStencil
+
+  if(true) then
+    self:RemoveGUIItemChild(self.ItemsAnchor)
+    backgroundStencil:AddGUIItemChild(self.ItemsAnchor)
+  end
 end
 
 function ListView:SetScrollBarWidth(width)
@@ -273,6 +301,10 @@ function ListView:SetSize(width, height)
   self.ScrollBar:SetSize(self.ScrollBarWidth, height)
  
   self.SelectBG:SetSize(Vector(width, self.ItemHeight, 0))
+  
+  if(self.BackgroundStencil) then
+    self.BackgroundStencil:SetSize(self.Size)
+  end
   
   self.ItemWidth = width-15
 
@@ -564,6 +596,25 @@ function ListView:RefreshItems()
 end
 
 function ListView:ChangeItemClass(itemClassName)
+  
+  self:RemoveGUIItemChild(self.ItemsAnchor)
+  self.ItemsAnchor:Uninitialize()
+  self.ItemsAnchor = nil
+
+  self:CreateItemsAnchor()
+ 
+  self.Items = {}
+
+  self.ItemClass = itemClassName
+
+  self:CreateItems()
+  
+  self:ListDataModifed()
+end
+
+function ListView:SetFontSize(size)
+  self.FontSize = size
+  
   
 end
 
