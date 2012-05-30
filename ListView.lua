@@ -563,6 +563,36 @@ function ListView:RefreshItems()
   end
 end
 
+function ListView:ChangeItemClass(itemClassName)
+  
+end
+
+function ListView:SetItemLayout(positionsList)
+  
+  self.ItemLayout = positionsList
+  
+  if(not self.Items) then
+    return
+  end
+  
+  for i,item in ipairs(self.Items) do
+    
+    if(item.UpdateLayout) then
+      item:UpdateLayout(positionsList)
+    else
+      
+      for name,position in pairs(positionsList) do
+      
+        local control = item[name]
+      
+        if(control) then
+          control:SetPosition(position)
+        end
+      end
+    end
+  end
+end
+
 function ListView:JumpToListEnd(forceRefresh)
   
   local index = 1+#self.ItemDataList-self.MaxVisibleItems
@@ -607,7 +637,7 @@ function ListView:CreateItems(startIndex)
   startIndex = startIndex or 1
 
   for i=startIndex,self.MaxVisibleItems do
-    local item = self.ItemsAnchor:CreateControl(self.ItemClass, self, width, height, self.FontSize)
+    local item = self.ItemsAnchor:CreateControl(self.ItemClass, self, width, height, self.FontSize, self.ItemLayout)
 
     //self.CreateItem(self, width, height)
 
