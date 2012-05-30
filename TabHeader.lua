@@ -6,12 +6,17 @@
 ControlClass("TabHeader", BorderedSquare)
 
 TabHeader:SetDefaultOptions{
-  ResizerWidth = 16,
+  ResizerWidth = 12,
   TabSpacing = 2,
   MinTabWidth = 50,
   DefaultTabWidth = 80,
+  ExpandTabsToFit = false,
   Height = 20,
   DraggableTabs = true,
+  Mode = "",
+  TabColor = ControlGrey2,
+  ActiveTabColor = ControlGrey2,
+  NonActiveTabColor = Color(ControlGrey2.r*0.3, ControlGrey2.g*0.3, ControlGrey2.b*0.3, 1)
 }
 
 TabHeader.TabOptionFields = {
@@ -24,6 +29,7 @@ TabHeader.TabOptionFields = {
 
 function TabHeader:InitFromTable(options)
   self.Height = options.Height  
+  self.Width = options.Width
   BorderedSquare.Initialize(self, options.Width, self.Height, 1)
 
   self:SetBackgroundColor(self.BackgroundColor)
@@ -32,20 +38,116 @@ function TabHeader:InitFromTable(options)
 
   self.TabPressed = ResolveToEventReceiver(options.TabPressed, self)
   self.TabsSwapped = ResolveToEventReceiver(options.TabsSwapped, self)
+  
   self.TabResized = ResolveToEventReceiver(options.TabResized, self)
 
   self.Tabs = {}
   self.Dividers = {}
   
   local offset = 0
+
+  self.Mode = options.Mode
   
+  //allow the auto value of DraggableTabs tobe overidden by the options table
+  if(options.DraggableTabs ~= nil) then
+    self.DraggableTabs = options.DraggableTabs
+  else
+    self.DraggableTabs = self.Mode == "ListHeader"
+  end
+  
+  self.TabSpacing = options.TabSpacing
+  self.ExpandTabsToFit = options.ExpandTabsToFit
+  
+  if(self.ExpandTabsToFit) then
+    assert(not options.DefaultTabWidth)
+    self.DefaultTabWidth = ((self.Width+self.TabSpacing)/#options.TabList)-self.TabSpacing
+  end
+
   for i,info in ipairs(options.TabList) do
     self:CreateTab(info)
   end
+
+  if(options.GetSavedLayout) then
+    local order, widths = ResolveAndCallFunction(options.GetSavedLayout, self)
+   
+    if(order and next(order)) then
+      self:RestoreTabOrder(order, true)
+    else
+      order = nil
+    end
+    
+    if(widths and next(widths)) then
+      self:RestoreTabWidths(widths, order, true)
+    end
+  end
+ 
+  //have tobe created after the tabs since the hit detection  systeme searchs a controls ChildControls list in reverse
+  if(self.Mode == "ListHeader") then
+    self:CreateDividers(#options.TabList)
+  end
   
-  self:CreateDividers(#options.TabList)
+  self.TabColor = options.TabColor
+  
+  if(self.Mode == "Tab" and not options.TabColor) then
+    self.TabColor = Color(ControlGrey2.r*0.3, ControlGrey2.g*0.3, ControlGrey2.b*0.3, 1)
+  end
+  
+  //allow the auto value of DraggableTabs tobe overidden by the options table
+  if(options.DraggableTabs ~= nil) then
+    self.DraggableTabs = options.DraggableTabs
+  end
   
   self:UpdateTabPositions()
+end
+
+function TabHeader:RestoreTabWidths(widths, nameToIndex, supressLayout)
+  
+  nameToIndex = nameToIndex or self:GetTabOrder()
+  
+  for name,index in pairs(nameToIndex) do
+    
+    local width = widths[name]
+    local tab = self.Tabs[index]
+    
+    if(tab and width and width > 0) then
+      tab:SetWidth(width)
+    end
+  end
+
+  if(not supressLayout) then
+    self:UpdateTabPositions()
+  end
+end
+
+function TabHeader:RestoreTabOrder(order, supressLayout)
+
+  local newList = {}
+  
+  local count = #self.Tabs
+  
+  for i=1,count do
+    newList[i] = false
+  end
+  
+  for i,tab in ipairs(self.Tabs) do
+   
+    local index = order[tab.NameTag]
+   
+    if(index) then
+      assert(newList[index] == false)
+      
+      newList[index] = tab
+      count = count-1
+    end
+  end
+  
+  assert(count == 0)
+  
+  self.Tabs = newList
+  
+  if(not supressLayout) then
+    self:UpdateTabPositions()
+  end
 end
 
 function TabHeader:CreateDividers(count)
@@ -122,7 +224,7 @@ function TabHeader:GetTabWidth(index)
   return tab:GetWidth()
 end
 
-function TabHeader:GetColumnWidths(widths)
+function TabHeader:GetTabWidths(widths)
   
   widths = widths or {}
 
@@ -133,7 +235,18 @@ function TabHeader:GetColumnWidths(widths)
   return widths
 end
 
-function TabHeader:GetColumnOffsets(offsets)
+function TabHeader:GetTabOrder(order)
+
+  order = order or {}
+  
+  for i,tab in ipairs(self.Tabs) do
+    order[tab.NameTag or i] = tab.TabIndex
+  end
+  
+  return order
+end
+
+function TabHeader:GetTabOffsets(offsets)
   
   offsets = offsets or {}
 
@@ -149,6 +262,15 @@ function TabHeader:GetTabCount()
 end
 
 function TabHeader:OnTabPressed(tab)
+
+  if(self.Mode == "Tab") then
+    if(self.ActiveTab) then
+      self.ActiveTab:ClearActiveState()
+    end
+    
+    self.ActiveTab = tab 
+    tab:SetActiveState()
+  end
 
   if(tab.Clicked) then
     tab:FireEvent(tab.Clicked, tab)
@@ -219,13 +341,50 @@ function TabHeader:ResizerMoved(resizer, offset)
     
   Tabs[index]:SetWidth(resizer.LeftWidth+offset)
     
-  if(index < #Tabs) then
+  if(index < #Tabs and self.ShiftTabs) then
     Tabs[index+1]:SetWidth(resizer.RightWidth-offset)
   end
 
   self:UpdateTabPositions()
   
   self:FireEvent(self.TabResized, Tabs[index], index)
+end
+
+function TabHeader:ResolveToTab(nameOrIndex)
+  
+  local argType = type(nameOrIndex) 
+  
+  if(argType == "string") then
+  
+    for i,tab in ipairs(self.Tabs) do
+      if(tab.NameTag == nameOrIndex) then
+        return tab
+      end
+    end
+    
+    error("there was no tab with the tab name "..nameOrIndex)
+  elseif(argType == "number") then
+  
+    assert(nameOrIndex > 0 and nameOrIndex <= #self.Tabs)
+    
+    return self.Tabs[nameOrIndex]
+  else
+    error("Tab identifter was not a index or a tagname")
+  end
+  
+end
+
+function TabHeader:SetTabSortDirection(tabKey, ascending)
+  
+  local tab = self:ResolveToTab(tabKey)
+  
+  tab:SetSortDirection(ascending)
+end
+
+function TabHeader:ClearSortDirection()
+  for i,tab in ipairs(self.Tabs) do
+    tab:ClearSortDirection()
+  end
 end
 
 ControlClass("TabDivider", BaseControl)
@@ -265,7 +424,7 @@ function TabDivider:OnDragMove(pos)
   local max = 0
 
 
-  if(self.RightTab) then
+  if(self.RightTab and self.Parent.ShiftTabs) then
     max = self.RightWidth-(self.RightTab.MinWidth or self.Parent.MinTabWidth)
   else
     max = self.Parent:GetWidth()-(self.StartPosition+(self.Parent.ResizerWidth/2))
@@ -317,13 +476,47 @@ function TabHeaderButton:Initialize(parent, tabIndex, labelString, width, color)
   
   self:SetLayer(0)
   
-  self:SetColor(color or ControlGrey2)
+  self.Color = color 
+  self:SetColor(color or parent.TabColor)
+  
   
   if(parent.DraggableTabs) then
     self:SetDraggable()
   end
   
   self.StartPosition = 0
+  
+  //self:SetAscending()
+end
+
+function TabHeaderButton:ClearSortDirection()
+  if(self.SortDirection) then
+    self.SortDirection:Hide()
+  end
+end
+
+function TabHeaderButton:SetSortDirection(ascending)
+
+  if(not self.SortDirection) then
+    
+    local size = self:GetHeight()*0.5
+    
+    local sortDirection = self:CreateControl("BaseControl", size, size)
+      sortDirection:SetPoint("Right", -2, 0)
+      sortDirection:SetTexture("ui/ButtonArrows.dds")
+      self:AddChild(sortDirection)
+    self.SortDirection = sortDirection
+  end
+  
+  self.Ascending = ascending
+  
+  self.Parent:ClearSortDirection()
+  
+  self.SortDirection:Show()
+  
+  local direction = (ascending and "Down") or "Up"
+  
+  self.SortDirection:SetTexturePixelCoordinates(unpack(ArrowButton.ArrowTextures[direction]))
 end
 
 function TabHeaderButton:SetPosition(x, y, DragSetPosiiton)
@@ -339,7 +532,16 @@ function TabHeaderButton:OnEnter()
 end
 
 function TabHeaderButton:OnLeave()
-  self:SetColor(ControlGrey2)
+
+  local color
+  
+  if(self.Active) then
+    color = self.Parent.ActiveTabColor
+  else
+    color = self.Color or self.Parent.TabColor
+  end
+  
+  self:SetColor(color)
 end
 
 function TabHeaderButton:OnDragStart()
@@ -369,6 +571,24 @@ function TabHeaderButton:OnDragStop()
 
   if(not self.CurrentPosition or not self.Parent:CheckTabSwap(self, self.CurrentPosition, self.CurrentPosition > self.StartPosition)) then
     self:SetPosition(self.StartPosition, 0,  true)
+  end
+end
+
+function TabHeaderButton:SetActiveState()
+  
+  self.Active = true
+  
+  if(not self.Entered) then
+    self:SetColor(self.Parent.ActiveTabColor)
+  end
+end
+
+function TabHeaderButton:ClearActiveState()
+
+  self.Active = false
+  
+  if(not self.Entered) then
+    self:SetColor(self.Color or self.Parent.TabColor)
   end
 end
 

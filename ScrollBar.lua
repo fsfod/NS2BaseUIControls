@@ -133,7 +133,7 @@ function ScrollBar:InteralSetValue(value, fromSlider, noValueChangedEvent)
   end
 
   if(not noValueChangedEvent) then
-    self:FireEvent(self.ValueChanged, self.Value, fromSlider)
+    self:FireEvent(self.ValueChanged, self.Value, fromSlider, self)
   end
 end
 
@@ -305,15 +305,14 @@ function SliderButton:OnDragStop()
   self.Parent:BarDragEnded()
 end
 
-local ArrowTextures = {
+ControlClass('ArrowButton', BaseControl)
+
+ArrowButton.ArrowTextures = {
   Up = {96,0, 128, 32},
   Down = {64,0, 96, 32},
   Left = {0,0, 32, 32},
   Right = {32,0, 64,32},
 }
-
-ControlClass('ArrowButton', BaseControl)
-
 
 local NormalColor = Color(66/255, 66/255, 66/255, 1)
 local MouseOverColor = Color(90/255, 90/255, 90/255, 1)
@@ -333,7 +332,7 @@ function ArrowButton:Initialize(width, height, mode)
     //arrow:SetColor(Color(1,1,1, 1))
     //arrow:SetBlendTechnique(GUIItem.Add)
     arrow:SetTexture("ui/ButtonArrows.dds")
-    arrow:SetTexturePixelCoordinates(unpack(ArrowTextures[mode]))
+    arrow:SetTexturePixelCoordinates(unpack(self.ArrowTextures[mode]))
   self.Overlay = arrow
 
   self:SetSize(width, height)
@@ -368,13 +367,13 @@ function ArrowButton:OnClick(button, down)
         self.OnClicked[1](self.OnClicked[2], true)
       end 
 
-      local x1, _, x2, _ = unpack(ArrowTextures[self.Mode])
+      local x1, _, x2, _ = unpack(self.ArrowTextures[self.Mode])
   
       self.Overlay:SetTexturePixelCoordinates(x1, 32, x2, 64)
     else
       self.IsDown = false
       
-      self.Overlay:SetTexturePixelCoordinates(unpack(ArrowTextures[self.Mode]))
+      self.Overlay:SetTexturePixelCoordinates(unpack(self.ArrowTextures[self.Mode]))
       //self.Overlay:SetColor(Color(1, 1, 1, 1))
 
       if(self.MouseOver) then
