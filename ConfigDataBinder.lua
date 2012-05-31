@@ -121,18 +121,34 @@ function ConfigDataBind:MulitValueInit(bindingList, converter)
   self.SetValue = self.MultiSetValue
 end
 
+function ConfigDataBind:ContainerInit(options)
+  
+  self.InternalSetValue = self.ContainerSetValue
+  self.GetValue = self.ContainerGetValue
+ 
+  assert(options.Table, "\"Table\" cannot be nil for a table ConfigDataBind")
+  assert(options.TableKey, "\"TableKey\" cannot be nil for a table ConfigDataBind")
+  
+  self.Table = options.Table
+  self.TableKey = options.TableKey
+end
+
 function ConfigDataBind:InitFromTable(options)
   
   if(options.ConfigPath) then
     self.Path = options.ConfigPath
   else
+    
     if(#options > 0) then
       self:MulitValueInit(options)
     else
-      assert(options.ValueGetter)
-      self:InitFunction(options.ValueGetter, options.ValueSetter)
+      if(options.TableKey) then
+        self:ContainerInit(options)
+      else
+        assert(options.ValueGetter)
+        self:InitFunction(options.ValueGetter, options.ValueSetter)
+      end
     end
-    
   end
   
   self.ValueConverter = options.ValueConverter
@@ -261,6 +277,27 @@ function ConfigDataBind:SetValue(...)
   else
     self:InternalSetValue(value)
   end  
+end
+
+function ConfigDataBind:ContainerSetValue(value)
+  self.Table[self.TableKey] = value
+end
+
+function ConfigDataBind:ContainerGetValue()
+  
+  local value = self.Table[self.TableKey]
+  
+  if(value == nil) then
+    value = self.Default
+  end
+  
+  local converter = self.ValueConverter
+  
+  if(converter) then
+    return converter(value)
+  else
+    return value
+  end
 end
 
 function ConfigDataBind:InternalSetValue(value)
