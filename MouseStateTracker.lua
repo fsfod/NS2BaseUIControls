@@ -245,6 +245,11 @@ end
 function MouseStateTracker:SetMainMenuState()
   self:PrintDebug("SetMainMenuState")
   
+  if(not SetCursor) then
+      RawPrint("MouseStateTracker:SetMainMenuState called before mouse functions are available")
+    return
+  end
+  
   self.MainMenuActive = true
 
   SetMouseVisible(true)
@@ -254,6 +259,12 @@ end
 
 function MouseStateTracker:ClearMainMenuState()
   self.MainMenuActive = false
+  
+  if(not SetCursor) then
+      RawPrint("MouseStateTracker:ClearMainMenuState called before mouse functions are available")
+    return
+  end
+
   self:ApplyStack()
 end
 
