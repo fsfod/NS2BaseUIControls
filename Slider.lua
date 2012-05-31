@@ -93,7 +93,7 @@ function Slider:InteralSetValue(value, fromSlider, noValueChangedEvent)
     end
 
     if(not noValueChangedEvent) then
-      self:FireEvent(self.ValueChanged, self.Value, fromSlider)
+      self:FireEvent(self.ValueChanged, self.Value, fromSlider, self)
     end
   end
 end

@@ -19,8 +19,9 @@ UpDownControl:SetDefaultOptions{
 function UpDownControl:Initialize(options)
   
   local width = options.Width or self.Width
+  local height = options.Height or self.Height
   
-  BaseControl.Initialize(self, width, options.Height or self.Height)
+  BaseControl.Initialize(self, width, height)
   
   local numberBox = self:CreateControl("TextBox", width-((UpDownControl.ButtonWidth*2)+2), 20)
     numberBox:SetPoint("Center", -1, 0, "Center")
