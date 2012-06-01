@@ -13,7 +13,8 @@ TabHeader:SetDefaultOptions{
   ExpandTabsToFit = false,
   Height = 20,
   DraggableTabs = true,
-  Mode = "",
+  ResizableTabs = true,
+  Mode = "ListHeader",
   TabColor = ControlGrey2,
   ActiveTabColor = ControlGrey2,
   NonActiveTabColor = Color(ControlGrey2.r*0.3, ControlGrey2.g*0.3, ControlGrey2.b*0.3, 1)
@@ -48,11 +49,24 @@ function TabHeader:InitFromTable(options)
 
   self.Mode = options.Mode
   
+  self.TabColor = options.TabColor
+  
+  if(self.Mode == "Tab") then
+    if(not options.TabColor) then
+      self.TabColor = self.NonActiveTabColor
+    end
+    
+    self.ResizableTabs = false
+    self.DraggableTabs = false
+  end
+  
+  if(options.ResizableTabs ~= nil) then
+    self.ResizableTabs = options.ResizableTabs
+  end
+  
   //allow the auto value of DraggableTabs tobe overidden by the options table
   if(options.DraggableTabs ~= nil) then
     self.DraggableTabs = options.DraggableTabs
-  else
-    self.DraggableTabs = self.Mode == "ListHeader"
   end
   
   self.TabSpacing = options.TabSpacing
@@ -65,6 +79,10 @@ function TabHeader:InitFromTable(options)
 
   for i,info in ipairs(options.TabList) do
     self:CreateTab(info)
+  end
+  
+  if(self.Mode == "Tab" and #self.Tabs ~= 0) then
+    self:SetActiveTab(options.ActiveTab or 1)
   end
 
   if(options.GetSavedLayout) then
@@ -82,14 +100,8 @@ function TabHeader:InitFromTable(options)
   end
  
   //have tobe created after the tabs since the hit detection  systeme searchs a controls ChildControls list in reverse
-  if(self.Mode == "ListHeader") then
+  if(self.ResizableTabs) then
     self:CreateDividers(#options.TabList)
-  end
-  
-  self.TabColor = options.TabColor
-  
-  if(self.Mode == "Tab" and not options.TabColor) then
-    self.TabColor = Color(ControlGrey2.r*0.3, ControlGrey2.g*0.3, ControlGrey2.b*0.3, 1)
   end
   
   //allow the auto value of DraggableTabs tobe overidden by the options table
@@ -152,6 +164,8 @@ end
 
 function TabHeader:CreateDividers(count)
 
+  count = count or #self.Tabs
+
   if(#self.Dividers > count) then
     //TODO clear up the extras
     return
@@ -163,6 +177,44 @@ function TabHeader:CreateDividers(count)
     
     self.Dividers[index] = divider
     self:AddChild(divider)
+  end
+end
+
+function TabHeader:DestroyDividers()
+  
+  for i,divider in ipairs(self.Dividers) do
+    self:DestoryChild(divider)
+  end
+  
+  self.Dividers = {}
+end
+
+function TabHeader:SetResizableTabs(enable)
+  
+  if(enable) then
+    if(self.Dividers and #self.Dividers ~= 0) then
+      return
+    end
+
+    self:CreateDividers()
+    self:UpdateTabPositions()
+  else
+    if(not self.Dividers) then
+      return
+    end
+    
+    self:DestroyDividers()
+  end
+  
+  self.ResizableTabs = enable
+end
+
+function TabHeader:SetDraggableTabs(enable)
+  
+  self.DraggableTabs = enable
+  
+  for i,tab in ipairs(self.Tabs) do
+    tab.DragEnabled = enable
   end
 end
 
@@ -264,6 +316,8 @@ end
 function TabHeader:OnTabPressed(tab)
 
   if(self.Mode == "Tab") then
+    self:SetActiveTab(tab)
+    
     if(self.ActiveTab) then
       self.ActiveTab:ClearActiveState()
     end
@@ -354,7 +408,10 @@ function TabHeader:ResolveToTab(nameOrIndex)
   
   local argType = type(nameOrIndex) 
   
-  if(argType == "string") then
+  if(argType == "userdata") then
+     assert(nameOrIndex.TabIndex)
+    return nameOrIndex
+  elseif(argType == "string") then
   
     for i,tab in ipairs(self.Tabs) do
       if(tab.NameTag == nameOrIndex) then
@@ -362,7 +419,7 @@ function TabHeader:ResolveToTab(nameOrIndex)
       end
     end
     
-    error("there was no tab with the tab name "..nameOrIndex)
+    error("there was no tab with the NameTag "..nameOrIndex)
   elseif(argType == "number") then
   
     assert(nameOrIndex > 0 and nameOrIndex <= #self.Tabs)
@@ -386,6 +443,19 @@ function TabHeader:ClearSortDirection()
     tab:ClearSortDirection()
   end
 end
+
+function TabHeader:SetActiveTab(tab)
+
+  tab = self:ResolveToTab(tab)
+
+  if(self.ActiveTab) then
+    self.ActiveTab:ClearActiveState()
+  end
+
+  self.ActiveTab = tab 
+  tab:SetActiveState()
+end
+
 
 ControlClass("TabDivider", BaseControl)
 
@@ -477,12 +547,11 @@ function TabHeaderButton:Initialize(parent, tabIndex, labelString, width, color)
   self:SetLayer(0)
   
   self.Color = color 
+  
   self:SetColor(color or parent.TabColor)
-  
-  
-  if(parent.DraggableTabs) then
-    self:SetDraggable()
-  end
+
+  self:SetDraggable()
+  self.DragEnabled = parent.DraggableTabs
   
   self.StartPosition = 0
   
