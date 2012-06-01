@@ -595,21 +595,39 @@ function ListView:RefreshItems()
   end
 end
 
-function ListView:ChangeItemClass(itemClassName)
+function ListView:DestroyItems()
+  
+  if(not self.Items or #self.Items == 0) then
+    return
+  end
   
   self:RemoveGUIItemChild(self.ItemsAnchor)
   self.ItemsAnchor:Uninitialize()
   self.ItemsAnchor = nil
 
   self:CreateItemsAnchor()
- 
+
   self.Items = {}
+  
+  self.ItemsCreated = false
+end
+
+function ListView:ChangeItemClass(itemClassName, force)
+  
+  if(self.ItemClass == itemClassName and not force) then
+    return
+  end
+
+  self:DestroyItems()
 
   self.ItemClass = itemClassName
+  self:ResetSelection()
 
-  self:CreateItems()
-  
-  self:ListDataModifed()
+  //only recreate the items 
+  if(self.ItemDataList and #self.ItemDataList ~= 0) then
+    self:CreateItems()
+    self:ListDataModifed()
+  end
 end
 
 function ListView:SetFontSize(size)
