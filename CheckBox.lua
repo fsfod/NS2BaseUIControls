@@ -28,7 +28,7 @@ function CheckBox:Initialize(options)
    labeltxt:SetText(label)
 
   local width = labeltxt:GetTextWidth(label)
-  local height = labeltxt:GetTextHeight(label)+4
+  local height = options.Height or labeltxt:GetTextHeight(label)+4
   self.Label = labeltxt
 
   BaseControl.Initialize(self, height, height)
