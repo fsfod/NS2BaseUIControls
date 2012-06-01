@@ -539,7 +539,7 @@ function ListView:ListSizeChanged()
   end
 end
 
-function ListView:SetDataList(list)
+function ListView:SetDataList(list, keepScrollPosition)
   assert(list)
   
   if(not self.ItemsCreated) then
@@ -550,7 +550,15 @@ function ListView:SetDataList(list)
   self.ItemDataList = list
   
   self:ResetSelection()
-  self.ViewStart = 1
+  
+  if(keepScrollPosition and self.ViewStart) then
+    self:ClampViewStart()
+  else
+    self.ViewStart = 1
+    self.ScrollBar:SetValue(1)
+  end
+
+  
   self.PrevListSize = nil
   self:ListSizeChanged()
 end
