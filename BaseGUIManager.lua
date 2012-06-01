@@ -404,6 +404,10 @@ function BaseGUIManager:CreateWindowFromTable(className, optionTable, ...)
   end
 
   frame.Parent = self.TopLevelUIParent
+  
+  if(optionTable.RestoreSavedOptions) then
+    RestoreSavedOptions(self, optionTable)
+  end
 
   sucess = SafeCall(frame.InitFromTable, frame, optionTable, ...)
   

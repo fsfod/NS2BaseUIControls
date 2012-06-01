@@ -7,6 +7,10 @@ if(not _G.EventOption) then
   
 end
 
+if(not _G.OptionalValue) then
+  _G.OptionalValue = {}
+end
+
 function ResolveToEventReceiver(value, object)
   
   if(not value or type(value) == "function") then
@@ -40,11 +44,11 @@ function ResolveToEventReceiver(value, object)
     //treated as a self call function
     return {value, object.Parent}
   end
-  
-  error("NYI or invalid event receiver")
+    
+  error("invalid event receiver "..name)
 end
 
-local function ResolveNameToFunction(name, object)
+function ResolveNameToFunction(name, object)
   
   assert(name)
   assert(type(name) == "string", "d")
@@ -83,16 +87,44 @@ local function GetTableFromFunction(func, name, ...)
   return result
 end
 
-function ResolveToFunction(value, object)
+function ResolveAndCallFunction(value, object, ...)
 
   if(type(value) == "function") then
-    return value
+    return value(...)
   end
   
+  local name = value
+
+  if(type(name) ~= "string") then
+    error("expected a function or string that resolved to a function")
+  end
+
+//TODO Decide if it even makes sense to have this option
+/* 
+  value = object[name]
+
+  if(value) then
+    //treated as a self call function
+    return {value, object}
+  end 
+*/
+
+  value = object.Parent[name]
+
+  if(value) then
+    if(type(value) ~= "function") then
+      error(string.format("expected a member varible %s tobe a function ", name))
+    end
+    
+    //treated as a self call function
+    return value(object.Parent, ...)
+  end
+
   if(type(value) ~= "string") then
     error("expected a function or string that resolved to a function")
   end
-  
+    
+  error("NYI or invalid event receiver")
 end
 
 function ResolveToTable(value, object)
@@ -212,4 +244,46 @@ function ApplySharedControlOptions(frame, options)
   if(databind) then
     frame:SetConfigBinding(databind)
   end
+end
+
+function RestoreSavedOptions(control, optionTable, restoreFunction)
+  
+  restoreFunction = restoreFunction or optionTable.RestoreSavedOptions
+  
+  assert(restoreFunction)
+  
+  local savedOptions, nameList = ResolveAndCallFunction(restoreFunction, control)
+  
+  if(nameList) then
+    
+    for i,name in ipairs(nameList) do
+      optionTable[name] = savedOptions[name]
+    end
+  else
+    
+    for name,value in pairs(savedOptions) do
+      optionTable[name] = value
+    end
+  end
+end
+
+function MergControlSetupList(existingOptions, extraOptions)
+  
+  for name,entry in pairs(extraOptions) do
+    
+    local existingEntry = existingOptions[name]
+    
+    if(existingEntry) then
+      
+      if(type(existingEntry) ~= "table") then
+        existingEntry[name] = entry
+      else
+        MergControlSetupList(existingEntry, entry)
+      end
+    else
+      //the key was not in the existing table so add this entry even if its a table
+      existingEntry[k] = entry
+    end
+  end
+  
 end

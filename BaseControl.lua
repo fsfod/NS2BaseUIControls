@@ -189,6 +189,10 @@ function BaseControl:CreateControlFromTable(optionTable, ...)
     error("BaseControl:CreateControl: Control class "..(optionTable.Type or "nil").. "does not exist")
   end
 
+  if(optionTable.RestoreSavedOptions) then
+    RestoreSavedOptions(self, optionTable)
+  end
+
   local control = CreateControl(optionTable.Type)
   //set parent before calling InitFromTable so that option values that refrance this control work
   control.Parent = self
