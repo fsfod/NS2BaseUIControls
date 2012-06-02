@@ -71,6 +71,8 @@ function MouseStateTracker:OnClientLoadComplete()
     self:InjectHooks()
   end
   
+  self.MouseTracker_SetIsVisible = self.MouseTracker_SetIsVisible or MouseTracker_SetIsVisible
+  
   MouseTracker_SetIsVisible = function()
   end
 end
@@ -255,6 +257,10 @@ function MouseStateTracker:SetMainMenuState()
   SetMouseVisible(true)
   SetMouseClipped(false)
   SetCursor(self.DefaultCursor, 0, 0)
+  
+  if(MouseTracker_SetIsVisible) then
+    MouseTracker_SetIsVisible(false)
+  end
 end
 
 function MouseStateTracker:ClearMainMenuState()
@@ -406,6 +412,16 @@ function MouseStateTracker:ApplyStack()
   
   if(self.MainMenuActive) then
     return
+  end
+
+  //Make our evil twin process mouse events correctly
+  if(MouseTracker_SetIsVisible) then
+    
+    if(#self.StateStack == 0 and MouseTracker_GetIsVisible()) then
+      self.MouseTracker_SetIsVisible(false)
+    elseif(#self.StateStack ~= 0 and not MouseTracker_GetIsVisible()) then
+      self.MouseTracker_SetIsVisible(true)
+    end
   end
 
   local visible, clipped = false, true
