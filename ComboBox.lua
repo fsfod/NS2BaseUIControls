@@ -53,7 +53,7 @@ function ComboBox:Initialize(options)
   
   self.LabelCache = {}
 
-  self.LabelCreator = options.LabelCreator
+  self.LabelCreator = ResolveToFunction(options.LabelCreator, self)
   
   for i,data in ipairs(self.ItemList) do
     self.LabelCache[i] = self.LabelCreator(data, i)

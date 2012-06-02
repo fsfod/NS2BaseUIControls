@@ -48,23 +48,47 @@ function ResolveToEventReceiver(value, object)
   error("invalid event receiver "..name)
 end
 
+function ResolveToFunction(value, object)
+  
+  if(not value or type(value) == "function") then
+    return value
+  end
+  
+  if(type(value) ~= "string") then
+    error("ResolveToFunction: expected a function or string that resolved to a function")
+  end
+    
+  return ResolveNameToFunction(value, object)
+end
+
+local function TryGetMemberFunction(object, key)
+
+  local func = object[key]
+  
+  if(func) then
+    if(type(func) ~= "function") then
+      error("TryGetMemberFunction: Expected member "..key.." tobe a function")
+    end
+    
+    return function(...)
+      local f = object[key]
+      
+      return f(object, ...)
+    end
+  end
+  
+  return nil
+end
+
 function ResolveNameToFunction(name, object)
   
   assert(name)
   assert(type(name) == "string", "d")
   
-  local funct = object[name]
+  local func = TryGetMemberFunction(object, name) or TryGetMemberFunction(object.Parent, name) 
   
-  if(funct) then
-    if(type(funct) ~= "function") then
-      error("")
-    end
-    
-    return function(...)
-      local f = object[name]
-      
-      return f(object, ...)
-    end
+  if(func) then
+    return func  
   end
   
   funct = _G[name]
