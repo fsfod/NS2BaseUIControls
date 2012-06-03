@@ -158,7 +158,15 @@ function MouseStateTracker:SetHooks(startup)
   //self:HookLibraryFunction(HookType.Post, "Client", "SetYaw", function()
  //   self:PrintDebug("Client.SetYaw")
  // end)
-  
+  ClassHooker:SetClassCreatedIn("OverheadSpectatorMode", "lua/OverheadSpectatorMode.lua")
+ 
+  self:HookClassFunction("OverheadSpectatorMode", "Initialize", function()
+    MouseStateTracker:PushState("Spectator", true, true)
+  end)
+    
+  self:HookClassFunction("OverheadSpectatorMode", "Uninitialize", function()
+    MouseStateTracker:PopState("Spectator")
+  end) 
   
   PlayerEvents:HookIsCommander(self, "CommaderStateChanged")
   PlayerEvents:HookPlayerDied(self, "PlayerDied")
