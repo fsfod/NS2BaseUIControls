@@ -486,7 +486,7 @@ end
 
 if(HotReload) then
   GUIMenuManager:LuaReloaded()
-  
-  Event.Hook("Console_showmenu", function() GUIMenuManager:ShowMenu() end)
-  Event.Hook("Console_hidemenu", function() GUIMenuManager:CloseMenu() end)
 end
+
+Event.Hook("Console_showmenu", function() GUIMenuManager:ShowMenu() end)
+Event.Hook("Console_hidemenu", function() GUIMenuManager:CloseMenu() end)
