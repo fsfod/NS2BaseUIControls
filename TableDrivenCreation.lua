@@ -263,7 +263,7 @@ function ApplySharedControlOptions(frame, options)
     frame:SetColor(color)
   end
   
-  local databind = options.ConfigDatabind
+  local databind = options.ConfigDataBind
   
   if(databind) then
     frame:SetConfigBinding(databind)
