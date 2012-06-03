@@ -10,7 +10,7 @@ if(not HotReload) then
 
 GUIMenuManager = {
   Name = "GUIMenuManager",
-  MenuLayer = 20,
+  MenuLayer = 30,
   MenuClass = "PagedMainMenu",
   MessageBoxClass = "MessageBox",
   
@@ -157,6 +157,8 @@ function GUIMenuManager:SetMainMenu(menuFrame)
     table.removevalue(self.AllFrames, self.MainMenu)
     table.removevalue(self.NonWindowList, self.MainMenu)
   end
+  
+  menuFrame:SetLayer(self.MenuLayer-1)
 
   menuFrame.Parent = UIMenuParent
   menuFrame:SetPosition(0, 0)
