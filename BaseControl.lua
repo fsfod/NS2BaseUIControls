@@ -956,7 +956,7 @@ function FontTemplate:Apply(font)
   end
 
   if(self.FontSize) then
-    font:SetFontSize(self.FontSize*UIScale)
+    font:SetFontSize(self.FontSize)
   end
   
   if(self.Bold) then

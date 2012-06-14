@@ -266,34 +266,6 @@ function BaseControl:CreateFontString(fontSizeOrTemplate, anchorPoint, x, y, cli
   return font
 end
 
-function FontTemplate:Apply(font)
-  
-  if(self.FontName) then
-    font:SetFontName(self.FontName)
-  end
-  
-  if(self.FontSize) then
-    font:SetFontSize(self.FontSize*UIFontScale)
-  end
-  
-  if(self.Bold) then
-    font:SetFontIsBold(true)
-  end
-
-  if(self.TextAlignmentX) then
-    font:SetTextAlignmentX(self.TextAlignmentX)
-    font:SetTextAlignmentY(self.TextAlignmentY)
-  end
-  
-  if(self.XAnchor) then
-    font:SetAnchor(self.XAnchor, self.YAnchor)
-  end
-  
-  if(self.Colour) then
-    font:SetColor(self.Colour)
-  end
-end
-
 function GUIItemTable:SetFontSize(fontSize)
   self._FontSize = fontSize
   
