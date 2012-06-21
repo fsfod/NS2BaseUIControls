@@ -148,7 +148,11 @@ function BaseGUIManager:HandleCtrClipboardKeys(key)
     return false
   end
   
-  local focus = self.FocusedFrame
+  local focus = self:GetFocus()
+  
+  if(not focus) then
+    return false
+  end
   
   if(key == InputKey.V and focus.OnPaste) then
     local text = GetClipboardString()
@@ -188,7 +192,7 @@ function BaseGUIManager:SendKeyEvent(key, down, IsRepeat)
     return self:OnMouseClick(key, down)
   end
 
-  local focus = self.FocusedFrame
+  local focus = self:GetFocus()
 
   if(focus) then
     if(down and not IsRepeat and InputKeyHelper:IsCtlDown() and self:HandleCtrClipboardKeys(key)) then
@@ -220,7 +224,7 @@ function BaseGUIManager:SendCharacterEvent(...)
     return false
   end
 
-  local focus = self.FocusedFrame
+  local focus = self:GetFocus()
 
   if(focus and focus.SendCharacterEvent) then
     return focus:SendCharacterEvent(...)
@@ -266,7 +270,7 @@ function BaseGUIManager:Update(force)
     return
   end
 
-  if(self.FocusedFrame and not self.FocusedFrame:IsShown()) then
+  if(self:GetFocus() and not self:GetFocus():IsShown()) then
     self:ClearFocus()
   end
 
@@ -549,7 +553,7 @@ function BaseGUIManager:ClearStatesSetToFrame(frame)
     self:ClearMouseOver()
   end
 
-  if(frame == self.FocusedFrame) then
+  if(frame == self:GetFocus()) then
     self:ClearFocus()
   end
 
@@ -659,7 +663,7 @@ function BaseGUIManager:OnMouseClick(button, down)
   //this will get cleared if a a frame is found in the traverse that has a OnClick functions that either returns nothing or true
   self.ClickedButton = button
 
-  local focus = self.FocusedFrame
+  local focus = self:GetFocus()
   local clearFocus = false
 
   local MouseX, MouseY = self:GetCursorPos()
@@ -699,7 +703,7 @@ function BaseGUIManager:OnMouseClick(button, down)
 end
 
 function BaseGUIManager:ClearFocusIfFrame(frame)
-  if(self.FocusedFrame and self.FocusedFrame == frame) then
+  if(self:GetFocus() and self:GetFocus() == frame) then
     self:ClearFocus()
   end
 end
@@ -721,7 +725,7 @@ end
 
 function BaseGUIManager:ClearFocus(newFocus)
   
-  local focus = self.FocusedFrame
+  local focus = self:GetFocus()
   
   if(focus) then
     self.FocusedFrame = nil
@@ -735,6 +739,13 @@ function BaseGUIManager:ClearFocus(newFocus)
 end
 
 function BaseGUIManager:SetFocus(frame)
+
+  assert(frame)
+  
+  //don't clear and set focus for a frame that is already focused
+  if(self:GetFocus() == frame) then
+    return
+  end
   
   self.FocusUnchanged = nil
 
@@ -751,8 +762,17 @@ function BaseGUIManager:SetFocus(frame)
   frame.Focused = true
 end
 
+function BaseGUIManager:GetFocus()
+
+  if(self.FocusedFrame and not IsValidControl(self.FocusedFrame)) then
+    self.FocusedFrame = nil
+  end
+  
+  return self.FocusedFrame
+end
+
 function BaseGUIManager:IsFocusedSet()
-  return self.FocusedFrame ~= nil
+  return self:GetFocus() ~= nil
 end
 
 local Features = {
