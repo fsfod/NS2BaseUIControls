@@ -459,5 +459,6 @@ function MouseStateTracker:ApplyStack()
 end
 
 if(HotReload) then
+  MouseStateTracker:DisableMouseFunctions()
   MouseStateTracker:SetHooks()
 end
