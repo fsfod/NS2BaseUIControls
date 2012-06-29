@@ -21,10 +21,7 @@ if(not MouseStateTracker) then
     },
 
     DefaultCursor = "ui/Cursor_MenuDefault.dds",
-  }
-  
-  Event.Hook("Console_resetmouse", function() MouseStateTracker:ClearStack() end)
-  
+  }  
 else
   HotReload = true
   
@@ -36,7 +33,6 @@ end
 MouseStateTracker.Debug = false
 
 ClassHooker:Mixin("MouseStateTracker")
-
 
 
 function MouseStateTracker:Init()
@@ -51,7 +47,7 @@ function MouseStateTracker:Init()
   //  MouseStateTracker:Update()
   //end)
 end
-
+ 
 function MouseStateTracker:OnClientLoadComplete()
 
   SetMouseVisible = Client.SetMouseVisible
@@ -457,6 +453,9 @@ function MouseStateTracker:ApplyStack()
   SetMouseVisible(visible)
   SetMouseClipped(clipped)
 end
+
+
+Event.Hook("Console_resetmouse", function() MouseStateTracker:ClearStack() end)
 
 if(HotReload) then
   MouseStateTracker:DisableMouseFunctions()
