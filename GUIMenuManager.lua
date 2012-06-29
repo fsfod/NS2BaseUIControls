@@ -327,6 +327,8 @@ function GUIMenuManager:RecreateMenu()
 end
 
 function GUIMenuManager:InternalRecreateMenu()
+  local alreadyCreated = self.CreatedMenu
+
   self.MainMenu = nil
   self.CreatedMenu = false
 
@@ -339,9 +341,14 @@ function GUIMenuManager:InternalRecreateMenu()
 
   UIMenuParent.Size = Vector(Client.GetScreenWidth()/UIScale, Client.GetScreenHeight()/UIScale, 0)
   
-  if(self:CreateMenu()) then
-    self.AnchorFrame:SetIsVisible(true)
+  if(alreadyCreated and self:CreateMenu()) then
+    if(self:IsMenuOpen()) then
+      self:InternalShow()
+    else
+      self:InternalHide()
+    end
   end
+
 
   self.CurrentWindowLayer = self.MenuLayer+1
 
@@ -366,6 +373,10 @@ function GUIMenuManager:InternalShow()
   if(self.AnchorFrame) then
    self.AnchorFrame:SetIsVisible(true)
   end
+  
+  if(self.MainMenu) then
+    self.MainMenu:Show()
+  end
 end
 
 function GUIMenuManager:InternalHide()
@@ -374,6 +385,10 @@ function GUIMenuManager:InternalHide()
   
   if(self.AnchorFrame) then
    self.AnchorFrame:SetIsVisible(false)
+  end
+  
+  if(self.MainMenu) then
+    self.MainMenu:Hide()
   end
 end
 
