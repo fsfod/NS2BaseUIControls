@@ -350,10 +350,10 @@ function ListView:OnItemSelected(index)
   
   local DataIndex = self.ViewStart+index-1
   
-  self.SelectedItem = DataIndex
+  self:SetSelectedIndex(DataIndex)
 
-  self.SelectBG:SetIsVisible(true)
-  self.SelectBG:SetPosition(Vector(0, (index-1)*self.ItemDistance, 0))
+  //self.SelectBG:SetIsVisible(true)
+  //self.SelectBG:SetPosition(Vector(0, (index-1)*self.ItemDistance, 0))
   
   self:FireEvent(self.ItemSelected, self.ItemDataList[DataIndex], DataIndex)
 end
@@ -392,6 +392,15 @@ end
 
 function ListView:OnMouseWheel(direction)
   self:SetListToIndex(self.ViewStart+(-direction))
+end
+
+function ListView:SetItemsSelectable(selectable)
+  
+  if(not selectable) then
+    self:ResetSelection()
+  end
+  
+  self.ItemsSelectable = selectable
 end
 
 function ListView:OnClick(button, down, x,y)
@@ -436,6 +445,7 @@ end
 
 function ListView:ResetSelection()
   self.SelectedItem = nil
+  self.SelectedValue = nil
   self.ClickedItem = nil
   
   self.SelectBG:SetIsVisible(false)
@@ -471,6 +481,7 @@ function ListView:SetSelectedIndex(index)
   assert(index > 0 and index <= #self.ItemDataList)
   
   self.SelectedItem = index
+  self.SelectedValue = self.ItemDataList[index]
   
   if(index < self.ViewStart or index > self.ViewStart+self.MaxVisibleItems) then
     self.SelectBG:SetIsVisible(false)
@@ -563,9 +574,17 @@ function ListView:SetDataList(list, keepScrollPosition)
   self:ListSizeChanged()
 end
 
-function ListView:ListDataModifed()
-  self:ResetSelection()
+function ListView:ListDataModifed(keepSelection)
+
+  local selected = keepSelection and self.SelectedItem and self.SelectedValue
+  
+  self.SelectedItem = nil
+  
   self:RefreshItems()
+  
+  if(not selected or not self:SetSelectedListEntry(selected)) then
+    self:ResetSelection()
+  end
 end
 
 function ListView:RefreshItems()
