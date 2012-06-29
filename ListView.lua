@@ -89,14 +89,14 @@ function ListView:Initialize(options)
 
   self.FontSize = options.FontSize or self.ItemHeight
 
+  self.Width,self.Height = GetSizeForTableOptions(options, self.Parent)
+
   if(options.MaxVisibleItems) then
     assert(not options.Height, "can't specify both the height and MaxVisibleItems for a listview")
     self.Height = (options.MaxVisibleItems*self.ItemDistance)+1
   else
-    self.Height = options.Height
+   // self.Height = options.Height
   end
-
-  self.Width = options.Width
 
   self.TraverseChildFirst = true
 

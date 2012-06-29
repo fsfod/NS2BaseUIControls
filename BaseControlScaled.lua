@@ -271,8 +271,8 @@ function GUIItemTable:SetFontSize(fontSize)
   
   GUIItem.SetFontSize(self, fontSize*UIFontScale)
   
-  if(self.SpecialAnchor) then
-    self:SetPoint(unpack(self.SpecialAnchor))
+  if(self.AnchorPoint1) then
+    self:SetPoint(unpack(self.AnchorPoint1))
   end
 end
 
@@ -280,8 +280,8 @@ function GUIItemTable:SetText(text)
 
   GUIItem.SetText(self, text)
 
-  if(self.SpecialAnchor) then
-    self:SetPoint(unpack(self.SpecialAnchor))
+  if(self.AnchorPoint1) then
+    self:SetPoint(unpack(self.AnchorPoint1))
   end
 end
 
@@ -291,12 +291,13 @@ function GUIItemTable:SetPoint(point, x, y, reltivePoint)
   if(not reltivePoint) then
     reltivePoint = point
   end
- 
-  self.SpecialAnchor = {point, x, y, reltivePoint}
-
+  
   if(not x) then
     x,y = 0,0
   end
+ 
+  self.AnchorPoint1 = {point, x, y, reltivePoint}
+
   
   local point = PointToAnchor[point]
   self:SetAnchor(point[1], point[2])

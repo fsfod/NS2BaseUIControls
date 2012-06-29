@@ -16,6 +16,20 @@ local PointToAnchor = {
   Center = {GUIItem.Middle, GUIItem.Center},
 }
 
+WidthUnchangedPoint = {
+  Top = true,
+  Bottom = true,
+  [PointToAnchor["Top"]] = true,
+  [PointToAnchor["Bottom"]] = true,
+}
+
+HeightUnchangedPoint = {
+  Left = true,
+  Right = true,
+  [PointToAnchor["Left"]] = true,
+  [PointToAnchor["Right"]] = true,
+}
+
 _G.PointToAnchor = PointToAnchor
 
 PointToAnchor.top = PointToAnchor.Top
@@ -395,8 +409,12 @@ end
 
 function BaseControl:ParentSizeChanged()
 
-  if(self.SpecialAnchor) then
-    self:UpdatePointOffset()
+  if(self.AnchorPoint1) then
+    self:UpdatePointOffset(self.AnchorPoint2)
+    
+    if(self.AnchorPoint2) then
+      self:UpdateSizeFromPoints()
+    end
   else
     self:TryUpdateHitRec()
   end
@@ -418,7 +436,7 @@ function BaseControl:SetSize(VecOrX, y, SkipHitRecUpdate)
 
   SetSize(self, self.Size)
 
-  if(self.SpecialAnchor) then
+  if(self.AnchorPoint1) then
     self:UpdatePointOffset()
   end
 
@@ -724,7 +742,7 @@ function BaseControl:UpdatePointOffset(SkipHitRecUpdate)
     height = Size.y
   end
 
-  local anchorInfo = self.SpecialAnchor
+  local anchorInfo = self.AnchorPoint1
   
   local relpoint = anchorInfo[4]
   local x,y = anchorInfo[2], anchorInfo[3]
@@ -740,13 +758,13 @@ function BaseControl:UpdatePointOffset(SkipHitRecUpdate)
   elseif(relpoint[2] == GUIItem.Center) then
     y = y-(height/2)
   end
-
+  
+  
   self:SetPosition(x, y, SkipHitRecUpdate)
 end
 
---the control needs to set its size if it want to pass a reltivePoint
-function BaseControl:SetPoint(point, x, y, reltivePoint, SkipHitRecUpdate)
-
+local function CheckPoint(point, x, y, reltivePoint)
+  
   if(not reltivePoint) then
     reltivePoint = point 
   end
@@ -754,16 +772,129 @@ function BaseControl:SetPoint(point, x, y, reltivePoint, SkipHitRecUpdate)
   if(not x) then
     x,y = 0,0
   end
- 
-  local point2 = PointToAnchor[point]
-  local reltivePoint2 = PointToAnchor[reltivePoint]
 
-  assert(point2, "Unknowed point "..tostring(point))
-  assert(reltivePoint2, "Unknowed relative point "..tostring(reltivePoint))
+  point = PointToAnchor[point]
+  reltivePoint = PointToAnchor[reltivePoint]
+
+  if(not point) then
+    error("Unknowed point " .. tostring(point))
+  end
+
+  if(not reltivePoint) then
+    error("Unknowed relative point "..tostring(reltivePoint))
+  end
+
+  return {point, x, y, reltivePoint}, point == reltivePoint
+end 
+
+/*
+ Point type
+  1 = min/left
+  2 = center
+  3 = max/right
+*/
+function CalcSizeFromPoints(point1, point2, x1, x2, size)
   
-  self.SpecialAnchor = {point2, x, y, reltivePoint2}
+  local sizeChange
 
-  self:SetAnchor(point2[1], point2[2])
+  //flip the values around if point2 is on the right and point1 is on the left
+  if(point1 > point2) then
+    local temp = point2
+    point2 = point1
+    point1 = temp
+    
+    temp = x1
+    x1 = x2
+    x1 = temp
+  end
+
+  if(point1 == 0) then
+    sizeChange = x1
+  elseif(point1 == 1) then
+    sizeChange = ((size/2)+x1)
+  else
+    sizeChange = size+x1
+  end
+
+  if(point2 == 0) then
+    sizeChange = sizeChange+x2
+  elseif(point2 == 1) then
+    sizeChange = sizeChange+((size/2)+x2)
+  else
+    sizeChange = sizeChange+(-x2)
+  end
+
+  return size-sizeChange
+end
+
+function GetSizeFromPoints(anchor1, anchor2, size)
+  
+  local width, height
+  
+  local point1 = anchor1[1]
+  local point2 = anchor2[1]
+ 
+  if(point1[1] ~= point2[1]) then
+    width = CalcSizeFromPoints(point1[1], point2[1], anchor1[2], anchor2[2], size.x)
+  end
+  
+  if(point1[2] ~= point2[2]) then
+    height = CalcSizeFromPoints(point1[2], point2[2], anchor1[3], anchor2[3], size.y)
+  end
+  
+  return width, height
+end
+
+function BaseControl:SetPoint2(point, x, y, reltivePoint)
+  
+  local anchorPoint1 = self.AnchorPoint1
+  assert(anchorPoint1, "Can't set second anchor point when the first is not set")
+  
+  local anchorPoint2, pointsSameSide = CheckPoint(point, x, y, reltivePoint)
+
+  assert(pointsSameSide)
+
+  if(anchorPoint1[1] == anchorPoint2[1] and anchorPoint1[4] == anchorPoint2[4]) then
+    error("Error cant set Point2 sides to the same as Point1 one")
+  end
+  
+  self.AnchorPoint2 = anchorPoint2
+  
+  if(self.Parent and self.AnchorPoint1) then
+    self:UpdateSizeFromPoints()
+  end
+end
+
+function BaseControl:UpdateSizeFromPoints()
+  
+  local anchor1, anchor2 = self.AnchorPoint1, self.AnchorPoint2
+  
+  local width,height = self.Size.x,self.Size.y
+  
+  local ParentSize = self.Parent.Size
+ 
+  local point1 = anchor1[1]
+  local point2 = anchor2[1]
+ 
+  if(point1[1] ~= point2[1]) then
+    width = CalcSizeFromPoints(point1[1], point2[1], anchor1[2], anchor2[2], ParentSize.x)
+  end
+  
+  if(point1[2] ~= point2[2]) then
+    height = CalcSizeFromPoints(point1[2], point2[2], anchor1[3], anchor2[3], ParentSize.y)
+  end
+  
+  self:SetSize(width, height)
+end
+
+--the control needs to set its size if it want to pass a reltivePoint
+function BaseControl:SetPoint(point, x, y, reltivePoint, SkipHitRecUpdate)
+  
+  local anchorPoint = CheckPoint(point, x, y, reltivePoint)
+
+  self.AnchorPoint1 = anchorPoint
+
+  self:SetAnchor(anchorPoint[1][1], anchorPoint[1][2])
   
   self:UpdatePointOffset()
 end

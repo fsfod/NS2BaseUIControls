@@ -227,6 +227,32 @@ function CreatChildControlsFromTable(parentFrame, options)
   end
 end
 
+function GetSizeForTableOptions(options, parent, control)
+
+  if(options.Point2) then
+    local width, height
+    
+    local anchor1 = options.Position
+    local anchor2 = options.Point2
+    
+    local point1 = PointToAnchor[anchor1[1]]
+    local point2 = PointToAnchor[anchor2[1]]
+    
+    if(not WidthUnchangedPoint[point1]) then
+      width = CalcSizeFromPoints(point1[1], point2[1], anchor1[2] or 0, anchor2[2] or 0, parent.Size.x)
+    end
+  
+    if(not HeightUnchangedPoint[point2]) then
+      height = CalcSizeFromPoints(point1[2], point2[2], anchor1[3] or 0, anchor2[3] or 0, parent.Size.y)
+    end
+    
+    return width or options.Width, height or options.Height
+  else
+    return options.Width, options.Height
+  end
+  
+end
+
 function ApplySharedControlOptions(frame, options)
 
   if(not frame.InitFromTable and options.Width) then
@@ -244,6 +270,10 @@ function ApplySharedControlOptions(frame, options)
        
       frame:SetPosition(position)
     end
+  end
+  
+  if(options.Point2) then
+    frame:SetPoint2(unpack(options.Point2))
   end
   
   local label = options.Label
