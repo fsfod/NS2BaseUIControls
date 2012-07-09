@@ -44,7 +44,7 @@ function PageFactory:_internalCreatePage(name)
 
     local success2, errorMessage = pcall(pageOrError.Initialize, pageOrError, self)
 
-    if(not success) then
+    if(not success2) then
       //try to clear up any frames that got created during the failed Initialize call
       pcall(GUI.DestroyItem, pageOrError)
 
