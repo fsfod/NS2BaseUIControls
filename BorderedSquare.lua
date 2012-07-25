@@ -129,7 +129,6 @@ function BasePage:Initialize(width, height, pageName, titleString)
   local titlebox = self:CreateControl("BorderedSquare", 200, 24, 2)
     titlebox:SetPoint("Top", 0, 2, "Bottom")
     titlebox:SetColor(Color(0.1, 0.1, 0.1, 1))
-    titlebox:AddGUIItemChild(title)
    self:AddChild(titlebox)
    
   local title = titlebox:CreateFontString(20)

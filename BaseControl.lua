@@ -63,6 +63,16 @@ local GetPosition = GUIItem.SetPosition
 local GetSize = GUIItem.SetSize
 local AddChild = GUIItem.AddChild
 
+if(decoda_output) then
+  local old_AddChild = AddChild
+    
+  AddChild = function(self, child)
+    assert(child and child:GetParent() ~= self)
+      
+    old_AddChild(self, child)
+  end
+end 
+
 function ChangePositionSizeFunctions(setPos, setSize, getPos, getSize)
   SetPosition = setPos
   SetSize = setSize
@@ -549,6 +559,8 @@ end
 
 function BaseControl:AddGUIItemChild(frame)
 
+  assert(frame)
+
   table.insert(debug.getfenv(self), frame)
 
   GUIItem.AddChild(self, frame)
@@ -563,6 +575,8 @@ function BaseControl:AddChild(control)
   if(not self.ChildControls) then
     self.ChildControls = {}
   end
+  
+  assert(control.RootFrame)
   
   GUIItem.AddChild(self, control.RootFrame)
   control.Parent = self

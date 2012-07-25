@@ -42,7 +42,6 @@ function ComboBox:Initialize(options)
 
   local itemText = self:CreateFontString(self.FontSize)
    itemText:SetPosition(Vector(4.5, 1.5, 0))
-    self:AddGUIItemChild(itemText)
   self.ItemText = itemText
   
   self.DropDownOpen = false
