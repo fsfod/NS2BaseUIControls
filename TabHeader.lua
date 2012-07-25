@@ -28,19 +28,21 @@ TabHeader.TabOptionFields = {
   Width = OptionalValue,
 }
 
-function TabHeader:InitFromTable(options)
+function TabHeader:InitFromTable(options, width)
   self.Height = options.Height  
-  self.Width = options.Width
-  BorderedSquare.Initialize(self, options.Width, self.Height, 1)
+  self.Width = width or options.Width
+  BorderedSquare.Initialize(self, options.Width, self.Height, 1, true)
 
   self:SetBackgroundColor(self.BackgroundColor)
 
   self.FontSize = options.FontSize or self.Height-2
 
-  self.TabPressed = ResolveToEventReceiver(options.TabPressed, self)
-  self.TabsSwapped = ResolveToEventReceiver(options.TabsSwapped, self)
+  local eventContainer = (self.Parent:isa("ListView") and self.Parent) or self
+
+  self.TabPressed = ResolveToEventReceiver(options.TabPressed, eventContainer)
+  self.TabsSwapped = ResolveToEventReceiver(options.TabsSwapped, eventContainer)
   
-  self.TabResized = ResolveToEventReceiver(options.TabResized, self)
+  self.TabResized = ResolveToEventReceiver(options.TabResized, eventContainer)
 
   self.Tabs = {}
   self.Dividers = {}
@@ -86,7 +88,7 @@ function TabHeader:InitFromTable(options)
   end
 
   if(options.GetSavedLayout) then
-    local order, widths = ResolveAndCallFunction(options.GetSavedLayout, self)
+    local order, widths = ResolveAndCallFunction(options.GetSavedLayout, eventContainer)
    
     if(order and next(order)) then
       self:RestoreTabOrder(order, true)
@@ -245,6 +247,29 @@ end
 function TabHeader:RemoveTab(tab)
   table.removevalue(self.Tabs, tab)
   self:UpdateTabPositions()
+end
+
+function TabHeader:SetSize(width, height)
+  
+  local oldWidth = self:GetWidth()
+  local width, height = BaseControl.SetSize(self, width, height)
+   
+  if(width ~= oldWidth) then
+    self:WidthRescaled(width/oldWidth)
+  end
+end
+
+function TabHeader:WidthRescaled(change)
+  
+  for i,tab in ipairs(self.Tabs) do
+    tab:SetWidth(tab:GetWidth()*change)
+  end
+
+  self:UpdateTabPositions()
+  
+  if(not self.__Constructing and not self.Parent.__Constructing) then
+    self:FireEvent(self.TabResized)
+  end
 end
 
 function TabHeader:UpdateTabPositions()
@@ -667,4 +692,28 @@ function TabHeaderButton:OnClick(button, down)
     PlayerUI_PlayButtonClickSound()
     self.Parent:OnTabPressed(self)
   end
+end
+
+local function Create(fields)
+  
+  local func = {"local self,data = ...\n"}
+
+  for i,field in ipairs(fields) do
+    
+  end
+  
+  local dataField = entry.Name
+
+  if(dataField) then
+    
+  end
+
+  if(true) then
+    string.format("self.%s:SetText(data[%s])\n", entry.Name, entry.Name)
+    
+  elseif(true) then
+    string.format("self.%s:SetChecked(data[%s])\n", entry.Name, entry.Name)
+    
+  end
+  
 end

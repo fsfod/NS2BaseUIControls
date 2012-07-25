@@ -76,6 +76,7 @@ function ListView:InitFromTable(options)
   
   self.ItemSelected = ResolveToEventReceiver(options.ItemSelected, self)
   self.ItemDblClicked = ResolveToEventReceiver(options.ItemDblClicked, self)
+ 
 end
 
 function ListView:Initialize(options)
@@ -102,11 +103,23 @@ function ListView:Initialize(options)
 
   BaseControl.Initialize(self, self.Width, self.Height)
   
+  if(options.Header) then
+    local header = options.Header
+    header.Type = "TabHeader"
+    
+    self.Header = self:CreateControlFromTable(header, self.Width)
+    self.ItemStartingYOffset = self.Header:GetHeight()+2
+    self.Header:SetLayer(2)
+  else
+    self.ItemStartingYOffset = 0
+  end
+     
   self:SetColor(Color(0.5,0.5,0.5,0.5))
 
   local selectBG = self:CreateGUIItem()
     selectBG:SetIsVisible(false)
     selectBG:SetColor(options.SelectedItemColor or self.SelectedItemColor)
+    selectBG:SetSize(Vector(self.Width, self.ItemHeight, 0))
   self.SelectBG = selectBG
 
   self:CreateItemsAnchor()
@@ -116,15 +129,18 @@ function ListView:Initialize(options)
   self.ItemClass = options.ItemCreator or options.ItemClass or self.ItemClass
   
   self.ScrollBarWidth = options.ScrollBarWidth
+  self.ItemWidth = self.Width-self.ScrollBarWidth
   self.ScrollHiddenUntilNeeded = options.ScrollHiddenUntilNeeded
   self.AutoScroll = options.AutoScroll
   
   self.ItemsSelectable = options.ItemsSelectable
   self.TreatItemSpacingAsHit = options.TreatItemSpacingAsHit
-    
   
+  local visibleItemSpace = self.Height-self.ItemStartingYOffset
+
   local scrollbar = self:CreateControl("ScrollBar")
-   scrollbar:SetPoint("TopRight", 0, 0, "TopRight")
+   scrollbar:SetPoint("BottomRight", 0, 0, "BottomRight")
+   scrollbar:SetSize(self.ScrollBarWidth, visibleItemSpace)
    scrollbar.ValueChanged = {self.OnScrollChanged, self}
    scrollbar:SetStepSize(1)
    scrollbar:DisableScrolling()
@@ -134,8 +150,9 @@ function ListView:Initialize(options)
 
   self.Items = {}
   
-  self:SetSize(self.Width, self.Height)
+  //self:SetSize(self.Width, self.Height)
 
+  self.MaxVisibleItems = math.floor(visibleItemSpace/self.ItemDistance)
 
   if(not options.DelayCreateItems) then
     self:CreateItems()
@@ -164,7 +181,7 @@ function ListView:CreateItemsAnchor()
   local anchor = self:CreateControl("BaseControl")
     anchor:SetColor(Color(0,0,0,0))
     anchor.Size = Vector(0, 0, 0)
-    anchor:SetPosition(0, 0, 0)
+    anchor:SetPosition(0, self.ItemStartingYOffset)
     self:AddGUIItemChild(anchor)
   self.ItemsAnchor = anchor
 end
@@ -297,18 +314,25 @@ end
 
 
 function ListView:SetSize(width, height)
-  BaseControl.SetSize(self, width, height)
-  self.ScrollBar:SetSize(self.ScrollBarWidth, height)
- 
+  width, height = BaseControl.SetSize(self, width, height)
+
+  local visibleItemSpace = height-self.ItemStartingYOffset
+
+  self.ScrollBar:SetSize(self.ScrollBarWidth, visibleItemSpace)
+
   self.SelectBG:SetSize(Vector(width, self.ItemHeight, 0))
   
   if(self.BackgroundStencil) then
     self.BackgroundStencil:SetSize(self.Size)
   end
+
+  if(self.Header) then
+    self.Header:SetWidth(width)
+  end
   
   self.ItemWidth = width-15
 
-  self:OnMaxVisibleChanged(math.floor(height/self.ItemDistance))
+  self:OnMaxVisibleChanged(math.floor(visibleItemSpace/self.ItemDistance))
   
   if(self.ItemsCreated) then
 
@@ -327,9 +351,11 @@ function ListView:GetItemAtCoords(x, y)
   local ScrollBar = self.ScrollBar
   
   --check to see if the point is within the scrollbar
-  if(not ScrollBar.Hidden and x > (self:GetWidth()-ScrollBar:GetWidth()) ) then
+  if(y < self.ItemStartingYOffset or (not ScrollBar.Hidden and x > (self:GetWidth()-ScrollBar:GetWidth())) ) then
     return nil
   end
+  
+  y = y-self.ItemStartingYOffset
   
   local yOffset = (y%self.ItemDistance)
   
@@ -489,7 +515,7 @@ function ListView:SetSelectedIndex(index)
     self.SelectBG:SetIsVisible(true)
     
     
-    self.SelectBG:SetPosition(Vector(0, (index-self.ViewStart)*self.ItemDistance, 0))
+    self.SelectBG:SetPosition(Vector(0, self.ItemStartingYOffset+((index-self.ViewStart)*self.ItemDistance), 0))
   end
 end
 
@@ -601,7 +627,7 @@ function ListView:RefreshItems()
     else
       SelectedIndex = (index-self.ViewStart)+1
       self.SelectBG:SetIsVisible(true)
-      self.SelectBG:SetPosition(Vector(0, (SelectedIndex-1)*self.ItemDistance, 0))
+      self.SelectBG:SetPosition(Vector(0, self.ItemStartingYOffset+((SelectedIndex-1)*self.ItemDistance), 0))
     end
   end
 
@@ -639,7 +665,7 @@ function ListView:DestroyItems()
   self.ItemsCreated = false
 end
 
-function ListView:ChangeItemClass(itemClassName, force)
+function ListView:ChangeItemClass(itemClassName, clearList, force)
   
   if(self.ItemClass == itemClassName and not force) then
     return
@@ -650,11 +676,17 @@ function ListView:ChangeItemClass(itemClassName, force)
   self.ItemClass = itemClassName
   self:ResetSelection()
 
-  //only recreate the items 
-  if(self.ItemDataList and #self.ItemDataList ~= 0) then
-    self:CreateItems()
-    self:ListDataModifed()
+  if(clearList) then
+    self:SetDataList({})
+  else
+    //only recreate the items 
+    if(self.ItemDataList and #self.ItemDataList ~= 0) then
+      self:CreateItems()
+      self:ListDataModifed()
+    end
   end
+
+
 end
 
 function ListView:SetFontSize(size)
