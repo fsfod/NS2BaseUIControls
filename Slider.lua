@@ -14,9 +14,19 @@ Slider:SetDefaultOptions{
 }
 
 function Slider:InitFromTable(options)
-  Slider.Initialize(self, options)
+
+  ScrollBar.Initialize(self, options.Width, options.Height)
+  
+  self.MinValue = ResolveToNumber(options.MinValue, self)
+  self.MaxValue = ResolveToNumber(options.MaxValue, self)
+  
+  self:SetMinMax(self.MinValue, self.MaxValue)
   
   self.ValueChanged = ResolveToEventReceiver(options.ValueChanged, self)
+  
+  if(options.StepSize) then
+    self:SetStepSize(ResolveToNumber(options.StepSize))
+  end
 end
 
 function Slider:Initialize(options)
@@ -50,7 +60,7 @@ end
 
 function Slider:ConfigValueChanged(value)
   self:SetValue(value)
-  self:FireEvent(self.ValueChanged, self.Value)
+  self:FireEvent(self.ValueChanged, self.Value, false, self)
 end
 
 function Slider:BarDragEnded()
@@ -60,7 +70,7 @@ function Slider:BarDragEnded()
       self.ConfigBinding:SetValue(self.Value)
     end
     
-    self:FireEvent(self.ValueChanged, self.Value)
+    self:FireEvent(self.ValueChanged, self.Value, true, self)
   end
 end
 

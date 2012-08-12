@@ -61,6 +61,29 @@ function ResolveToFunction(value, object)
   return ResolveNameToFunction(value, object)
 end
 
+function ResolveToNumber(value, object)
+  
+  local valueType = type(value)
+  
+  if(not value or valueType == "number") then
+    return value
+  end
+  
+  if(valueType == "string") then
+    local result = _G[value]
+  
+    if(result and type(result) == "number") then
+      return result
+    end
+  end
+    
+  if(valueType ~= "string" and valueType ~= "function") then
+    error("ResolveToNumber: expected a function or string that resolved to a number")
+  end
+
+  return ResolveAndCallFunction(value, object)
+end
+
 local function TryGetMemberFunction(object, key)
 
   local func = object[key]
@@ -266,7 +289,7 @@ function ApplySharedControlOptions(frame, options)
     if(type(position) == "table") then
       frame:SetPoint(unpack(position))
     else
-      assert(type(position) == "userdata")
+      //assert(type(position) == "userdata")
        
       frame:SetPosition(position)
     end
@@ -296,7 +319,13 @@ function ApplySharedControlOptions(frame, options)
   local databind = options.ConfigDataBind
   
   if(databind) then
-    frame:SetConfigBinding(databind)
+    
+    if(not databind.TriggerChange) then
+      frame:SetConfigBinding(databind)
+    else
+      frame:SetConfigBindingAndTriggerChange(databind)
+    end
+    
   end
 end
 

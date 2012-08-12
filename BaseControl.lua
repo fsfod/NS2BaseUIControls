@@ -705,6 +705,10 @@ function BaseControl:SetConfigBindingAndTriggerChange(...)
   return self.ConfigBinding
 end
 
+function BaseControl:ReloadConfigValue()
+  self:ConfigValueChanged(self.ConfigBinding:GetValue())
+end
+
 function BaseControl:FireEvent(Action, ...)
   --client code doesn't need bother to check if anything has registered the event
   if(not Action) then
