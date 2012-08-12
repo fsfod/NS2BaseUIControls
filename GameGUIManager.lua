@@ -121,9 +121,7 @@ end
 
 function GameGUIManager:Update()
   
-  for _,frame in ipairs(self.AllFrames) do
-    frame:Update()
-  end
+  self:UpdateFrames() 
 
   if(not self:IsActive()) then
     return 

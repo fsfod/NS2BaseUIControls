@@ -267,6 +267,7 @@ end
 function BaseGUIManager:Update(force)
   
   if(not force and not self:IsActive()) then
+      self:UpdateFrames() 
     return
   end
 
@@ -281,8 +282,13 @@ end
 
 function BaseGUIManager:UpdateFrames()
 
+  local active = self:IsActive()
+
   for _,frame in ipairs(self.AllFrames) do
-    frame:Update()
+    
+    if(active or frame.AlwaysUpdate) then
+      frame:Update()
+    end
   end
 end
 
