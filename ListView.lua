@@ -234,13 +234,26 @@ function ListView:ClampViewStart()
   return oldValue ~= self.ViewStart
 end
  
+function ListView:SetHideScrollBar(hide)
+  
+  if(hide) then
+    self.ScrollBar:Hide()
+  else
+    self.ScrollBar:Show()
+  end
+
+  self.HideScrollBar = hide
+  
+  self:UpdateScrollbarRange()
+end
+ 
 function ListView:UpdateScrollbarRange()
   local extra = (self.ItemDataList and #self.ItemDataList-self.MaxVisibleItems) or 0
 
   local ScrollBar = self.ScrollBar
 
   if(extra > 0) then
-    if(self.ScrollHiddenUntilNeeded and ScrollBar.Hidden) then
+    if(self.ScrollHiddenUntilNeeded and ScrollBar.Hidden and not self.HideScrollBar) then
       ScrollBar:Show()
     end
     
@@ -251,7 +264,7 @@ function ListView:UpdateScrollbarRange()
     
     ScrollBar:SetMinMax(1, extra+1)
   else
-    if(self.ScrollHiddenUntilNeeded) then
+    if(self.ScrollHiddenUntilNeeded and not self.HideScrollBar) then
       ScrollBar:Hide()
     end
     

@@ -6,13 +6,6 @@ local HotReload = ClassHooker:Mixin("GUIMenuManager")
 
 function GUIMenuManager:SetHooks()
 
-
-  self:HookLibraryFunction(HookType.Replace, "MenuManager", "SetMenu", function() end) 
-  
-  self:HookLibraryFunction(HookType.Replace, "MenuManager", "GetMenu", function() 
-    return (self:IsMenuOpen() and "") or nil 
-  end)
-
   //uncomment to disable menu cinematic
   //self:HookLibraryFunction(HookType.Raw, "MenuManager", "SetMenuCinematic")
   self:ReplaceFunction("MainMenu_Open", function()
@@ -33,7 +26,6 @@ function GUIMenuManager:SetHooks()
   self:ReplaceFunction("LeaveMenu", function() 
     self:InternalCloseMenu()
 
-    MenuManager.SetMenu(nil)
     MenuManager.SetMenuCinematic(nil)
     MenuMenu_PlayMusic(nil)
   end)

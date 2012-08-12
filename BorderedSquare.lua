@@ -64,7 +64,8 @@ function BorderedSquare:SetBackgroundColor(colour)
 end
 
 function BorderedSquare:SetSize(width, height)
-  BaseControl.SetSize(self, width, height)
+  
+  width, height = BaseControl.SetSize(self, width, height)
   
   local SizeVec = Vector(width, self.LineWidth, 0)
   

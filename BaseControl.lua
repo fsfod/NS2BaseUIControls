@@ -218,6 +218,7 @@ function BaseControl:CreateControlFromTable(optionTable, ...)
   end
 
   local control = CreateControl(optionTable.Type)
+  control.__Constructing = true
   //set parent before calling InitFromTable so that option values that refrance this control work
   control.Parent = self
   control:InitFromTable(optionTable, ...)
@@ -228,6 +229,8 @@ function BaseControl:CreateControlFromTable(optionTable, ...)
   self:AddChild(control)
 
   CreatChildControlsFromTable(self, optionTable)
+  
+  control.__Constructing = false
 
   return control
 end
@@ -432,19 +435,22 @@ end
 
 function BaseControl:SetSize(VecOrX, y, SkipHitRecUpdate)
 
+  local size = self.Size
+
   if(y) then
-    self.Size.x = VecOrX
-    self.Size.y = y
+    size.x = VecOrX
+    size.y = y
   else
-    if(not self.Size) then
+    if(not size) then
       self.Size = Vector(VecOrX)
+      size = self.Size
     else
-      self.Size.x = VecOrX.x
-      self.Size.y = VecOrX.y
+      size.x = VecOrX.x
+      size.y = VecOrX.y
     end
   end
 
-  SetSize(self, self.Size)
+  SetSize(self, size)
 
   if(self.AnchorPoint1) then
     self:UpdatePointOffset()
@@ -461,6 +467,7 @@ function BaseControl:SetSize(VecOrX, y, SkipHitRecUpdate)
     end
   end
 
+  return size.x, size.y
 end
 
 function BaseControl:TryUpdateHitRec()
@@ -563,7 +570,7 @@ function BaseControl:AddGUIItemChild(frame)
 
   table.insert(debug.getfenv(self), frame)
 
-  GUIItem.AddChild(self, frame)
+  AddChild(self, frame)
 
   return frame
 end
@@ -578,7 +585,7 @@ function BaseControl:AddChild(control)
   
   assert(control.RootFrame)
   
-  GUIItem.AddChild(self, control.RootFrame)
+  AddChild(self, control.RootFrame)
   control.Parent = self
   
   if(control.OnParentSet) then
@@ -935,6 +942,21 @@ function BaseControl:Hide()
   end
 end
 
+function BaseControl:ShowChildControls()
+  
+  for _, control in ipairs(self.ChildControls) do
+    control:Show()
+  end
+
+end
+
+function BaseControl:HideChildControls()
+  
+  for _, control in ipairs(self.ChildControls) do
+    control:Hide()
+  end
+end
+
 function BaseControl:RegisterForMouseMove(functionName)
   self:GetGUIManager().RegisterCallback(self, "MouseMove", functionName)
 end
@@ -965,6 +987,8 @@ end
 function BaseControl:SetDraggable(dragButton)
   self.DragButton = dragButton or InputKey.MouseButton0
   self.DragEnabled = true
+
+  self:SetupHitRec()
 
   self:AddFlag(ControlFlags.Draggable)
 end

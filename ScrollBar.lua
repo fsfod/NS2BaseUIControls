@@ -138,7 +138,7 @@ function ScrollBar:InteralSetValue(value, fromSlider, noValueChangedEvent)
 end
 
 function ScrollBar:SetSize(width, height)
-  BaseControl.SetSize(self, width, height)
+  width, height = BaseControl.SetSize(self, width, height)
   
   if(type(width) ~= "number") then
     width = height.x
@@ -341,7 +341,7 @@ function ArrowButton:Initialize(width, height, mode)
 end
 
 function ArrowButton:SetSize(width, height)
-  BaseControl.SetSize(self, width, height)
+  width, height = BaseControl.SetSize(self, width, height)
   self.Overlay:SetSize(self.Size)
 end
 
