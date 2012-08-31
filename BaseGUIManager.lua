@@ -42,6 +42,8 @@ function BaseGUIManager:ClearFrameLists()
   self.NonWindowList = {}
   
   self.AllFrames = {}
+  
+  self.SingleInstance = {}
 end
 
 function BaseGUIManager:RecreateAnchorAndUpdateFrames(width, height, layer, ...)
@@ -463,6 +465,34 @@ function BaseGUIManager:CreateWindow(className, ...)
   end
 
   return frame
+end
+
+function BaseGUIManager:GetSingleInstanceControl(name, ...)
+
+  if(self.SingleInstance[name]) then
+    return self.SingleInstance[name]
+  end
+
+  local frame = self:InternalCreateFrame(name, ...)
+
+  if(frame) then
+    self:AddFrame(frame)
+    
+    self.SingleInstance[name] = frame
+  end
+
+  return frame
+end
+
+function BaseGUIManager:DestroySingleInstance(name)
+
+  local frame = self.SingleInstance[name]
+
+  if(frame) then
+    self:RemoveFrame(frame, true)
+    
+    self.SingleInstance[name] = nil
+  end
 end
 
 function BaseGUIManager:TryCloseTopMostWindow()

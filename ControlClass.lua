@@ -237,10 +237,14 @@ function DestroyControl(control)
   //debug.setfenv(control, env)
 end
 
+local function CheckValid(control)
+  return not control.__Destroyed
+end
+
 function IsValidControl(control)
   assert(type(control) == "userdata")
 
-  local sucess, result = pcall(function() return not control.__Destroyed end)
+  local sucess, result = pcall(CheckValid, control)
 
   if(not sucess and not result.find(result, "Attempt to access an object that no longer exists")) then
    RawPrint(result)

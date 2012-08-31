@@ -54,21 +54,8 @@ function GameGUIManager:Reset()
   UIParent.RootFrame = self.AnchorFrame
   UIParent.Size = self.AnchorSize
   
-  self.SingleInstance = {}
-  
   //WORKAROUND for layers going all wierd
   GUIMenuManager:DoLayerFix()
-end
-
-function GameGUIManager:DestroySingleInstance(name)
-
-  local frame = self.SingleInstance[name]
-
-  if(frame) then
-    self:RemoveFrame(frame, true)
-    
-    self.SingleInstance[name] = nil
-  end
 end
 
 function GameGUIManager:CreateFrame(name, ...)
@@ -77,23 +64,6 @@ function GameGUIManager:CreateFrame(name, ...)
 
   if(frame) then
     self:AddFrame(frame)
-  end
-
-  return frame
-end
-
-function GameGUIManager:GetSingleInstanceControl(name, ...)
-
-  if(self.SingleInstance[name]) then
-    return self.SingleInstance[name]
-  end
-
-  local frame = self:InternalCreateFrame(name, ...)
-
-  if(frame) then
-    self:AddFrame(frame)
-    
-    self.SingleInstance[name] = frame
   end
 
   return frame
