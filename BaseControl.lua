@@ -59,7 +59,7 @@ ControlFlags = {
 local GUIItem = GUIItem
 local SetPosition = GUIItem.SetPosition
 local SetSize = GUIItem.SetSize
-local GetPosition = GUIItem.SetPosition
+local GetPosition = GUIItem.GetPosition
 local GetSize = GUIItem.SetSize
 local AddChild = GUIItem.AddChild
 
@@ -115,6 +115,15 @@ function BaseControl:Initialize(width, height)
   if(flags ~= 0) then
     self:SetupHitRec()
   end
+end
+
+function BaseControl:InitFromTable(optionTable)
+  
+  if(optionTable.FontSize or optionTable.Text) then
+  else
+    self:Initialize(optionTable.Width, optionTable.Height)
+  end
+  
 end
 
 //self is really the static table of the control
@@ -205,19 +214,43 @@ end
 local CreatChildControlsFromTable = _G.CreatChildControlsFromTable
 local ApplySharedControlOptions = _G.ApplySharedControlOptions
 
+local function OptionsTable_TextHandler(self, optionTable)
+
+  local control = self:CreateFontString(optionTable.FontSize or 20)
+  
+  if(optionTable.Text) then
+    control:SetText(optionTable.Text)
+  end
+  
+  ApplySharedControlOptions(control, optionTable)
+  
+  return control
+
+end
+
+local ExtraTypes = {
+  Text = OptionsTable_TextHandler,
+}
+
 function BaseControl:CreateControlFromTable(optionTable, ...)
 
-  local Class = _G[optionTable.Type]
+  local controlType = optionTable.Type
+
+  local Class = _G[controlType]
 
   if(not Class) then
-    error("BaseControl:CreateControl: Control class "..(optionTable.Type or "nil").. "does not exist")
+    if(ExtraTypes[controlType]) then
+      return ExtraTypes[controlType](self, optionTable, ...)
+    end
+    
+    error("BaseControl:CreateControl: Control class "..(controlType or "nil").. "does not exist")
   end
 
   if(optionTable.RestoreSavedOptions) then
     RestoreSavedOptions(self, optionTable)
   end
 
-  local control = CreateControl(optionTable.Type)
+  local control = CreateControl(controlType)
   control.__Constructing = true
   //set parent before calling InitFromTable so that option values that refrance this control work
   control.Parent = self
@@ -228,7 +261,7 @@ function BaseControl:CreateControlFromTable(optionTable, ...)
   control.Parent = nil
   self:AddChild(control)
 
-  CreatChildControlsFromTable(self, optionTable)
+  CreatChildControlsFromTable(control, optionTable)
   
   control.__Constructing = false
 
