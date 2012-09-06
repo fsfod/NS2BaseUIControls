@@ -4,6 +4,10 @@ MainScript = "GUIManagerEx.lua"
 ValidVM = "main_client"
 MountSource = true
 
+OptionalDependencies = {
+  "NS2LuaJIT",
+}
+
 ScriptList = {
   "ControlClass.lua", 
   "MouseStateTracker.lua",
@@ -30,6 +34,7 @@ ScriptList = {
   "ScrollBar.lua",
   "Slider.lua",
   "TabHeader.lua",
+  "ListFilterAdapter.lua",
   "ListView.lua",
   "TextBoxMixin.lua",
   "TextBox.lua",
