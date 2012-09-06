@@ -137,6 +137,16 @@ function ComboBox:GetSelectedItem()
   
 end
 
+function ComboBox:OnMouseWheel(direction)
+  
+  local newIndex = Clamp((self.SelectedIndex or 1)+(-direction), 1, #self.ItemList)
+
+  //don't try to select the next entry if the dropdown is open
+  if(not self.DropDownOpen and newIndex ~= self.SelectedIndex) then
+    self:SetSelectedItem(newIndex, true)
+  end
+end
+
 function ComboBox:SetSelectedItem(index, fromDropDown)
   
   self.SelectedIndex = index
