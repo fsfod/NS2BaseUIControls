@@ -230,6 +230,7 @@ function BaseControl:CreateFontString(fontSizeOrTemplate, anchorPoint, x, y, cli
     font = GUIManager:CreateTextItem()
     setmetatable(debug.getfenv(font), GUIItemTable)
     
+    font:SetFontName("arial")
     font:SetFontSize(fontSizeOrTemplate)
   else
     font = fontSizeOrTemplate:CreateFontString()

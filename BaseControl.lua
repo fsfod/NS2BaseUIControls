@@ -1159,6 +1159,8 @@ function FontTemplate:Apply(font)
   
   if(self.FontName) then
     font:SetFontName(self.FontName)
+  else
+    font:SetFontName("arial")
   end
 
   if(self.FontSize) then
