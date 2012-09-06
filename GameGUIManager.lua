@@ -39,7 +39,7 @@ function GameGUIManager:Initialize()
 end
 
 function GameGUIManager:LoadComplete()
-  self:CreateAnchorFrame(Client.GetScreenWidth(), Client.GetScreenHeight())
+  self:CreateAnchorFrame(Client.GetScreenWidth(), Client.GetScreenHeight(), GUIMenuManager.MenuLayer-3)
   
   local size = Vector(Client.GetScreenWidth()/UIScale, Client.GetScreenHeight()/UIScale, 0)
   UIParent.Size = size
@@ -49,7 +49,7 @@ function GameGUIManager:Reset()
 
   self:DestroyAllFrames()
 
-  self:CreateAnchorFrame(Client.GetScreenWidth(), Client.GetScreenHeight())
+  self:CreateAnchorFrame(Client.GetScreenWidth(), Client.GetScreenHeight(), GUIMenuManager.MenuLayer-3)
   
   UIParent.RootFrame = self.AnchorFrame
   UIParent.Size = self.AnchorSize

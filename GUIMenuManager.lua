@@ -10,7 +10,7 @@ if(not HotReload) then
 
 GUIMenuManager = {
   Name = "GUIMenuManager",
-  MenuLayer = 30,
+  MenuLayer = 100,
   MenuClass = "PagedMainMenu",
   MessageBoxClass = "MessageBox",
   
