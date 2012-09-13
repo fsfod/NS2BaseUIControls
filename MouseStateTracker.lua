@@ -38,14 +38,13 @@ ClassHooker:Mixin("MouseStateTracker")
 function MouseStateTracker:Init()
   self:SetHooks()
   
-  LoadTracker:HookFileLoadFinished("lua/GUIScoreboard.lua", function() 
-     self:InjectHook({"scoreboard", "GUIScoreboard", "_SetMouseVisible"})
-  end)
-  //self:SetMainMenuState()
+  ClassHooker:SetClassCreatedIn("GUIScoreboard", "lua/GUIScoreboard.lua")
   
-  //Event.Hook("UpdateClient", function()
-  //  MouseStateTracker:Update()
-  //end)
+  //self:SetMainMenuState()
+
+  Event.Hook("UpdateClient", function()
+    MouseStateTracker:Update()
+  end)
 end
  
 function MouseStateTracker:OnClientLoadComplete()
@@ -74,6 +73,11 @@ function MouseStateTracker:OnClientLoadComplete()
 end
 
 function MouseStateTracker:Update()
+  
+  if(ScoreboardUI_GetVisible and not ScoreboardUI_GetVisible() and self:IsStateActive("scoreboard")) then
+    MouseStateTracker:TryPopState("scoreboard")
+  end
+  
   //self:ApplyStack()
 end
 
@@ -147,11 +151,11 @@ function MouseStateTracker:SetHooks(startup)
   self:PostHookClassFunction("Commander", "UpdateCursor")  
   self:HookClassFunction("Commander", "SetupHud", function() self:PushState("commander", true, true) end)
   
-  //self:HookLibraryFunction(HookType.Post, "Client", "SetPitch", function() 
-  //  self:PrintDebug("Client.SetPitch")
+ //self:HookLibraryFunction(HookType.Post, "Client", "SetPitch", function() 
+ //  self:PrintDebug("Client.SetPitch")
  // end)
 
-  //self:HookLibraryFunction(HookType.Post, "Client", "SetYaw", function()
+ //self:HookLibraryFunction(HookType.Post, "Client", "SetYaw", function()
  //   self:PrintDebug("Client.SetYaw")
  // end)
   ClassHooker:SetClassCreatedIn("OverheadSpectatorMode", "lua/OverheadSpectatorMode.lua")
@@ -162,7 +166,17 @@ function MouseStateTracker:SetHooks(startup)
     
   self:HookClassFunction("OverheadSpectatorMode", "Uninitialize", function()
     MouseStateTracker:PopState("Spectator")
-  end) 
+  end)
+
+  self:PostHookClassFunction("GUIScoreboard", "SendKeyEvent", function(scoreboardSelf, key, down)
+    if(down and key == InputKey.MouseButton0 and ScoreboardUI_GetVisible() and not MouseStateTracker:IsStateActive("scoreboard")) then
+      MouseStateTracker:PushState("scoreboard", true, true)
+    end
+  end)
+  
+  self:PostHookClassFunction("GUIScoreboard", "Update", function()
+    
+  end)
   
   PlayerEvents:HookIsCommander(self, "CommaderStateChanged")
   PlayerEvents:HookPlayerDied(self, "PlayerDied")
