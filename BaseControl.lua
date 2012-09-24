@@ -419,7 +419,7 @@ function BaseControl:SetColor(redOrColour, g, b, a)
     redOrColour = Color(redOrColour, g, b, a)
   end
   
-  GUIItem.SetColor(self.RootFrame, redOrColour)
+  GUIItem.SetColor(self, redOrColour)
 end
 
 function BaseControl:GetPosition()
@@ -463,6 +463,23 @@ function BaseControl:ParentSizeChanged()
     end
   else
     self:TryUpdateHitRec()
+  end
+end
+
+function BaseControl:ResizeInplace(x, y, side)
+  
+  local posX, posY = self:GetLeft(), self:GetTop()
+  
+  if(side[1] == 0) then
+    posX = -x
+  else
+    posX = self:GetLeft()
+  end
+  
+  if(false) then
+    self:SetPosition(posX, posY)
+  else
+    self:SetPosition(posX, posY)
   end
 end
 

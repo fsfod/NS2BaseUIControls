@@ -14,6 +14,18 @@ function BaseWindow:Initialize(width, height, titleString, noCloseButton)
 
   self:SetPoint("Center", 0, 0, "Center")
 
+  local titlebox = self:CreateControl("BorderedSquare", 200, 24, 2)
+    titlebox:SetPoint("Top", 0, 2, "Bottom")
+    titlebox:SetColor(Color(0.1, 0.1, 0.1, 1))
+   self:AddChild(titlebox)
+   
+  local title = titlebox:CreateFontString(20)
+    title:SetText(titleString)
+    title:SetAnchor(GUIItem.Center, GUIItem.Middle)
+    title:SetTextAlignmentX(GUIItem.Align_Center)
+    title:SetTextAlignmentY(GUIItem.Align_Center)
+  self.Title = title
+
   local closeButton = self:CreateControl("CloseButton", self)
    closeButton:SetPoint("TopRight", -5, 5, "TopRight")
   self:AddChild(closeButton)
@@ -91,4 +103,53 @@ end
 
 function CloseButton:OnLeave()
 	self.Highlight:SetIsVisible(false)
+end
+
+
+ControlClass('ResizeButton', BaseControl)
+
+
+ResizeButton.DefaultHeight = 30
+
+function ResizeButton:InitFromTable()
+  self:Initialize()
+end
+
+function ResizeButton:Initialize()
+  
+  local height = self.DefaultHeight
+  BaseControl.Initialize(self, height, height)
+  
+  self:SetColor(0.4, 0.4, 0.4, 1)
+
+  self:SetDraggable()
+end
+
+function ResizeButton:OnDragStart()
+
+  self.DragStartOffset = self.CurrentValuePositon
+  
+  self.ParentSize = Vector(self.Parent:GetSize())
+  RawPrint("DragStarted")
+  
+  self.ParentAnchorPoint = self.Parent.AnchorPoint1
+  self.Parent.AnchorPoint1 = nil
+end
+
+function ResizeButton:OnDragMove(pos)
+  
+  local newSize = self.ParentSize+pos
+  local currentSize = self.Parent.Size
+
+  if(newSize.x == currentSize.x and newSize.y == currentSize.y) then
+    return
+  end
+  
+  //self:SetLabel(string.format("pos: %f,%f size:%f/%f,%f/%f", pos.x, pos.y, newSize.x, self.ParentSize.x, newSize.y, self.ParentSize.y))
+  
+  self.Parent:SetSize(newSize)
+end
+
+function ResizeButton:OnDragStop()
+  self.Parent.AnchorPoint1 = self.ParentAnchorPoint
 end

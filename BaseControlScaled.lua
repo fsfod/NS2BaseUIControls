@@ -248,17 +248,22 @@ function BaseControl:CreateFontString(fontSizeOrTemplate, anchorPoint, x, y, cli
     font:SetPosition(Vector(x, y, 0))
    
     if(clipText) then
-      local width = self:GetWidth()
-
-      if(anchorPoint) then
-        if(point[1] == GUIItem.Right) then
-          x = (width)+x
-        elseif(point[1] == GUIItem.Middle) then
-          x = x-(width/2)
-        end
-      end
       
-      font:SetTextClipped(true, width-x, fontSizeOrTemplate)
+      if(type(clipText) == "number") then
+        font:SetTextClipped(true, clipText, fontSizeOrTemplate)
+      else
+        local width = self:GetWidth()
+        
+        if(anchorPoint) then
+          if(point[1] == GUIItem.Right) then
+            x = (width)+x
+          elseif(point[1] == GUIItem.Middle) then
+            x = x-(width/2)
+          end
+        end
+      
+        font:SetTextClipped(true, width-x, fontSizeOrTemplate)
+      end
     end
   end
   

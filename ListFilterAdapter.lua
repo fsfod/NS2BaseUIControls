@@ -10,6 +10,8 @@ function ListFilterAdapter.Create(filterList)
   local instance = {
     RegistedFilters = {},
     ActiveFilters = {},
+    SingleFilters = {},
+    SingleExcludeFilters = {},
   }
   
   if(filterList) then
@@ -21,6 +23,11 @@ function ListFilterAdapter.Create(filterList)
   setmetatable(instance, mt)
   
   return instance
+end
+
+function ListFilterAdapter:GetFilteredList()
+  assert(self.UnfilteredList and self.FilteredList) 
+  return self.FilteredList
 end
 
 function ListFilterAdapter:SetList(list)
@@ -46,9 +53,9 @@ function ListFilterAdapter:SetFilterAndFilterExisting(filterName, ...)
   end
 end
   
-function ListFilterAdapter:SetFilter(filterName, ...)
+function ListFilterAdapter:SetSingleFilter(filterName, ...)
   
-  self:_SetFilter(filterName, ...)
+  self.SingleFilters[filterName] = self:CreateFilter(filterName, ...)
   
   self:FiltersChanged()
 end
@@ -58,29 +65,30 @@ function ListFilterAdapter:SetFilterNoListUpdate(filterName, ...)
 end
 
 function ListFilterAdapter:_SetFilter(filterName, ...)
+  
+end
+
+function ListFilterAdapter:CreateFilter(filterName, ...)
   local filterCreator = self.RegistedFilters[filterName]
   
   assert(filterCreator, "No filter named "..filterName.." registered")
   
-  local sucess, filter = pcall(filterCreator, ...)
+  local filter = filterCreator(...)
   
-  if(not sucess) then
-    Print("SetFilter: Filter creator failed with error: "..filter)
-    return
-  end
-
-  self.ActiveFilters[filterName] = filter
+  assert(type(filter) == "function", "CreateFilter: Error filter creator function did not return a function")
+  
+  return filter
 end
 
-function ListFilterAdapter:RemoveFilter(filterName)
+function ListFilterAdapter:RemoveSingleFilter(filterName)
   
-  local filter = self.ActiveFilters[filterName]
+  local filter = self.SingleFilters[filterName]
   
   if(not filter) then
     return
   end
   
-  self.ActiveFilters[filterName] = nil
+  self.SingleFilters[filterName] = nil
   
   self:FiltersChanged()
 end
@@ -114,20 +122,25 @@ function ListFilterAdapter:RefilterList()
 end
 
 function ListFilterAdapter:FiltersChanged()
-
+  
+  //clear incremental search state since we have to refilter the list
   self.PreviousListSize = nil
 
   if(not self.UnfilteredList) then
     return
   end
 
-  if(next(self.ActiveFilters)) then  
-    local filters = {}
+  local filters
 
-    for _,filter in pairs(self.ActiveFilters) do
+  if(next(self.SingleFilters)) then
+    filters = filters or {}
+    
+    for _,filter in pairs(self.SingleFilters) do
       filters[#filters+1] = filter
     end
+  end
 
+  if(filters) then 
     self.FilterFunction = self:BuildFilterFunction(filters)
     
     //its much faster to just throw away the old list instead of clearing it  

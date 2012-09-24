@@ -4,13 +4,21 @@
 
 local HotReload = ClassHooker:Mixin("GUIMenuManager")
 
+local kOpenMenuSound = "sound/NS2.fev/common/menu_confirm"
+
 function GUIMenuManager:SetHooks()
 
   //uncomment to disable menu cinematic
   //self:HookLibraryFunction(HookType.Raw, "MenuManager", "SetMenuCinematic")
   self:ReplaceFunction("MainMenu_Open", function()
     OptionsDialogUI_OnInit()
-    MainMenu_OnOpenMenu()
+    
+    if(MainMenuMod and MainMenuMod.DisableMenuAmbientSound) then
+      Shared.PlaySound(nil, kOpenMenuSound)
+      self:ShowMenu()
+    else
+      MainMenu_OnOpenMenu()
+    end
   end)
   
 
