@@ -136,27 +136,25 @@ end
 function TabHeader:RestoreTabOrder(order, supressLayout)
 
   local newList = {}
+  local extra = {}
   
-  local count = #self.Tabs
-  
-  for i=1,count do
-    newList[i] = false
-  end
-  
+  //silently ignore any tabs that no longer exist
   for i,tab in ipairs(self.Tabs) do
-   
-    local index = order[tab.NameTag]
-   
-    if(index) then
-      assert(newList[index] == false)
-      
-      newList[index] = tab
-      count = count-1
+    
+    if(order[tab.NameTag]) then
+      newList[#newList+1] = tab
+    else
+      extra[#extra+1] = tab
     end
   end
   
-  assert(count == 0)
+  table.sort(newList, function(tab1, tab2) return order[tab1.NameTag] < order[tab2.NameTag] end)
   
+  //add any new tabs that didn't have an order index saved for them to the end of the list
+  for i,tab in ipairs(extra) do
+    newList[#newList+1] = tab
+  end
+
   self.Tabs = newList
   
   if(not supressLayout) then
