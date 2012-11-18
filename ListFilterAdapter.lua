@@ -162,7 +162,7 @@ function ListFilterAdapter:FilteredListChanged(sizeOnly)
   if(self.ListControl) then
 	  --delay setting the new list 
 	  if(sizeOnly and self.PreviousListSize and not self.ListSorter) then
-	    self.ListControl:ListSizeChanged()
+	    self.ListControl:SetDataList(self.FilteredList, true)//self.ListControl:ListSizeChanged()
 	  else
 	    self.ListControl:SetDataList(self.FilteredList, true)
 	  end

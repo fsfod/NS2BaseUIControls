@@ -23,13 +23,13 @@ function CheckBox:Initialize(options)
   local label = options.Label or self.Label
   
   self.FontSize = options.FontSize
-
   local labeltxt = self:CreateFontString(self.FontSize)
-   labeltxt:SetText(label)
+  labeltxt:SetText(label)
 
   local width = labeltxt:GetTextWidth(label)
+  
   local height = options.Height or labeltxt:GetTextHeight(label)+4
-  self.Label = labeltxt
+  self.BC_Label = labeltxt
 
   BaseControl.Initialize(self, height, height)
   
@@ -44,6 +44,10 @@ function CheckBox:Initialize(options)
   self.Button = button
 end
 
+function CheckBox:SetLabel(label)
+  self.BC_Label:SetText(label)
+end
+
 function CheckBox:SetLabelOnLeft(labelOnLeft)
    self.LabelOnLeft = labelOnLeft
    self:UpdateLabelPosition()
@@ -51,7 +55,7 @@ end
 
 function CheckBox:UpdateLabelPosition()
    
-  local label = self.Label 
+  local label = self.BC_Label 
    
   if(self.LabelOnLeft) then
     label:SetPoint("Left", -4, 2, "Right")
@@ -67,7 +71,7 @@ function CheckBox:OnCheckedToggled()
     self.ConfigBinding:SetValue(self.Checked)
   end
   
-  self:FireEvent(self.CheckChanged, self.Checked)
+  self:FireEvent(self.CheckChanged, self.Checked, self)
 
   return self.Checked
 end
@@ -139,8 +143,12 @@ end
 
 function CheckButton:OnClick(button, down)
   if(down and button == InputKey.MouseButton0) then
-    
-    local checked = self.Parent:OnCheckedToggled(self)
+
+    local checked = not self.Checked
+
+    if(self.Parent.OnCheckedToggled) then
+      checked = self.Parent:OnCheckedToggled(self)
+    end
     
     self:SetCheckedState(checked)
     

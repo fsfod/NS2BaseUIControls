@@ -52,11 +52,18 @@ function ComboBox:Initialize(options)
   
   self.LabelCache = {}
 
-  self.LabelCreator = ResolveToFunction(options.LabelCreator, self)
+  if(options.ItemLabels) then
+    local labelList = options.ItemLabels
+    self.LabelCreator = function(data, i) return labelList[i] end
+  else
+    self.LabelCreator = ResolveToFunction(options.LabelCreator, self)
   
-  for i,data in ipairs(self.ItemList) do
-    self.LabelCache[i] = self.LabelCreator(data, i)
+    for i,data in ipairs(self.ItemList) do
+      self.LabelCache[i] = self.LabelCreator(data, i)
+    end
   end
+
+
   
   self:SetSelectedItem(1)
 end
@@ -165,7 +172,7 @@ function ComboBox:SetSelectedItem(index, fromDropDown)
     local item = self.ItemList[self.SelectedIndex]
 
     if(item) then
-      self.ItemText:SetText(self.LabelCreator(item))
+      self.ItemText:SetText(self.LabelCreator(item, self.SelectedIndex))
     end
   else
     self.ItemText:SetText("")

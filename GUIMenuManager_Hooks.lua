@@ -14,7 +14,7 @@ function GUIMenuManager:SetHooks()
     OptionsDialogUI_OnInit()
     
     if(MainMenuMod and MainMenuMod.DisableMenuAmbientSound) then
-      Shared.PlaySound(nil, kOpenMenuSound)
+      //Shared.PlaySound(nil, kOpenMenuSound)
       self:ShowMenu()
     else
       MainMenu_OnOpenMenu()

@@ -216,10 +216,16 @@ local ApplySharedControlOptions = _G.ApplySharedControlOptions
 
 local function OptionsTable_TextHandler(self, optionTable)
 
-  local control = self:CreateFontString(optionTable.FontSize or 20)
+  local height = optionTable.FontSize or 20
+
+  local control = self:CreateFontString(height)
   
   if(optionTable.Text) then
     control:SetText(optionTable.Text)
+  end
+
+  if(optionTable.Width) then
+    control:SetTextClipped(true, optionTable.Width, height)
   end
   
   ApplySharedControlOptions(control, optionTable)

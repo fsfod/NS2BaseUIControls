@@ -278,7 +278,7 @@ end
 
 function ApplySharedControlOptions(frame, options)
 
-  if(not frame.InitFromTable and options.Width) then
+  if(not frame.InitFromTable and options.Width and options.Type ~= "Text") then
     frame:SetSize(options.Width, options.Height)
   end
 
