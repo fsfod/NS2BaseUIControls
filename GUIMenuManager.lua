@@ -419,8 +419,6 @@ function GUIMenuManager:ShowMenu(message)
     end
   end
 
-  MainMenu_Loaded()
-
   self:Activate()
 
   MouseStateTracker:SetMainMenuState()
